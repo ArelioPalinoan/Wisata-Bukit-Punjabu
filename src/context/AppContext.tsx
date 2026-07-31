@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { NewsArticle, INITIAL_NEWS, VillageStats, INITIAL_STATS } from '@/data/initialData';
+import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 
 export interface User {
   name: string;
@@ -23,17 +24,17 @@ interface AppContextType {
   openBookingModal: () => void;
   closeBookingModal: () => void;
   newsList: NewsArticle[];
-  addNews: (newsItem: Omit<NewsArticle, 'id' | 'views' | 'date'>) => void;
-  updateNews: (id: string, updatedFields: Partial<NewsArticle>) => void;
-  deleteNews: (id: string) => void;
+  addNews: (newsItem: Omit<NewsArticle, 'id' | 'views' | 'date'>) => Promise<void>;
+  updateNews: (id: string, updatedFields: Partial<NewsArticle>) => Promise<void>;
+  deleteNews: (id: string) => Promise<void>;
   stats: VillageStats;
   mounted: boolean;
+  supabaseActive: boolean;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  // Always start with SSR-safe defaults — NO window/localStorage access here
   const [theme, setTheme] = useState<'dark' | 'light'>('dark');
   const [user, setUser] = useState<User | null>(null);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
@@ -41,12 +42,68 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [newsList, setNewsList] = useState<NewsArticle[]>(INITIAL_NEWS);
   const [stats, setStats] = useState<VillageStats>({ ...INITIAL_STATS, totalNews: INITIAL_NEWS.length });
   const [mounted, setMounted] = useState(false);
+  const [supabaseActive, setSupabaseActive] = useState(false);
 
-  // Hydrate from localStorage ONLY after mount (client-side)
+  // Helper to map DB record to NewsArticle interface
+  const mapDbNews = (item: any): NewsArticle => ({
+    id: String(item.id),
+    title: item.title,
+    slug: item.slug || item.id,
+    category: item.category,
+    author: item.author || 'Tim Redaksi Desa',
+    authorRole: item.author_role || item.authorRole || 'Pengelola Wisata',
+    date: item.date,
+    readTime: item.read_time || item.readTime || '3 min baca',
+    views: item.views || 0,
+    featured: item.featured || false,
+    status: item.status || 'Published',
+    summary: item.summary,
+    content: item.content,
+    coverImage: item.cover_image || item.coverImage,
+    gallery: item.gallery || [],
+    videoUrl: item.video_url || item.videoUrl,
+    tags: item.tags || [],
+  });
+
+  // Fetch news from Supabase or fallback to LocalStorage
+  const fetchNews = async () => {
+    if (isSupabaseConfigured() && supabase) {
+      try {
+        const { data, error } = await supabase
+          .from('news')
+          .select('*')
+          .order('created_at', { ascending: false });
+
+        if (!error && data && data.length > 0) {
+          const mapped = data.map(mapDbNews);
+          setNewsList(mapped);
+          setStats((prev) => ({ ...prev, totalNews: mapped.length }));
+          setSupabaseActive(true);
+          return;
+        }
+      } catch (err) {
+        console.warn('Supabase fetch failed, falling back to local storage:', err);
+      }
+    }
+
+    // Fallback to localStorage
+    const savedNews = localStorage.getItem('punjabu_news');
+    if (savedNews) {
+      try {
+        const parsed = JSON.parse(savedNews);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setNewsList(parsed);
+          setStats((prev) => ({ ...prev, totalNews: parsed.length }));
+        }
+      } catch (e) {
+        console.error('Error loading news from storage:', e);
+      }
+    }
+  };
+
   useEffect(() => {
     const savedTheme = localStorage.getItem('punjabu_theme') as 'dark' | 'light' | null;
     const savedUser = localStorage.getItem('punjabu_user');
-    const savedNews = localStorage.getItem('punjabu_news');
 
     queueMicrotask(() => {
       if (savedTheme) setTheme(savedTheme);
@@ -57,22 +114,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           console.error('Error loading user from storage:', e);
         }
       }
-      if (savedNews) {
-        try {
-          const parsed = JSON.parse(savedNews);
-          if (Array.isArray(parsed) && parsed.length > 0) {
-            setNewsList(parsed);
-            setStats((prev) => ({ ...prev, totalNews: parsed.length }));
-          }
-        } catch (e) {
-          console.error('Error loading news from storage:', e);
-        }
-      }
+      fetchNews();
       setMounted(true);
     });
   }, []);
 
-  // Sync theme class on document element whenever theme changes
   useEffect(() => {
     document.documentElement.classList.toggle('dark', theme === 'dark');
   }, [theme]);
@@ -113,12 +159,51 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setStats((prev) => ({ ...prev, totalNews: updatedList.length }));
   };
 
-  const addNews = (newsItem: Omit<NewsArticle, 'id' | 'views' | 'date'>) => {
+  const addNews = async (newsItem: Omit<NewsArticle, 'id' | 'views' | 'date'>) => {
     const today = new Date();
     const formattedDate = today.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+    const slug = newsItem.slug || newsItem.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+
+    if (isSupabaseConfigured() && supabase) {
+      try {
+        const { data, error } = await supabase.from('news').insert([
+          {
+            title: newsItem.title,
+            slug: slug,
+            category: newsItem.category,
+            author: newsItem.author,
+            author_role: newsItem.authorRole,
+            date: formattedDate,
+            read_time: newsItem.readTime,
+            views: 0,
+            featured: newsItem.featured,
+            status: newsItem.status,
+            summary: newsItem.summary,
+            content: newsItem.content,
+            cover_image: newsItem.coverImage,
+            gallery: newsItem.gallery,
+            video_url: newsItem.videoUrl,
+            tags: newsItem.tags,
+          },
+        ]).select('*');
+
+        if (!error && data && data.length > 0) {
+          const newArticle = mapDbNews(data[0]);
+          const updatedList = [newArticle, ...newsList];
+          setNewsList(updatedList);
+          setStats((prev) => ({ ...prev, totalNews: updatedList.length }));
+          return;
+        }
+      } catch (err) {
+        console.warn('Supabase addNews failed, falling back to localStorage:', err);
+      }
+    }
+
+    // Fallback to localStorage
     const newArticle: NewsArticle = {
       ...newsItem,
       id: Date.now().toString(),
+      slug: slug,
       views: 0,
       date: formattedDate,
     };
@@ -126,12 +211,56 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     saveNewsToStorage(updatedList);
   };
 
-  const updateNews = (id: string, updatedFields: Partial<NewsArticle>) => {
+  const updateNews = async (id: string, updatedFields: Partial<NewsArticle>) => {
+    if (isSupabaseConfigured() && supabase) {
+      try {
+        const payload: any = {};
+        if (updatedFields.title !== undefined) payload.title = updatedFields.title;
+        if (updatedFields.category !== undefined) payload.category = updatedFields.category;
+        if (updatedFields.author !== undefined) payload.author = updatedFields.author;
+        if (updatedFields.authorRole !== undefined) payload.author_role = updatedFields.authorRole;
+        if (updatedFields.readTime !== undefined) payload.read_time = updatedFields.readTime;
+        if (updatedFields.featured !== undefined) payload.featured = updatedFields.featured;
+        if (updatedFields.status !== undefined) payload.status = updatedFields.status;
+        if (updatedFields.summary !== undefined) payload.summary = updatedFields.summary;
+        if (updatedFields.content !== undefined) payload.content = updatedFields.content;
+        if (updatedFields.coverImage !== undefined) payload.cover_image = updatedFields.coverImage;
+        if (updatedFields.gallery !== undefined) payload.gallery = updatedFields.gallery;
+        if (updatedFields.videoUrl !== undefined) payload.video_url = updatedFields.videoUrl;
+        if (updatedFields.tags !== undefined) payload.tags = updatedFields.tags;
+
+        const { error } = await supabase.from('news').update(payload).eq('id', id);
+        if (!error) {
+          const updatedList = newsList.map((item) => (item.id === id ? { ...item, ...updatedFields } : item));
+          setNewsList(updatedList);
+          return;
+        }
+      } catch (err) {
+        console.warn('Supabase updateNews failed, falling back to localStorage:', err);
+      }
+    }
+
+    // Fallback to localStorage
     const updatedList = newsList.map((item) => (item.id === id ? { ...item, ...updatedFields } : item));
     saveNewsToStorage(updatedList);
   };
 
-  const deleteNews = (id: string) => {
+  const deleteNews = async (id: string) => {
+    if (isSupabaseConfigured() && supabase) {
+      try {
+        const { error } = await supabase.from('news').delete().eq('id', id);
+        if (!error) {
+          const updatedList = newsList.filter((item) => item.id !== id);
+          setNewsList(updatedList);
+          setStats((prev) => ({ ...prev, totalNews: updatedList.length }));
+          return;
+        }
+      } catch (err) {
+        console.warn('Supabase deleteNews failed, falling back to localStorage:', err);
+      }
+    }
+
+    // Fallback to localStorage
     const updatedList = newsList.filter((item) => item.id !== id);
     saveNewsToStorage(updatedList);
   };
@@ -156,6 +285,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         deleteNews,
         stats,
         mounted,
+        supabaseActive,
       }}
     >
       {children}

@@ -20,7 +20,7 @@ import {
 } from 'lucide-react';
 
 export default function AdminDashboardPage() {
-  const { user, login, newsList, addNews, updateNews, deleteNews, stats } = useApp();
+  const { user, login, newsList, addNews, updateNews, deleteNews, stats, supabaseActive } = useApp();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [filterCategory, setFilterCategory] = useState('Semua');
@@ -112,7 +112,7 @@ export default function AdminDashboardPage() {
   };
 
   // Form Submit (Add or Edit)
-  const handleSubmitForm = (e: React.FormEvent) => {
+  const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.title || !formData.content) return;
 
@@ -124,7 +124,7 @@ export default function AdminDashboardPage() {
       : [];
 
     if (editingArticle) {
-      updateNews(editingArticle.id, {
+      await updateNews(editingArticle.id, {
         title: formData.title,
         category: formData.category,
         author: formData.author,
@@ -140,7 +140,7 @@ export default function AdminDashboardPage() {
         tags: tagsArray,
       });
     } else {
-      addNews({
+      await addNews({
         title: formData.title,
         slug: formData.title.toLowerCase().replace(/\s+/g, '-'),
         category: formData.category,
@@ -191,9 +191,13 @@ export default function AdminDashboardPage() {
       {/* Dashboard Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b border-zinc-200 dark:border-zinc-800">
         <div>
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-xs font-bold mb-2">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-500 text-xs font-semibold">
             <LayoutDashboard className="w-4 h-4" />
             <span>Dashboard Sistem CMS Desa</span>
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse ml-1" />
+            <span className="text-[10px] opacity-80">
+              {supabaseActive ? '• Supabase DB Connected' : '• Local Fallback Mode'}
+            </span>
           </div>
           <h1 className="text-3xl font-extrabold text-zinc-900 dark:text-white">
             Panel Pengelola Wisata & Portal Berita
@@ -415,7 +419,7 @@ export default function AdminDashboardPage() {
               {editingArticle ? 'Edit Berita' : 'Tambah Berita Baru'}
             </h2>
 
-            <form onSubmit={handleSubmitForm} className="space-y-4 text-xs">
+            <form onSubmit={handleFormSubmit} className="space-y-4 text-xs">
               <div>
                 <label className="block font-bold mb-1 text-zinc-700 dark:text-zinc-300">Judul Berita</label>
                 <input

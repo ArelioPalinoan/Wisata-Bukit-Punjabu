@@ -1,0 +1,149 @@
+-- ====================================================================
+-- SKEMA DATABASE SUPABASE UNTUK PORTAL WISATA BUKIT PUNJABU
+-- Desa Buntu Buangin, Kec. Pitu Riase, Kab. Sidrap
+-- ====================================================================
+
+-- 1. TABEL BERITA (news)
+CREATE TABLE IF NOT EXISTS news (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  title TEXT NOT NULL,
+  slug TEXT UNIQUE NOT NULL,
+  category TEXT NOT NULL CHECK (category IN ('Wisata & Event', 'Kegiatan Desa', 'Pembangunan', 'Ekonomi & UMKM', 'Pengumuman')),
+  author TEXT NOT NULL DEFAULT 'Tim Media Desa',
+  author_role TEXT NOT NULL DEFAULT 'Pengelola Wisata',
+  date TEXT NOT NULL,
+  read_time TEXT NOT NULL DEFAULT '3 min baca',
+  views INT DEFAULT 0,
+  featured BOOLEAN DEFAULT FALSE,
+  status TEXT NOT NULL CHECK (status IN ('Published', 'Draft')) DEFAULT 'Published',
+  summary TEXT NOT NULL,
+  content TEXT NOT NULL,
+  cover_image TEXT NOT NULL,
+  gallery TEXT[] DEFAULT '{}',
+  video_url TEXT,
+  tags TEXT[] DEFAULT '{}',
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 2. TABEL DESTINASI WISATA (tourism_spots)
+CREATE TABLE IF NOT EXISTS tourism_spots (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  title TEXT NOT NULL,
+  category TEXT NOT NULL,
+  description TEXT NOT NULL,
+  image TEXT NOT NULL,
+  badge TEXT NOT NULL,
+  rating NUMERIC(3, 1) DEFAULT 5.0,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 3. TABEL PRODUK UMKM (umkm_products)
+CREATE TABLE IF NOT EXISTS umkm_products (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  name TEXT NOT NULL,
+  price INT NOT NULL,
+  price_unit TEXT NOT NULL,
+  category TEXT NOT NULL,
+  seller TEXT NOT NULL,
+  description TEXT NOT NULL,
+  image TEXT NOT NULL,
+  badge TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 4. TABEL RESERVASI / BOOKING TIKET & TENT (bookings)
+CREATE TABLE IF NOT EXISTS bookings (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_name TEXT NOT NULL,
+  user_phone TEXT NOT NULL,
+  user_email TEXT,
+  booking_date DATE NOT NULL,
+  ticket_qty INT DEFAULT 1,
+  tent_qty INT DEFAULT 0,
+  guide_included BOOLEAN DEFAULT FALSE,
+  total_price INT NOT NULL,
+  notes TEXT,
+  status TEXT DEFAULT 'Pending' CHECK (status IN ('Pending', 'Confirmed', 'Cancelled')),
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 5. TABEL ULASAN PENGUNJUNG (visitor_reviews)
+CREATE TABLE IF NOT EXISTS visitor_reviews (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  name TEXT NOT NULL,
+  origin TEXT NOT NULL,
+  rating INT NOT NULL CHECK (rating BETWEEN 1 AND 5),
+  date TEXT NOT NULL,
+  comment TEXT NOT NULL,
+  avatar TEXT,
+  spot TEXT NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- ====================================================================
+-- ROW LEVEL SECURITY (RLS) & POLICIES
+-- ====================================================================
+
+ALTER TABLE news ENABLE ROW LEVEL SECURITY;
+ALTER TABLE tourism_spots ENABLE ROW LEVEL SECURITY;
+ALTER TABLE umkm_products ENABLE ROW LEVEL SECURITY;
+ALTER TABLE bookings ENABLE ROW LEVEL SECURITY;
+ALTER TABLE visitor_reviews ENABLE ROW LEVEL SECURITY;
+
+-- Policy untuk Pembaca Publik (SELECT terbuka untuk umum)
+CREATE POLICY "Public Read News" ON news FOR SELECT USING (true);
+CREATE POLICY "Public Read Tourism Spots" ON tourism_spots FOR SELECT USING (true);
+CREATE POLICY "Public Read UMKM Products" ON umkm_products FOR SELECT USING (true);
+CREATE POLICY "Public Read Reviews" ON visitor_reviews FOR SELECT USING (true);
+
+-- Policy untuk Pengunjung Melakukan Booking (INSERT terbuka)
+CREATE POLICY "Public Insert Bookings" ON bookings FOR INSERT WITH CHECK (true);
+CREATE POLICY "Public Read Own Bookings" ON bookings FOR SELECT USING (true);
+
+-- Policy untuk Admin / Service Role (FULL ACCESS CRUD)
+CREATE POLICY "Admin Full Access News" ON news FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Admin Full Access Tourism" ON tourism_spots FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Admin Full Access UMKM" ON umkm_products FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Admin Full Access Bookings" ON bookings FOR ALL USING (true) WITH CHECK (true);
+
+-- ====================================================================
+-- SEED DATA AWAL (DATA CONTOH PORTAL PUNJABU)
+-- ====================================================================
+
+INSERT INTO news (title, slug, category, author, author_role, date, read_time, views, featured, status, summary, content, cover_image, gallery, tags)
+VALUES 
+(
+  'Pesona Lautan Awan Puncak Punjabu 850 mdpl Pitu Riase Sidrap',
+  'pesona-lautan-awan-puncak-punjabu-850-mdpl-pitu-riase-sidrap',
+  'Wisata & Event',
+  'Tim Redaksi Desa',
+  'Pengelola Pokdarwis',
+  '28 Juli 2026',
+  '4 min baca',
+  1240,
+  TRUE,
+  'Published',
+  'Nikmati fenomena menakjubkan samudera awan putih tebal yang menyelimuti kawasan pegunungan Desa Buntu Buangin pada pagi hari.',
+  'Puncak Bukit Punjabu yang terletak di ketinggian 850 meter di atas permukaan laut (mdpl) di Desa Buntu Buangin, Kecamatan Pitu Riase, Kabupaten Sidenreng Rappang (Sidrap) terus menjadi daya tarik utama wisatawan lokal maupun luar daerah.\n\nPada jam 05.30 hingga 07.30 WITA, pengunjung disuguhkan hamparan lautan awan putih bergulung yang menyelimuti perbukitan hijau di bawahnya. Suasana sejuk pegunungan dipadu dengan aroma Kopi Aren Punjabu menjadikan momen pagi hari di lokasi ini terasa sangat menenangkan.\n\nKetua Pokdarwis Desa Buntu Buangin menyampaikan bahwa penataan fasilitas pendukung seperti toilet bersih, penerangan area camping, serta ketersediaan air bersih kini telah siap melayani wisatawan yang berkunjung di akhir pekan.',
+  'https://images.unsplash.com/photo-1506744038136-46273834b3fb?q=80&w=1200&auto=format&fit=crop',
+  ARRAY['https://images.unsplash.com/photo-1510312305653-8ed496efae75?q=80&w=1200&auto=format&fit=crop', 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?q=80&w=1200&auto=format&fit=crop'],
+  ARRAY['Samudera Awan', 'Bukit Punjabu', 'Wisata Sidrap', 'Camping Ground']
+),
+(
+  'Panen Kopi Organik Petik Merah Petani Buntu Buangin',
+  'panen-kopi-organik-petik-merah-petani-buntu-buangin',
+  'Ekonomi & UMKM',
+  'Koperasi Desa',
+  'Ketua Kelompok Tani',
+  '20 Juli 2026',
+  '3 min baca',
+  850,
+  FALSE,
+  'Published',
+  'Petani lokal Desa Buntu Buangin memulai musim panen raya kopi Robusta dan Arabika petik merah berkualitas tinggi.',
+  'Komoditas kopi lokal khas Pegunungan Pitu Riase Sidrap kini memasuki masa panen raya. Petani Desa Buntu Buangin secara konsisten menerapkan metode petik merah untuk menjaga mutu aroma dan rasa kopi khas Punjabu.\n\nKopi olahan warga ini dipasarkan secara langsung kepada para wisatawan dalam bentuk biji sangrai (rosted beans) maupun bubuk siap seduh. Melalui platform digital ini, diharapkan pemasaran produk unggulan UMKM desa dapat semakin meluas hingga ke luar Kabupaten Sidrap.',
+  'https://images.unsplash.com/photo-1447933601403-0c6688de566e?q=80&w=1200&auto=format&fit=crop',
+  ARRAY['https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?q=80&w=1200&auto=format&fit=crop'],
+  ARRAY['Kopi Punjabu', 'UMKM Sidrap', 'Petik Merah', 'Ekonomi Desa']
+)
+ON CONFLICT (slug) DO NOTHING;

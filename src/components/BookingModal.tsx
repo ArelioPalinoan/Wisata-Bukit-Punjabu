@@ -52,8 +52,29 @@ export const BookingModal: React.FC = () => {
       : 0;
   const grandTotal = totalTiket + totalSewa;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Async save to Supabase if configured
+    try {
+      const { supabase, isSupabaseConfigured } = await import('@/lib/supabase');
+      if (isSupabaseConfigured() && supabase) {
+        await supabase.from('bookings').insert([
+          {
+            user_name: name || 'Pengunjung',
+            user_phone: phone || '-',
+            booking_date: visitDate || new Date().toISOString().split('T')[0],
+            ticket_qty: visitorCount,
+            tent_qty: rentTenda,
+            total_price: grandTotal,
+            notes: `Type: ${bookingType}, SB: ${rentSleepingBag}, Matras: ${rentMatras}`,
+            status: 'Pending',
+          },
+        ]);
+      }
+    } catch (err) {
+      console.warn('Could not save booking to Supabase:', err);
+    }
 
     const fmt = new Intl.NumberFormat('id-ID', {
       style: 'currency',
