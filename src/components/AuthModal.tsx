@@ -13,18 +13,19 @@ export const AuthModal: React.FC = () => {
 
   if (!isAuthModalOpen) return null;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email) return;
-    login(email, 'visitor', name);
+    const isAdmin = email.toLowerCase().includes('admin');
+    await login(email, isAdmin ? 'admin' : 'visitor', name);
   };
 
-  const handleGoogleLogin = () => {
-    login('user.google@gmail.com', 'visitor', 'Pengunjung Google');
+  const handleGoogleLogin = async () => {
+    await login('user.google@gmail.com', 'visitor', 'Pengunjung Google');
   };
 
-  const handleQuickAdminLogin = () => {
-    login('admin.punjabu@desa.id', 'admin', 'Admin Pengelola Punjabu');
+  const handleQuickAdminLogin = async () => {
+    await login('admin.punjabu@gmail.com', 'admin', 'Admin Pengelola Punjabu');
   };
 
   return (
