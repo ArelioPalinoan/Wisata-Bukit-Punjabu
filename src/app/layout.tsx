@@ -42,6 +42,7 @@ export default function RootLayout({
     // the client DOM. Without this, React throws a hydration warning every load.
     <html
       lang="id"
+      data-scroll-behavior="smooth"
       className={`${jakartaSans.variable} dark scroll-smooth`}
       suppressHydrationWarning
     >
