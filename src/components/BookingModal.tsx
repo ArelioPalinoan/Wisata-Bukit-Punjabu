@@ -41,7 +41,8 @@ export const BookingModal: React.FC = () => {
     }
   }, [isBookingModalOpen]);
 
-  if (!isBookingModalOpen) return null;
+  // Reservation feature disabled per instruction
+  return null;
 
   // --- Price calculation ---
   const pricePerPerson = bookingType === 'harian' ? 10000 : 20000;

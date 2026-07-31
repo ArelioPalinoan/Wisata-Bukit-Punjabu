@@ -29,35 +29,39 @@ import {
   HelpCircle,
 } from 'lucide-react';
 
-/** Attach IntersectionObserver to trigger .visible on .reveal / .reveal-left / .reveal-right elements.
- *  The empty dep array [] ensures this runs only once on mount, not every render. */
-function useRevealOnScroll() {
+/** Attach IntersectionObserver to trigger .visible on .reveal / .reveal-left / .reveal-right elements. */
+function useRevealOnScroll(newsLength: number) {
   useEffect(() => {
-    const els = document.querySelectorAll('.reveal, .reveal-left, .reveal-right');
-    if (!els.length) return;
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            entry.target.classList.add('visible');
-            observer.unobserve(entry.target);
-          }
-        });
-      },
-      { threshold: 0.12 }
-    );
-    els.forEach((el) => observer.observe(el));
-    return () => observer.disconnect();
-  }, []); // ← empty array: run once on mount only
+    const scanAndObserve = () => {
+      const els = document.querySelectorAll('.reveal:not(.visible), .reveal-left:not(.visible), .reveal-right:not(.visible)');
+      if (!els.length) return;
+      const observer = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((entry) => {
+            if (entry.isIntersecting) {
+              entry.target.classList.add('visible');
+              observer.unobserve(entry.target);
+            }
+          });
+        },
+        { threshold: 0.02 }
+      );
+      els.forEach((el) => observer.observe(el));
+    };
+
+    scanAndObserve();
+    const timer = setTimeout(scanAndObserve, 80);
+    return () => clearTimeout(timer);
+  }, [newsLength]);
 }
 
 export default function Home() {
-  const { newsList, openBookingModal } = useApp();
+  const { newsList } = useApp();
   const [activeMediaModal, setActiveMediaModal] = useState<string | null>(null);
   const [openFaqId, setOpenFaqId] = useState<string | null>('f1');
   const heroRef = useRef<HTMLDivElement>(null);
   const [heroParallax, setHeroParallax] = useState(0);
-  useRevealOnScroll();
+  useRevealOnScroll(newsList.length);
 
   // Subtle parallax on hero bg
   useEffect(() => {
@@ -151,21 +155,21 @@ export default function Home() {
 
           {/* Action Buttons */}
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-2 animate-fade-in animate-delay-400">
-            <button
-              onClick={openBookingModal}
-              style={noFocusStyle}
-              className="w-full sm:w-auto px-8 py-4 bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white font-bold rounded-2xl shadow-xl shadow-emerald-600/40 transition-all duration-300 hover:scale-105 flex items-center justify-center gap-2 text-base cursor-pointer"
-            >
-              <Ticket className="w-5 h-5 text-emerald-200" />
-              Reservasi Tiket &amp; Camping
-            </button>
             <a
               href="#wisata"
               style={{ outline: 'none' }}
+              className="w-full sm:w-auto px-8 py-4 bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white font-bold rounded-2xl shadow-xl shadow-emerald-600/40 transition-all duration-300 hover:scale-105 flex items-center justify-center gap-2 text-base cursor-pointer"
+            >
+              <Compass className="w-5 h-5 text-emerald-200" />
+              Jelajahi Wisata Punjabu
+            </a>
+            <a
+              href="#berita"
+              style={{ outline: 'none' }}
               className="w-full sm:w-auto px-8 py-4 bg-white/10 hover:bg-white/20 active:scale-95 text-white font-bold rounded-2xl border border-white/25 backdrop-blur-md transition-all duration-300 hover:scale-105 flex items-center justify-center gap-2 text-base"
             >
-              <Compass className="w-5 h-5 text-emerald-400" />
-              Jelajahi Wisata
+              <Sparkles className="w-5 h-5 text-emerald-400" />
+              Portal Berita Desa
             </a>
           </div>
 
@@ -363,8 +367,8 @@ export default function Home() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {recentNews.map((article, i) => (
-              <div key={article.id} className="reveal" style={{ transitionDelay: `${i * 0.12}s` }}>
+            {recentNews.map((article) => (
+              <div key={article.id} className="h-full">
                 <NewsCard article={article} />
               </div>
             ))}
@@ -404,14 +408,10 @@ export default function Home() {
           </div>
 
           <div className="pt-2">
-            <button
-              onClick={openBookingModal}
-              style={noFocusStyle}
-              className="w-full sm:w-auto px-8 py-3.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-2xl shadow-lg shadow-emerald-600/30 transition flex items-center justify-center gap-2 text-sm cursor-pointer"
-            >
-              <Ticket className="w-4 h-4" />
-              Reservasi Tiket &amp; Camping Online Sekarang
-            </button>
+            <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-700 dark:text-amber-300 text-xs font-semibold flex items-center gap-2">
+              <Ticket className="w-4 h-4 shrink-0 text-amber-500" />
+              <span>Layanan Reservasi Tiket Online Ditutup Sementara oleh Pengelola Wisata Punjabu.</span>
+            </div>
           </div>
 
           <div className="space-y-3 pt-4 border-t border-zinc-200 dark:border-zinc-800">

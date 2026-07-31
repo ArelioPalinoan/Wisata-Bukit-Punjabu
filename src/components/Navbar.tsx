@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useApp } from '@/context/AppContext';
-import { Mountain, Sun, Moon, LogIn, LayoutDashboard, LogOut, Menu, X, Ticket } from 'lucide-react';
+import { Mountain, Sun, Moon, LogIn, LayoutDashboard, LogOut, Menu, X } from 'lucide-react';
 
 type NavLink = {
   name: string;
@@ -24,7 +24,7 @@ const navLinks: NavLink[] = [
 ];
 
 export const Navbar: React.FC = () => {
-  const { theme, toggleTheme, user, logout, openAuthModal, openBookingModal, mounted } = useApp();
+  const { theme, toggleTheme, user, logout, openAuthModal, mounted } = useApp();
   const pathname = usePathname();
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -164,15 +164,7 @@ export const Navbar: React.FC = () => {
 
         {/* ── Right Actions ──────────────────────── */}
         <div className="hidden md:flex items-center gap-3">
-          {/* Quick Booking Button */}
-          <button
-            onClick={openBookingModal}
-            style={noFocus}
-            className="flex items-center gap-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl shadow-md shadow-emerald-600/20 transition-all duration-200 hover:scale-105 cursor-pointer"
-          >
-            <Ticket className="w-3.5 h-3.5" />
-            Reservasi
-          </button>
+          {/* Quick Booking Button (Nonaktif Sementara) */}
 
           {/* Theme toggle */}
           <button
@@ -244,14 +236,7 @@ export const Navbar: React.FC = () => {
 
         {/* ── Mobile Controls ────────────────────── */}
         <div className="flex md:hidden items-center gap-2">
-          <button
-            onClick={openBookingModal}
-            style={noFocus}
-            className="flex items-center gap-1 px-3 py-1.5 bg-emerald-600 text-white text-xs font-bold rounded-xl"
-          >
-            <Ticket className="w-3.5 h-3.5" />
-            Booking
-          </button>
+
           <button
             onClick={toggleTheme}
             style={noFocus}
@@ -307,14 +292,7 @@ export const Navbar: React.FC = () => {
             );
           })}
           <div className="pt-3 border-t border-zinc-200 dark:border-zinc-800 space-y-2">
-            <button
-              onClick={() => { setMobileMenuOpen(false); openBookingModal(); }}
-              style={noFocus}
-              className="w-full py-3 bg-emerald-600 text-white font-bold rounded-xl flex items-center justify-center gap-2 text-sm shadow-md"
-            >
-              <Ticket className="w-4 h-4" />
-              Reservasi Tiket &amp; Camping Online
-            </button>
+
             {mounted && user ? (
               <div className="flex items-center justify-between px-4 py-2">
                 <span className="text-xs font-semibold text-zinc-800 dark:text-zinc-200">
