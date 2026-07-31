@@ -12,13 +12,13 @@ type NavLink = {
   sectionId: string;
 };
 
-// Streamlined, clean, un-bloated nav structure (7 concise links)
+// Streamlined, clean, spacious nav structure
 const navLinks: NavLink[] = [
   { name: 'Beranda', href: '/', sectionId: 'top' },
   { name: 'Wisata', href: '/#wisata', sectionId: 'wisata' },
-  { name: 'UMKM Desa', href: '/#umkm', sectionId: 'umkm' },
+  { name: 'UMKM', href: '/#umkm', sectionId: 'umkm' },
   { name: 'Berita', href: '/#berita', sectionId: 'berita' },
-  { name: 'Informasi & Rute', href: '/#informasi', sectionId: 'informasi' },
+  { name: 'Informasi', href: '/#informasi', sectionId: 'informasi' },
   { name: 'Galeri', href: '/#galeri', sectionId: 'galeri' },
   { name: 'FAQ', href: '/#faq', sectionId: 'faq' },
 ];
@@ -125,8 +125,8 @@ export const Navbar: React.FC = () => {
           </div>
         </Link>
 
-        {/* ── Desktop Nav Links (Clean, Uncrowded Layout) ──────────────────────── */}
-        <nav className="hidden md:flex items-center gap-7 lg:gap-8">
+        {/* ── Desktop Nav Links (Clean, Spacious Layout) ──────────────────────── */}
+        <nav className="hidden md:flex items-center gap-3 lg:gap-5 xl:gap-6">
           {navLinks.map((link) => {
             const active = isActive(link);
             return (

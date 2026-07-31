@@ -35,14 +35,15 @@ export default function BeritaPage() {
   return (
     <div className="pt-28 pb-20 space-y-12">
       {/* Header Banner */}
-      <section className="relative py-12 bg-gradient-to-br from-emerald-950 via-zinc-900 to-zinc-950 border-b border-zinc-800 text-white overflow-hidden">
+      <section className="relative py-14 bg-gradient-to-br from-emerald-850 via-emerald-900 to-zinc-900 border-b border-emerald-800/40 text-white overflow-hidden shadow-xl">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(16,185,129,0.25),transparent_50%)] pointer-events-none" />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 space-y-4">
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-500/20 text-emerald-300 text-xs font-bold border border-emerald-500/30">
-            <Newspaper className="w-4 h-4" />
-            <span>Portal Berita & Media Resmi Desa</span>
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-500/25 text-emerald-300 text-xs font-bold border border-emerald-400/40 shadow-inner">
+            <Newspaper className="w-4 h-4 text-emerald-400" />
+            <span>Portal Berita &amp; Media Resmi Desa</span>
           </div>
-          <h1 className="text-3xl sm:text-5xl font-extrabold tracking-tight">
-            Kabar Desa & Wisata Punjabu
+          <h1 className="text-3xl sm:text-5xl font-extrabold tracking-tight text-white drop-shadow-sm">
+            Kabar Desa &amp; Wisata Punjabu
           </h1>
           <p className="text-zinc-300 text-sm sm:text-base max-w-2xl">
             Pusat berita terkini, liputan kegiatan desa, agenda acara pariwisata, serta pengumuman penting bagi warga dan pengunjung Wisata Bukit Punjabu.

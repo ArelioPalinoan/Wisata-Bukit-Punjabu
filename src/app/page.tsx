@@ -65,7 +65,8 @@ export default function Home() {
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
-  const recentNews = newsList.filter((n) => n.status === 'Published').slice(0, 3);
+  const published = newsList.filter((n) => !n.status || n.status.toLowerCase() === 'published');
+  const recentNews = (published.length > 0 ? published : newsList).slice(0, 3);
 
   const galleryImages = [
     {
