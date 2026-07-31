@@ -39,7 +39,7 @@ export default function DetailBeritaPage({ params }: { params: Promise<{ id: str
   const [copiedLink, setCopiedLink] = useState(false);
   const [lightboxImage, setLightboxImage] = useState<string | null>(null);
 
-  const article = newsList.find((n) => n.id === resolvedParams.id) || newsList[0];
+  const article = newsList.find((n) => n.id === resolvedParams.id || n.slug === resolvedParams.id) || newsList[0];
 
   if (!article) {
     return (
@@ -54,7 +54,7 @@ export default function DetailBeritaPage({ params }: { params: Promise<{ id: str
 
   // Related articles in same category or recent
   const relatedArticles = newsList
-    .filter((n) => n.id !== article.id && n.status === 'Published')
+    .filter((n) => n.id !== article.id && (!n.status || n.status.toLowerCase() === 'published'))
     .slice(0, 3);
 
   const handleAddComment = (e: React.FormEvent) => {

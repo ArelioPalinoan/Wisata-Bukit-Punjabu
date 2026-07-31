@@ -12,7 +12,7 @@ type NavLink = {
   sectionId: string;
 };
 
-// Streamlined, clean, un-bloated nav structure (6 concise links)
+// Streamlined, clean, un-bloated nav structure (7 concise links)
 const navLinks: NavLink[] = [
   { name: 'Beranda', href: '/', sectionId: 'top' },
   { name: 'Wisata', href: '/#wisata', sectionId: 'wisata' },
@@ -20,6 +20,7 @@ const navLinks: NavLink[] = [
   { name: 'Berita', href: '/#berita', sectionId: 'berita' },
   { name: 'Informasi & Rute', href: '/#informasi', sectionId: 'informasi' },
   { name: 'Galeri', href: '/#galeri', sectionId: 'galeri' },
+  { name: 'FAQ', href: '/#faq', sectionId: 'faq' },
 ];
 
 export const Navbar: React.FC = () => {

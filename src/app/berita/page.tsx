@@ -12,22 +12,25 @@ export default function BeritaPage() {
 
   const categories = ['Semua', 'Wisata & Event', 'Kegiatan Desa', 'Pembangunan', 'Ekonomi & UMKM'];
 
-  // Filter only published news
-  const publishedNews = newsList.filter((n) => n.status === 'Published');
+  // Filter published news with fallback to all news
+  const publishedNews = newsList.filter((n) => !n.status || n.status.toLowerCase() === 'published');
+  const activeNews = publishedNews.length > 0 ? publishedNews : newsList;
 
-  const filteredNews = publishedNews.filter((item) => {
+  const filteredNews = activeNews.filter((item) => {
     const matchesSearch =
-      item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.summary.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.tags.some((tag) => tag.toLowerCase().includes(searchQuery.toLowerCase()));
+      (item.title && item.title.toLowerCase().includes(searchQuery.toLowerCase())) ||
+      (item.summary && item.summary.toLowerCase().includes(searchQuery.toLowerCase())) ||
+      (item.tags && Array.isArray(item.tags) && item.tags.some((tag) => tag.toLowerCase().includes(searchQuery.toLowerCase())));
 
     const matchesCategory = selectedCategory === 'Semua' || item.category === selectedCategory;
 
     return matchesSearch && matchesCategory;
   });
 
-  const featuredArticle = publishedNews.find((item) => item.featured) || publishedNews[0];
-  const regularNews = filteredNews.filter((item) => item.id !== featuredArticle?.id);
+  const featuredArticle = activeNews.find((item) => item.featured) || activeNews[0];
+  const regularNews = (searchQuery || selectedCategory !== 'Semua')
+    ? filteredNews
+    : filteredNews.filter((item) => item.id !== featuredArticle?.id);
 
   return (
     <div className="pt-28 pb-20 space-y-12">
@@ -118,7 +121,7 @@ export default function BeritaPage() {
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {(searchQuery || selectedCategory !== 'Semua' ? filteredNews : regularNews).map((article) => (
+              {((searchQuery || selectedCategory !== 'Semua' || regularNews.length === 0) ? filteredNews : regularNews).map((article) => (
                 <NewsCard key={article.id} article={article} />
               ))}
             </div>

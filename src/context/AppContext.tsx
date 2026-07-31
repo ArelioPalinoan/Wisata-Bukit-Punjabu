@@ -94,11 +94,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         if (Array.isArray(parsed) && parsed.length > 0) {
           setNewsList(parsed);
           setStats((prev) => ({ ...prev, totalNews: parsed.length }));
+          return;
         }
       } catch (e) {
         console.error('Error loading news from storage:', e);
       }
     }
+
+    // If nothing found in Supabase or localStorage, fallback to INITIAL_NEWS
+    setNewsList(INITIAL_NEWS);
+    setStats((prev) => ({ ...prev, totalNews: INITIAL_NEWS.length }));
   };
 
   useEffect(() => {
