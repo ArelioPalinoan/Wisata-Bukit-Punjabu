@@ -76,28 +76,8 @@ interface AppContextType {
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [theme, setTheme] = useState<'dark' | 'light'>(() => {
-    if (typeof window !== 'undefined') {
-      const savedTheme = localStorage.getItem('punjabu_theme') as 'dark' | 'light' | null;
-      if (savedTheme === 'light' || savedTheme === 'dark') return savedTheme;
-    }
-    return 'dark';
-  });
-
-  const [user, setUser] = useState<User | null>(() => {
-    if (typeof window !== 'undefined') {
-      const savedUser = localStorage.getItem('punjabu_user');
-      if (savedUser) {
-        try {
-          return JSON.parse(savedUser);
-        } catch (e) {
-          console.error('Error loading user from storage:', e);
-        }
-      }
-    }
-    return null;
-  });
-
+  const [theme, setTheme] = useState<'dark' | 'light'>('dark');
+  const [user, setUser] = useState<User | null>(null);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
   const [newsList, setNewsList] = useState<NewsArticle[]>(INITIAL_NEWS);
@@ -172,6 +152,20 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   useEffect(() => {
     queueMicrotask(() => {
+      if (typeof window !== 'undefined') {
+        const savedTheme = localStorage.getItem('punjabu_theme') as 'dark' | 'light' | null;
+        if (savedTheme === 'light' || savedTheme === 'dark') {
+          setTheme(savedTheme);
+        }
+        const savedUser = localStorage.getItem('punjabu_user');
+        if (savedUser) {
+          try {
+            setUser(JSON.parse(savedUser));
+          } catch (e) {
+            console.error('Error loading user from storage:', e);
+          }
+        }
+      }
       setMounted(true);
       fetchNews();
     });

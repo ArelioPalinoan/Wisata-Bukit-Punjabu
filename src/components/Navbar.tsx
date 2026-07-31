@@ -90,16 +90,14 @@ export const Navbar: React.FC = () => {
     WebkitTapHighlightColor: 'transparent',
   };
 
-  const isLightMode = mounted && theme === 'light';
+  const isSolidHeader = scrolled || pathname !== '/';
 
   return (
     <header
       style={{ willChange: 'background-color, padding' }}
       className={`fixed top-0 left-0 right-0 z-40 transition-all duration-500 ease-in-out ${
-        scrolled
+        isSolidHeader
           ? 'bg-white/95 dark:bg-zinc-950/95 backdrop-blur-md border-b border-zinc-200/80 dark:border-zinc-800/60 py-3 shadow-xs'
-          : isLightMode
-          ? 'bg-gradient-to-b from-white/95 via-white/60 to-transparent py-4 backdrop-blur-xs'
           : 'bg-gradient-to-b from-black/80 via-black/30 to-transparent py-4'
       }`}
     >
@@ -118,7 +116,7 @@ export const Navbar: React.FC = () => {
           <div className="flex flex-col">
             <span
               className={`font-extrabold text-base sm:text-lg tracking-tight transition-colors duration-300 group-hover:text-emerald-500 ${
-                scrolled || isLightMode ? 'text-zinc-900 dark:text-white' : 'text-white'
+                isSolidHeader ? 'text-zinc-900 dark:text-white' : 'text-white'
               }`}
             >
               Bukit Punjabu
@@ -142,7 +140,7 @@ export const Navbar: React.FC = () => {
                 className={`relative py-1 text-xs sm:text-sm font-semibold select-none outline-none focus:outline-none transition-colors duration-300 ease-out ${
                   active
                     ? 'text-emerald-600 dark:text-emerald-400 font-bold'
-                    : scrolled || isLightMode
+                    : isSolidHeader
                     ? 'text-zinc-700 hover:text-emerald-600 dark:text-zinc-300 dark:hover:text-emerald-400'
                     : 'text-zinc-200 hover:text-white'
                 }`}
@@ -155,7 +153,9 @@ export const Navbar: React.FC = () => {
                     transform: active ? 'scaleX(1)' : 'scaleX(0)',
                     opacity: active ? 1 : 0,
                   }}
-                  className="absolute bottom-0 left-0 right-0 h-0.5 rounded-full bg-emerald-500"
+                  className={`absolute bottom-0 left-0 right-0 h-0.5 rounded-full ${
+                    isSolidHeader ? 'bg-emerald-600 dark:bg-emerald-400' : 'bg-emerald-400'
+                  }`}
                 />
               </Link>
             );
@@ -179,16 +179,17 @@ export const Navbar: React.FC = () => {
             onClick={toggleTheme}
             style={noFocus}
             className={`p-2 rounded-xl outline-none focus:outline-none transition-colors duration-300 ${
-              scrolled || isLightMode
+              isSolidHeader
                 ? 'text-zinc-700 hover:text-zinc-900 dark:text-zinc-300 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-800'
                 : 'text-zinc-200 hover:text-white hover:bg-white/10'
             }`}
-            title={theme === 'dark' ? 'Mode Terang' : 'Mode Gelap'}
+            title={mounted ? (theme === 'dark' ? 'Mode Terang' : 'Mode Gelap') : 'Beralih Mode Tampilan'}
+            aria-label="Beralih Mode Tampilan"
           >
             {mounted ? (
               theme === 'dark'
                 ? <Sun className="w-4 h-4 text-amber-400" />
-                : <Moon className="w-4 h-4 text-zinc-700" />
+                : <Moon className="w-4 h-4 text-zinc-700 dark:text-zinc-300" />
             ) : (
               <div className="w-4 h-4" />
             )}
@@ -207,15 +208,15 @@ export const Navbar: React.FC = () => {
                   Admin
                 </Link>
               )}
-              <div className={`flex items-center gap-2 pl-2 border-l ${scrolled || isLightMode ? 'border-zinc-200 dark:border-zinc-800' : 'border-white/20'}`}>
-                <span className={`text-xs font-semibold ${scrolled || isLightMode ? 'text-zinc-800 dark:text-zinc-200' : 'text-white'}`}>
+              <div className={`flex items-center gap-2 pl-2 border-l ${isSolidHeader ? 'border-zinc-200 dark:border-zinc-800' : 'border-white/20'}`}>
+                <span className={`text-xs font-semibold ${isSolidHeader ? 'text-zinc-800 dark:text-zinc-200' : 'text-white'}`}>
                   {user.name}
                 </span>
                 <button
                   onClick={logout}
                   style={noFocus}
                   className={`p-1.5 rounded-lg transition ${
-                    scrolled || isLightMode
+                    isSolidHeader
                       ? 'text-zinc-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10'
                       : 'text-zinc-300 hover:text-red-400 hover:bg-white/10'
                   }`}
@@ -230,7 +231,7 @@ export const Navbar: React.FC = () => {
               onClick={openAuthModal}
               style={noFocus}
               className={`flex items-center gap-1.5 px-3.5 py-2 font-semibold text-xs rounded-xl transition border cursor-pointer ${
-                scrolled || isLightMode
+                isSolidHeader
                   ? 'bg-zinc-900 text-white hover:bg-zinc-800 dark:bg-emerald-600 dark:hover:bg-emerald-500 border-transparent shadow-sm'
                   : 'bg-zinc-800/80 hover:bg-zinc-700 text-white border-white/10'
               }`}
@@ -254,8 +255,10 @@ export const Navbar: React.FC = () => {
           <button
             onClick={toggleTheme}
             style={noFocus}
+            title={mounted ? (theme === 'dark' ? 'Mode Terang' : 'Mode Gelap') : 'Beralih Mode Tampilan'}
+            aria-label="Beralih Mode Tampilan"
             className={`p-2 rounded-xl outline-none focus:outline-none ${
-              scrolled
+              isSolidHeader
                 ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200'
                 : 'bg-black/40 text-white border border-white/20'
             }`}
@@ -272,7 +275,7 @@ export const Navbar: React.FC = () => {
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             style={noFocus}
             className={`p-2 rounded-xl outline-none focus:outline-none ${
-              scrolled
+              isSolidHeader
                 ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200'
                 : 'bg-black/40 text-white border border-white/20'
             }`}
