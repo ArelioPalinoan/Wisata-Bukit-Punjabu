@@ -51,7 +51,7 @@ export const Navbar: React.FC = () => {
         const el = document.getElementById(id);
         if (el && threshold >= el.offsetTop - 120) {
           // Map sub-sections back to main nav items for active highlight
-          if (id === 'rute' || id === 'faq') {
+          if (id === 'rute') {
             current = 'informasi';
           } else {
             current = id;
@@ -90,13 +90,17 @@ export const Navbar: React.FC = () => {
     WebkitTapHighlightColor: 'transparent',
   };
 
+  const isLightMode = mounted && theme === 'light';
+
   return (
     <header
       style={{ willChange: 'background-color, padding' }}
       className={`fixed top-0 left-0 right-0 z-40 transition-all duration-500 ease-in-out ${
         scrolled
           ? 'bg-white/95 dark:bg-zinc-950/95 backdrop-blur-md border-b border-zinc-200/80 dark:border-zinc-800/60 py-3 shadow-xs'
-          : 'bg-gradient-to-b from-black/70 via-black/20 to-transparent py-4'
+          : isLightMode
+          ? 'bg-gradient-to-b from-white/95 via-white/60 to-transparent py-4 backdrop-blur-xs'
+          : 'bg-gradient-to-b from-black/80 via-black/30 to-transparent py-4'
       }`}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between">
@@ -114,12 +118,12 @@ export const Navbar: React.FC = () => {
           <div className="flex flex-col">
             <span
               className={`font-extrabold text-base sm:text-lg tracking-tight transition-colors duration-300 group-hover:text-emerald-500 ${
-                scrolled ? 'text-zinc-900 dark:text-white' : 'text-white'
+                scrolled || isLightMode ? 'text-zinc-900 dark:text-white' : 'text-white'
               }`}
             >
               Bukit Punjabu
             </span>
-            <span className="text-[9px] tracking-widest uppercase font-bold text-emerald-500 dark:text-emerald-400 leading-none">
+            <span className="text-[9px] tracking-widest uppercase font-bold text-emerald-600 dark:text-emerald-400 leading-none">
               Sidrap
             </span>
           </div>
@@ -137,9 +141,9 @@ export const Navbar: React.FC = () => {
                 style={noFocus}
                 className={`relative py-1 text-xs sm:text-sm font-semibold select-none outline-none focus:outline-none transition-colors duration-300 ease-out ${
                   active
-                    ? 'text-emerald-500 dark:text-emerald-400 font-bold'
-                    : scrolled
-                    ? 'text-zinc-600 dark:text-zinc-300 hover:text-emerald-600 dark:hover:text-emerald-400'
+                    ? 'text-emerald-600 dark:text-emerald-400 font-bold'
+                    : scrolled || isLightMode
+                    ? 'text-zinc-700 hover:text-emerald-600 dark:text-zinc-300 dark:hover:text-emerald-400'
                     : 'text-zinc-200 hover:text-white'
                 }`}
               >
@@ -175,8 +179,8 @@ export const Navbar: React.FC = () => {
             onClick={toggleTheme}
             style={noFocus}
             className={`p-2 rounded-xl outline-none focus:outline-none transition-colors duration-300 ${
-              scrolled
-                ? 'text-zinc-600 hover:text-zinc-900 dark:text-zinc-300 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-800'
+              scrolled || isLightMode
+                ? 'text-zinc-700 hover:text-zinc-900 dark:text-zinc-300 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-800'
                 : 'text-zinc-200 hover:text-white hover:bg-white/10'
             }`}
             title={theme === 'dark' ? 'Mode Terang' : 'Mode Gelap'}
@@ -184,7 +188,7 @@ export const Navbar: React.FC = () => {
             {mounted ? (
               theme === 'dark'
                 ? <Sun className="w-4 h-4 text-amber-400" />
-                : <Moon className="w-4 h-4" />
+                : <Moon className="w-4 h-4 text-zinc-700" />
             ) : (
               <div className="w-4 h-4" />
             )}
@@ -203,15 +207,15 @@ export const Navbar: React.FC = () => {
                   Admin
                 </Link>
               )}
-              <div className={`flex items-center gap-2 pl-2 border-l ${scrolled ? 'border-zinc-200 dark:border-zinc-800' : 'border-white/20'}`}>
-                <span className={`text-xs font-semibold ${scrolled ? 'text-zinc-800 dark:text-zinc-200' : 'text-white'}`}>
+              <div className={`flex items-center gap-2 pl-2 border-l ${scrolled || isLightMode ? 'border-zinc-200 dark:border-zinc-800' : 'border-white/20'}`}>
+                <span className={`text-xs font-semibold ${scrolled || isLightMode ? 'text-zinc-800 dark:text-zinc-200' : 'text-white'}`}>
                   {user.name}
                 </span>
                 <button
                   onClick={logout}
                   style={noFocus}
                   className={`p-1.5 rounded-lg transition ${
-                    scrolled
+                    scrolled || isLightMode
                       ? 'text-zinc-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10'
                       : 'text-zinc-300 hover:text-red-400 hover:bg-white/10'
                   }`}
@@ -225,7 +229,11 @@ export const Navbar: React.FC = () => {
             <button
               onClick={openAuthModal}
               style={noFocus}
-              className="flex items-center gap-1.5 px-3.5 py-2 bg-zinc-800/80 hover:bg-zinc-700 text-white font-semibold text-xs rounded-xl transition border border-white/10 cursor-pointer"
+              className={`flex items-center gap-1.5 px-3.5 py-2 font-semibold text-xs rounded-xl transition border cursor-pointer ${
+                scrolled || isLightMode
+                  ? 'bg-zinc-900 text-white hover:bg-zinc-800 dark:bg-emerald-600 dark:hover:bg-emerald-500 border-transparent shadow-sm'
+                  : 'bg-zinc-800/80 hover:bg-zinc-700 text-white border-white/10'
+              }`}
             >
               <LogIn className="w-3.5 h-3.5 text-zinc-300" />
               Masuk
