@@ -1,0 +1,330 @@
+'use client';
+
+import React, { useState, useEffect } from 'react';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+import { useApp } from '@/context/AppContext';
+import { Mountain, Sun, Moon, LogIn, LayoutDashboard, LogOut, Menu, X, Ticket } from 'lucide-react';
+
+type NavLink = {
+  name: string;
+  href: string;
+  sectionId: string;
+};
+
+// Streamlined, clean, un-bloated nav structure (6 concise links)
+const navLinks: NavLink[] = [
+  { name: 'Beranda', href: '/', sectionId: 'top' },
+  { name: 'Wisata', href: '/#wisata', sectionId: 'wisata' },
+  { name: 'UMKM Desa', href: '/#umkm', sectionId: 'umkm' },
+  { name: 'Berita', href: '/#berita', sectionId: 'berita' },
+  { name: 'Informasi & Rute', href: '/#informasi', sectionId: 'informasi' },
+  { name: 'Galeri', href: '/#galeri', sectionId: 'galeri' },
+];
+
+export const Navbar: React.FC = () => {
+  const { theme, toggleTheme, user, logout, openAuthModal, openBookingModal, mounted } = useApp();
+  const pathname = usePathname();
+  const [scrolled, setScrolled] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [activeSection, setActiveSection] = useState('top');
+
+  // ── Scrolled header state ───────────────────────────────────
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 20);
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+
+  // ── Scroll-Spy: track active section ────────────────────────
+  useEffect(() => {
+    if (pathname !== '/') return;
+
+    const sectionIds = ['wisata', 'umkm', 'berita', 'informasi', 'rute', 'galeri', 'faq'];
+
+    const update = () => {
+      const threshold = window.scrollY + 180;
+      let current = 'top';
+      for (const id of sectionIds) {
+        const el = document.getElementById(id);
+        if (el && threshold >= el.offsetTop - 120) {
+          // Map sub-sections back to main nav items for active highlight
+          if (id === 'rute' || id === 'faq') {
+            current = 'informasi';
+          } else {
+            current = id;
+          }
+        }
+      }
+      setActiveSection(current);
+    };
+
+    update();
+    window.addEventListener('scroll', update, { passive: true });
+    window.addEventListener('resize', update);
+    return () => {
+      window.removeEventListener('scroll', update);
+      window.removeEventListener('resize', update);
+    };
+  }, [pathname]);
+
+  const isActive = (link: NavLink): boolean => {
+    if (link.name === 'Berita' && pathname.startsWith('/berita')) return true;
+    if (pathname === '/') return activeSection === link.sectionId;
+    return false;
+  };
+
+  const handleNavClick = (link: NavLink) => {
+    if (pathname === '/' || link.href.startsWith('/#')) {
+      setActiveSection(link.sectionId);
+    }
+    setMobileMenuOpen(false);
+  };
+
+  const noFocus: React.CSSProperties = {
+    outline: 'none',
+    outlineWidth: 0,
+    boxShadow: 'none',
+    WebkitTapHighlightColor: 'transparent',
+  };
+
+  return (
+    <header
+      style={{ willChange: 'background-color, padding' }}
+      className={`fixed top-0 left-0 right-0 z-40 transition-all duration-500 ease-in-out ${
+        scrolled
+          ? 'bg-white/95 dark:bg-zinc-950/95 backdrop-blur-md border-b border-zinc-200/80 dark:border-zinc-800/60 py-3 shadow-xs'
+          : 'bg-gradient-to-b from-black/70 via-black/20 to-transparent py-4'
+      }`}
+    >
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between">
+
+        {/* ── Brand ─────────────────────────────── */}
+        <Link
+          href="/"
+          onClick={() => handleNavClick(navLinks[0])}
+          style={noFocus}
+          className="flex items-center gap-2.5 group outline-none focus:outline-none"
+        >
+          <div className="w-9 h-9 rounded-xl bg-emerald-600 flex items-center justify-center text-white shadow-md shadow-emerald-600/20 group-hover:scale-105 transition-transform duration-300">
+            <Mountain className="w-5 h-5" />
+          </div>
+          <div className="flex flex-col">
+            <span
+              className={`font-extrabold text-base sm:text-lg tracking-tight transition-colors duration-300 group-hover:text-emerald-500 ${
+                scrolled ? 'text-zinc-900 dark:text-white' : 'text-white'
+              }`}
+            >
+              Bukit Punjabu
+            </span>
+            <span className="text-[9px] tracking-widest uppercase font-bold text-emerald-500 dark:text-emerald-400 leading-none">
+              Sidrap
+            </span>
+          </div>
+        </Link>
+
+        {/* ── Desktop Nav Links (Clean, Uncrowded Layout) ──────────────────────── */}
+        <nav className="hidden md:flex items-center gap-7 lg:gap-8">
+          {navLinks.map((link) => {
+            const active = isActive(link);
+            return (
+              <Link
+                key={link.name}
+                href={link.href}
+                onClick={() => handleNavClick(link)}
+                style={noFocus}
+                className={`relative py-1 text-xs sm:text-sm font-semibold select-none outline-none focus:outline-none transition-colors duration-300 ease-out ${
+                  active
+                    ? 'text-emerald-500 dark:text-emerald-400 font-bold'
+                    : scrolled
+                    ? 'text-zinc-600 dark:text-zinc-300 hover:text-emerald-600 dark:hover:text-emerald-400'
+                    : 'text-zinc-200 hover:text-white'
+                }`}
+              >
+                {link.name}
+                <span
+                  style={{
+                    transformOrigin: 'center',
+                    transition: 'transform 0.3s ease, opacity 0.3s ease',
+                    transform: active ? 'scaleX(1)' : 'scaleX(0)',
+                    opacity: active ? 1 : 0,
+                  }}
+                  className="absolute bottom-0 left-0 right-0 h-0.5 rounded-full bg-emerald-500"
+                />
+              </Link>
+            );
+          })}
+        </nav>
+
+        {/* ── Right Actions ──────────────────────── */}
+        <div className="hidden md:flex items-center gap-3">
+          {/* Quick Booking Button */}
+          <button
+            onClick={openBookingModal}
+            style={noFocus}
+            className="flex items-center gap-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl shadow-md shadow-emerald-600/20 transition-all duration-200 hover:scale-105 cursor-pointer"
+          >
+            <Ticket className="w-3.5 h-3.5" />
+            Reservasi
+          </button>
+
+          {/* Theme toggle */}
+          <button
+            onClick={toggleTheme}
+            style={noFocus}
+            className={`p-2 rounded-xl outline-none focus:outline-none transition-colors duration-300 ${
+              scrolled
+                ? 'text-zinc-600 hover:text-zinc-900 dark:text-zinc-300 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-800'
+                : 'text-zinc-200 hover:text-white hover:bg-white/10'
+            }`}
+            title={theme === 'dark' ? 'Mode Terang' : 'Mode Gelap'}
+          >
+            {mounted ? (
+              theme === 'dark'
+                ? <Sun className="w-4 h-4 text-amber-400" />
+                : <Moon className="w-4 h-4" />
+            ) : (
+              <div className="w-4 h-4" />
+            )}
+          </button>
+
+          {/* User / Auth */}
+          {mounted && user ? (
+            <div className="flex items-center gap-2">
+              {user.role === 'admin' && (
+                <Link
+                  href="/admin"
+                  style={noFocus}
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 text-white font-semibold text-xs rounded-xl transition"
+                >
+                  <LayoutDashboard className="w-3.5 h-3.5" />
+                  Admin
+                </Link>
+              )}
+              <div className={`flex items-center gap-2 pl-2 border-l ${scrolled ? 'border-zinc-200 dark:border-zinc-800' : 'border-white/20'}`}>
+                <span className={`text-xs font-semibold ${scrolled ? 'text-zinc-800 dark:text-zinc-200' : 'text-white'}`}>
+                  {user.name}
+                </span>
+                <button
+                  onClick={logout}
+                  style={noFocus}
+                  className={`p-1.5 rounded-lg transition ${
+                    scrolled
+                      ? 'text-zinc-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10'
+                      : 'text-zinc-300 hover:text-red-400 hover:bg-white/10'
+                  }`}
+                  title="Keluar"
+                >
+                  <LogOut className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            </div>
+          ) : (
+            <button
+              onClick={openAuthModal}
+              style={noFocus}
+              className="flex items-center gap-1.5 px-3.5 py-2 bg-zinc-800/80 hover:bg-zinc-700 text-white font-semibold text-xs rounded-xl transition border border-white/10 cursor-pointer"
+            >
+              <LogIn className="w-3.5 h-3.5 text-zinc-300" />
+              Masuk
+            </button>
+          )}
+        </div>
+
+        {/* ── Mobile Controls ────────────────────── */}
+        <div className="flex md:hidden items-center gap-2">
+          <button
+            onClick={openBookingModal}
+            style={noFocus}
+            className="flex items-center gap-1 px-3 py-1.5 bg-emerald-600 text-white text-xs font-bold rounded-xl"
+          >
+            <Ticket className="w-3.5 h-3.5" />
+            Booking
+          </button>
+          <button
+            onClick={toggleTheme}
+            style={noFocus}
+            className={`p-2 rounded-xl outline-none focus:outline-none ${
+              scrolled
+                ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200'
+                : 'bg-black/40 text-white border border-white/20'
+            }`}
+          >
+            {mounted ? (
+              theme === 'dark'
+                ? <Sun className="w-4 h-4 text-amber-400" />
+                : <Moon className="w-4 h-4" />
+            ) : (
+              <div className="w-4 h-4" />
+            )}
+          </button>
+          <button
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            style={noFocus}
+            className={`p-2 rounded-xl outline-none focus:outline-none ${
+              scrolled
+                ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200'
+                : 'bg-black/40 text-white border border-white/20'
+            }`}
+          >
+            {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+          </button>
+        </div>
+      </div>
+
+      {/* ── Mobile Drawer ─────────────────────────── */}
+      {mobileMenuOpen && (
+        <div className="md:hidden bg-white dark:bg-zinc-950 border-b border-zinc-200 dark:border-zinc-800 px-4 pt-3 pb-6 space-y-2 mt-3 shadow-xl animate-fade-in">
+          {navLinks.map((link) => {
+            const active = isActive(link);
+            return (
+              <Link
+                key={link.name}
+                href={link.href}
+                onClick={() => handleNavClick(link)}
+                style={noFocus}
+                className={`block px-4 py-2.5 text-sm font-semibold rounded-xl transition ${
+                  active
+                    ? 'bg-emerald-600 text-white'
+                    : 'text-zinc-800 dark:text-zinc-200 hover:bg-emerald-500/10 hover:text-emerald-600 dark:hover:text-emerald-400'
+                }`}
+              >
+                {link.name}
+              </Link>
+            );
+          })}
+          <div className="pt-3 border-t border-zinc-200 dark:border-zinc-800 space-y-2">
+            <button
+              onClick={() => { setMobileMenuOpen(false); openBookingModal(); }}
+              style={noFocus}
+              className="w-full py-3 bg-emerald-600 text-white font-bold rounded-xl flex items-center justify-center gap-2 text-sm shadow-md"
+            >
+              <Ticket className="w-4 h-4" />
+              Reservasi Tiket &amp; Camping Online
+            </button>
+            {mounted && user ? (
+              <div className="flex items-center justify-between px-4 py-2">
+                <span className="text-xs font-semibold text-zinc-800 dark:text-zinc-200">
+                  {user.name} ({user.role})
+                </span>
+                <button onClick={logout} className="text-xs text-red-500 font-bold">
+                  Keluar
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={() => { setMobileMenuOpen(false); openAuthModal(); }}
+                style={noFocus}
+                className="w-full py-2.5 bg-zinc-800 text-white font-semibold rounded-xl flex items-center justify-center gap-2 text-xs"
+              >
+                <LogIn className="w-4 h-4" />
+                Masuk / Daftar
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+    </header>
+  );
+};
