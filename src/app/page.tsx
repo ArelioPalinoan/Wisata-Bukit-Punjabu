@@ -32,26 +32,47 @@ import {
 /** Attach IntersectionObserver to trigger .visible on .reveal / .reveal-left / .reveal-right elements. */
 function useRevealOnScroll(newsLength: number) {
   useEffect(() => {
-    const scanAndObserve = () => {
+    let observer: IntersectionObserver | null = null;
+
+    const initObserver = () => {
       const els = document.querySelectorAll('.reveal:not(.visible), .reveal-left:not(.visible), .reveal-right:not(.visible)');
       if (!els.length) return;
-      const observer = new IntersectionObserver(
+
+      observer = new IntersectionObserver(
         (entries) => {
           entries.forEach((entry) => {
             if (entry.isIntersecting) {
               entry.target.classList.add('visible');
-              observer.unobserve(entry.target);
+              if (observer) observer.unobserve(entry.target);
             }
           });
         },
-        { threshold: 0.02 }
+        { threshold: 0.05, rootMargin: '0px 0px 50px 0px' }
       );
-      els.forEach((el) => observer.observe(el));
+
+      els.forEach((el) => {
+        const rect = el.getBoundingClientRect();
+        if (rect.top < window.innerHeight + 100) {
+          el.classList.add('visible');
+        } else if (observer) {
+          observer.observe(el);
+        }
+      });
     };
 
-    scanAndObserve();
-    const timer = setTimeout(scanAndObserve, 80);
-    return () => clearTimeout(timer);
+    initObserver();
+    const t1 = setTimeout(initObserver, 100);
+    const t2 = setTimeout(() => {
+      document.querySelectorAll('.reveal, .reveal-left, .reveal-right').forEach((el) => {
+        el.classList.add('visible');
+      });
+    }, 500);
+
+    return () => {
+      clearTimeout(t1);
+      clearTimeout(t2);
+      if (observer) observer.disconnect();
+    };
   }, [newsLength]);
 }
 
@@ -367,8 +388,12 @@ export default function Home() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {recentNews.map((article) => (
-              <div key={article.id} className="h-full">
+            {recentNews.map((article, i) => (
+              <div
+                key={article.id}
+                className="reveal h-full"
+                style={{ transitionDelay: `${i * 0.12}s` }}
+              >
                 <NewsCard article={article} />
               </div>
             ))}

@@ -157,34 +157,30 @@ body {
 /* ====================================
    SCROLL-TRIGGERED REVEAL
    ==================================== */
-.reveal {
-  opacity: 1;
-  transform: translateY(0);
-  transition: opacity 0.4s ease, transform 0.4s ease;
+.reveal, .reveal-left, .reveal-right {
+  opacity: 0;
+  will-change: opacity, transform;
+  transition: opacity 0.7s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+              transform 0.7s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
-.reveal.visible {
-  opacity: 1;
-  transform: translateY(0);
+
+.reveal {
+  transform: translateY(28px);
 }
 
 .reveal-left {
-  opacity: 1;
-  transform: translateX(0);
-  transition: opacity 0.4s ease, transform 0.4s ease;
-}
-.reveal-left.visible {
-  opacity: 1;
-  transform: translateX(0);
+  transform: translateX(-28px);
 }
 
 .reveal-right {
-  opacity: 1;
-  transform: translateX(0);
-  transition: opacity 0.4s ease, transform 0.4s ease;
+  transform: translateX(28px);
 }
+
+.reveal.visible,
+.reveal-left.visible,
 .reveal-right.visible {
   opacity: 1;
-  transform: translateX(0);
+  transform: translate(0, 0);
 }
 
 /* ====================================
