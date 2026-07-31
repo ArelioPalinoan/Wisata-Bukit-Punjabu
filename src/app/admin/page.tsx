@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useApp } from '@/context/AppContext';
 import { NewsArticle } from '@/data/initialData';
 import {
@@ -337,9 +338,12 @@ export default function AdminDashboardPage() {
                 <tr key={item.id} className="hover:bg-zinc-50 dark:hover:bg-zinc-800/40 transition">
                   <td className="py-3.5 px-4 max-w-xs">
                     <div className="flex items-center gap-3">
-                      <img
+                      <Image
                         src={item.coverImage}
                         alt={item.title}
+                        width={48}
+                        height={40}
+                        unoptimized={!item.coverImage?.includes('images.unsplash.com')}
                         className="w-12 h-10 rounded-lg object-cover shrink-0"
                       />
                       <div>

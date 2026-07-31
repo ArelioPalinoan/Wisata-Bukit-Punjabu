@@ -2,6 +2,7 @@
 
 import React, { useState, use } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useApp } from '@/context/AppContext';
 import { NewsCard } from '@/components/NewsCard';
 import {
@@ -51,6 +52,8 @@ export default function DetailBeritaPage({ params }: { params: Promise<{ id: str
       </div>
     );
   }
+
+  const isUnsplashCover = article.coverImage?.includes('images.unsplash.com');
 
   // Related articles in same category or recent
   const relatedArticles = newsList
@@ -145,13 +148,16 @@ export default function DetailBeritaPage({ params }: { params: Promise<{ id: str
         </div>
 
         {/* Hero Cover Image */}
-        <div className="relative rounded-3xl overflow-hidden shadow-2xl border border-zinc-200 dark:border-zinc-800">
-          <img
+        <div className="relative h-72 sm:h-96 w-full rounded-3xl overflow-hidden shadow-2xl border border-zinc-200 dark:border-zinc-800">
+          <Image
             src={article.coverImage}
             alt={article.title}
-            className="w-full max-h-[480px] object-cover"
+            fill
+            priority
+            unoptimized={!isUnsplashCover}
+            className="object-cover"
           />
-          <div className="p-3 bg-zinc-100 dark:bg-zinc-900 text-xs text-zinc-500 text-center italic">
+          <div className="absolute bottom-0 left-0 right-0 p-3 bg-zinc-900/80 backdrop-blur-xs text-xs text-zinc-300 text-center italic z-10">
             Foto Sampul: Dokumentasi Wisata Bukit Punjabu
           </div>
         </div>
@@ -177,10 +183,12 @@ export default function DetailBeritaPage({ params }: { params: Promise<{ id: str
                   onClick={() => setLightboxImage(imgUrl)}
                   className="group relative h-40 rounded-2xl overflow-hidden cursor-pointer shadow-md border border-zinc-200 dark:border-zinc-800"
                 >
-                  <img
+                  <Image
                     src={imgUrl}
                     alt={`Dokumentasi ${i + 1}`}
-                    className="w-full h-full object-cover group-hover:scale-110 transition duration-500"
+                    fill
+                    unoptimized={!imgUrl.includes('images.unsplash.com')}
+                    className="object-cover group-hover:scale-110 transition duration-500"
                   />
                   <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition flex items-center justify-center text-white text-xs font-semibold">
                     Perbesar
@@ -279,7 +287,15 @@ export default function DetailBeritaPage({ params }: { params: Promise<{ id: str
           onClick={() => setLightboxImage(null)}
           className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4 cursor-pointer"
         >
-          <img src={lightboxImage} alt="Large preview" className="max-w-4xl max-h-[85vh] rounded-2xl object-contain" />
+          <div className="relative w-full max-w-4xl h-[85vh]">
+            <Image
+              src={lightboxImage}
+              alt="Large preview"
+              fill
+              unoptimized={!lightboxImage.includes('images.unsplash.com')}
+              className="rounded-2xl object-contain"
+            />
+          </div>
         </div>
       )}
 

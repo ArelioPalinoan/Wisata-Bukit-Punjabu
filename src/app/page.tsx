@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useApp } from '@/context/AppContext';
 import { TOURISM_SPOTS, UMKM_PRODUCTS, FAQS, VISITOR_REVIEWS, TRAVEL_ROUTES } from '@/data/initialData';
 import { NewsCard } from '@/components/NewsCard';
@@ -111,10 +112,12 @@ export default function Home() {
       <section className="relative min-h-[95vh] flex items-center justify-center overflow-hidden pt-20" ref={heroRef}>
         {/* Parallax Background */}
         <div className="absolute inset-0 z-0 overflow-hidden">
-          <img
+          <Image
             src="https://images.unsplash.com/photo-1506744038136-46273834b3fb?q=80&w=1920&auto=format&fit=crop"
             alt="Bukit Punjabu Sidrap Landscape"
-            className="w-full h-[115%] object-cover brightness-60 dark:brightness-50"
+            fill
+            priority
+            className="object-cover brightness-60 dark:brightness-50"
             style={{ transform: `translateY(${heroParallax}px)`, willChange: 'transform' }}
           />
           <div className="absolute inset-0 bg-gradient-to-t from-zinc-950 via-zinc-950/30 to-black/50" />
@@ -220,12 +223,14 @@ export default function Home() {
               style={{ animationDelay: `${i * 0.08}s` }}
             >
               <div className="relative h-60 overflow-hidden">
-                <img
+                <Image
                   src={spot.image}
                   alt={spot.title}
-                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 ease-out"
+                  fill
+                  sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                  className="object-cover group-hover:scale-110 transition-transform duration-700 ease-out"
                 />
-                <div className="absolute top-4 left-4 bg-emerald-600 text-white text-xs font-bold px-3 py-1 rounded-full shadow">
+                <div className="absolute top-4 left-4 z-10 bg-emerald-600 text-white text-xs font-bold px-3 py-1 rounded-full shadow">
                   {spot.badge}
                 </div>
                 <div className="absolute top-4 right-4 bg-zinc-950/70 backdrop-blur-md text-amber-400 text-xs font-bold px-2.5 py-1 rounded-full border border-amber-400/30 flex items-center gap-1">
@@ -283,10 +288,12 @@ export default function Home() {
             >
               <div>
                 <div className="relative h-48 overflow-hidden">
-                  <img
+                  <Image
                     src={prod.image}
                     alt={prod.name}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                    fill
+                    sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+                    className="object-cover group-hover:scale-105 transition-transform duration-500"
                   />
                   {prod.badge && (
                     <span className="absolute top-3 left-3 bg-emerald-600 text-white text-[11px] font-bold px-2.5 py-1 rounded-full shadow">
@@ -535,12 +542,14 @@ export default function Home() {
               style={{ transitionDelay: `${idx * 0.08}s` }}
               className="reveal group relative h-64 rounded-2xl overflow-hidden cursor-pointer shadow-md hover:shadow-2xl hover-lift"
             >
-              <img
+              <Image
                 src={img.url}
                 alt={img.title}
-                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-600 ease-out brightness-90 group-hover:brightness-105"
+                fill
+                sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+                className="object-cover group-hover:scale-110 transition-transform duration-600 ease-out brightness-90 group-hover:brightness-105"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-350 flex flex-col justify-end p-4 text-white">
+              <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-350 flex flex-col justify-end p-4 text-white z-10">
                 <span className="font-bold text-sm translate-y-2 group-hover:translate-y-0 transition-transform duration-350">{img.title}</span>
                 <span className="text-xs text-zinc-300 opacity-0 group-hover:opacity-100 transition-opacity duration-500 delay-100">{img.desc}</span>
               </div>
@@ -554,13 +563,14 @@ export default function Home() {
             onClick={() => setActiveMediaModal(null)}
             className="fixed inset-0 z-50 bg-black/95 flex items-center justify-center p-4 cursor-pointer animate-scale-in"
           >
-            <div className="relative max-w-5xl w-full">
-              <img
+            <div className="relative max-w-5xl w-full h-[85vh]">
+              <Image
                 src={activeMediaModal}
                 alt="Preview"
-                className="w-full rounded-3xl max-h-[85vh] object-contain shadow-2xl"
+                fill
+                className="rounded-3xl object-contain shadow-2xl"
               />
-              <p className="text-center text-zinc-500 text-xs mt-4 tracking-wider">Klik di mana saja untuk menutup</p>
+              <p className="absolute bottom-2 left-0 right-0 text-center text-zinc-400 text-xs tracking-wider z-10">Klik di mana saja untuk menutup</p>
             </div>
           </div>
         )}
@@ -602,7 +612,7 @@ export default function Home() {
                 </div>
 
                 <div className="flex items-center gap-3 pt-3 border-t border-zinc-100 dark:border-zinc-800">
-                  <img src={rev.avatar} alt={rev.name} className="w-10 h-10 rounded-full object-cover" />
+                  <Image src={rev.avatar} alt={rev.name} width={40} height={40} unoptimized className="w-10 h-10 rounded-full object-cover" />
                   <div>
                     <h4 className="text-sm font-bold text-zinc-900 dark:text-white">{rev.name}</h4>
                     <p className="text-[11px] text-zinc-400">{rev.origin} • {rev.spot}</p>

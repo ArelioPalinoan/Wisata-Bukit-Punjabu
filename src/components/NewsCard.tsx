@@ -2,6 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { NewsArticle } from '@/data/initialData';
 import { Calendar, Eye, Clock, ArrowRight, Tag } from 'lucide-react';
 
@@ -11,17 +12,22 @@ interface NewsCardProps {
 }
 
 export const NewsCard: React.FC<NewsCardProps> = ({ article, featured = false }) => {
+  const isUnsplash = article.coverImage?.includes('images.unsplash.com');
+
   if (featured) {
     return (
       <div className="group relative rounded-3xl overflow-hidden bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-2xl transition-all duration-300 hover:border-emerald-500/50">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-0">
           <div className="lg:col-span-7 relative h-72 lg:h-auto overflow-hidden">
-            <img
+            <Image
               src={article.coverImage}
               alt={article.title}
-              className="w-full h-full object-cover group-hover:scale-105 transition duration-700 brightness-95 dark:brightness-90 group-hover:brightness-100"
+              fill
+              unoptimized={!isUnsplash}
+              sizes="(max-width: 1024px) 100vw, 58vw"
+              className="object-cover group-hover:scale-105 transition duration-700 brightness-95 dark:brightness-90 group-hover:brightness-100"
             />
-            <div className="absolute top-4 left-4 bg-emerald-600 text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-lg flex items-center gap-1.5">
+            <div className="absolute top-4 left-4 z-10 bg-emerald-600 text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-lg flex items-center gap-1.5">
               <Tag className="w-3.5 h-3.5" />
               {article.category}
             </div>
@@ -81,15 +87,18 @@ export const NewsCard: React.FC<NewsCardProps> = ({ article, featured = false })
     <div className="group rounded-3xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800/80 shadow-md hover:shadow-2xl transition-all duration-300 flex flex-col h-full overflow-hidden hover:-translate-y-1">
       {/* Cover Image */}
       <div className="relative h-48 sm:h-52 overflow-hidden">
-        <img
+        <Image
           src={article.coverImage}
           alt={article.title}
-          className="w-full h-full object-cover group-hover:scale-105 transition duration-500"
+          fill
+          unoptimized={!isUnsplash}
+          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+          className="object-cover group-hover:scale-105 transition duration-500"
         />
-        <div className="absolute top-3 left-3 bg-zinc-900/80 backdrop-blur-md text-emerald-400 text-xs font-bold px-3 py-1 rounded-full border border-emerald-500/30">
+        <div className="absolute top-3 left-3 z-10 bg-zinc-900/80 backdrop-blur-md text-emerald-400 text-xs font-bold px-3 py-1 rounded-full border border-emerald-500/30">
           {article.category}
         </div>
-        <div className="absolute bottom-3 right-3 bg-black/60 backdrop-blur-sm text-white text-[11px] px-2.5 py-1 rounded-md flex items-center gap-1">
+        <div className="absolute bottom-3 right-3 z-10 bg-black/60 backdrop-blur-sm text-white text-[11px] px-2.5 py-1 rounded-md flex items-center gap-1">
           <Eye className="w-3 h-3 text-emerald-400" />
           {article.views}
         </div>

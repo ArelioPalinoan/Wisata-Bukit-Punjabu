@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { NewsArticle, INITIAL_NEWS, VillageStats, INITIAL_STATS } from '@/data/initialData';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 
@@ -9,6 +9,46 @@ export interface User {
   email: string;
   role: 'admin' | 'visitor';
   avatar?: string;
+}
+
+export interface SupabaseNewsRecord {
+  id: string | number;
+  title?: string;
+  slug?: string;
+  category?: string;
+  author?: string;
+  author_role?: string;
+  authorRole?: string;
+  date?: string;
+  read_time?: string;
+  readTime?: string;
+  views?: number;
+  featured?: boolean;
+  status?: string;
+  summary?: string;
+  content?: string;
+  cover_image?: string;
+  coverImage?: string;
+  gallery?: string[];
+  video_url?: string;
+  videoUrl?: string;
+  tags?: string[];
+}
+
+export interface SupabaseNewsUpdatePayload {
+  title?: string;
+  category?: string;
+  author?: string;
+  author_role?: string;
+  read_time?: string;
+  featured?: boolean;
+  status?: string;
+  summary?: string;
+  content?: string;
+  cover_image?: string;
+  gallery?: string[];
+  video_url?: string;
+  tags?: string[];
 }
 
 interface AppContextType {
@@ -36,8 +76,28 @@ interface AppContextType {
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [theme, setTheme] = useState<'dark' | 'light'>('dark');
-  const [user, setUser] = useState<User | null>(null);
+  const [theme, setTheme] = useState<'dark' | 'light'>(() => {
+    if (typeof window !== 'undefined') {
+      const savedTheme = localStorage.getItem('punjabu_theme') as 'dark' | 'light' | null;
+      if (savedTheme === 'light' || savedTheme === 'dark') return savedTheme;
+    }
+    return 'dark';
+  });
+
+  const [user, setUser] = useState<User | null>(() => {
+    if (typeof window !== 'undefined') {
+      const savedUser = localStorage.getItem('punjabu_user');
+      if (savedUser) {
+        try {
+          return JSON.parse(savedUser);
+        } catch (e) {
+          console.error('Error loading user from storage:', e);
+        }
+      }
+    }
+    return null;
+  });
+
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
   const [newsList, setNewsList] = useState<NewsArticle[]>(INITIAL_NEWS);
@@ -46,28 +106,29 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [supabaseActive, setSupabaseActive] = useState(false);
 
   // Bulletproof mapping from Database record to NewsArticle interface
-  const mapDbNews = (item: any): NewsArticle => ({
+  const mapDbNews = useCallback((item: SupabaseNewsRecord): NewsArticle => ({
     id: String(item.id),
     title: item.title || 'Tanpa Judul',
     slug: item.slug || String(item.id),
-    category: item.category || 'Wisata & Event',
+    category: (item.category as NewsArticle['category']) || 'Wisata & Event',
     author: item.author || 'Tim Redaksi Desa',
     authorRole: item.author_role || item.authorRole || 'Pengelola Wisata',
     date: item.date || new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }),
     readTime: item.read_time || item.readTime || '3 min baca',
     views: item.views || 0,
     featured: Boolean(item.featured),
-    status: item.status || 'Published',
+    status: (item.status as NewsArticle['status']) || 'Published',
     summary: item.summary || '',
     content: item.content || '',
     coverImage: item.cover_image || item.coverImage || 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?q=80&w=1200&auto=format&fit=crop',
     gallery: Array.isArray(item.gallery) ? item.gallery : [],
     videoUrl: item.video_url || item.videoUrl || undefined,
     tags: Array.isArray(item.tags) ? item.tags : [],
-  });
+  }), []);
 
   // Fetch news from Supabase or fallback to LocalStorage/INITIAL_NEWS
-  const fetchNews = async () => {
+  const fetchNews = useCallback(async () => {
+    await Promise.resolve();
     if (isSupabaseConfigured() && supabase) {
       try {
         const { data, error } = await supabase
@@ -76,7 +137,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           .order('created_at', { ascending: false });
 
         if (!error && data && data.length > 0) {
-          const mapped = data.map(mapDbNews);
+          const mapped = (data as SupabaseNewsRecord[]).map(mapDbNews);
           setNewsList(mapped);
           setStats((prev) => ({ ...prev, totalNews: mapped.length }));
           setSupabaseActive(true);
@@ -107,24 +168,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     // Default fallback to INITIAL_NEWS
     setNewsList(INITIAL_NEWS);
     setStats((prev) => ({ ...prev, totalNews: INITIAL_NEWS.length }));
-  };
+  }, [mapDbNews]);
 
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const savedTheme = localStorage.getItem('punjabu_theme') as 'dark' | 'light' | null;
-      const savedUser = localStorage.getItem('punjabu_user');
-
-      if (savedTheme) setTheme(savedTheme);
-      if (savedUser) {
-        try {
-          setUser(JSON.parse(savedUser));
-        } catch (e) {
-          console.error('Error loading user from storage:', e);
-        }
-      }
-      fetchNews();
+    queueMicrotask(() => {
       setMounted(true);
-    }
+      fetchNews();
+    });
 
     // Supabase Auth state listener
     if (isSupabaseConfigured() && supabase) {
@@ -146,7 +196,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
       return () => subscription.unsubscribe();
     }
-  }, []);
+  }, [fetchNews]);
 
   useEffect(() => {
     if (typeof document !== 'undefined') {
@@ -299,7 +349,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const updateNews = async (id: string, updatedFields: Partial<NewsArticle>) => {
     if (isSupabaseConfigured() && supabase) {
       try {
-        const payload: any = {};
+        const payload: SupabaseNewsUpdatePayload = {};
         if (updatedFields.title !== undefined) payload.title = updatedFields.title;
         if (updatedFields.category !== undefined) payload.category = updatedFields.category;
         if (updatedFields.author !== undefined) payload.author = updatedFields.author;
