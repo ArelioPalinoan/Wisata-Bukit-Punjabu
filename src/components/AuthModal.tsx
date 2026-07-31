@@ -5,7 +5,7 @@ import { useApp } from '@/context/AppContext';
 import { X, Mail, Lock, User as UserIcon, ShieldAlert } from 'lucide-react';
 
 export const AuthModal: React.FC = () => {
-  const { isAuthModalOpen, closeAuthModal, login } = useApp();
+  const { isAuthModalOpen, closeAuthModal, login, loginWithGoogle } = useApp();
   const [isSignUp, setIsSignUp] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -21,7 +21,7 @@ export const AuthModal: React.FC = () => {
   };
 
   const handleGoogleLogin = async () => {
-    await login('user.google@gmail.com', 'visitor', 'Pengunjung Google');
+    await loginWithGoogle();
   };
 
   const handleQuickAdminLogin = async () => {

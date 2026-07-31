@@ -15,8 +15,9 @@ interface AppContextType {
   theme: 'dark' | 'light';
   toggleTheme: () => void;
   user: User | null;
-  login: (email: string, role?: 'admin' | 'visitor', name?: string) => void;
-  logout: () => void;
+  login: (email: string, role?: 'admin' | 'visitor', name?: string) => Promise<void>;
+  loginWithGoogle: () => Promise<void>;
+  logout: () => Promise<void>;
   isAuthModalOpen: boolean;
   openAuthModal: () => void;
   closeAuthModal: () => void;
@@ -44,28 +45,28 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [mounted, setMounted] = useState(false);
   const [supabaseActive, setSupabaseActive] = useState(false);
 
-  // Helper to map DB record to NewsArticle interface
+  // Bulletproof mapping from Database record to NewsArticle interface
   const mapDbNews = (item: any): NewsArticle => ({
     id: String(item.id),
-    title: item.title,
-    slug: item.slug || item.id,
-    category: item.category,
+    title: item.title || 'Tanpa Judul',
+    slug: item.slug || String(item.id),
+    category: item.category || 'Wisata & Event',
     author: item.author || 'Tim Redaksi Desa',
     authorRole: item.author_role || item.authorRole || 'Pengelola Wisata',
-    date: item.date,
+    date: item.date || new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }),
     readTime: item.read_time || item.readTime || '3 min baca',
     views: item.views || 0,
-    featured: item.featured || false,
+    featured: Boolean(item.featured),
     status: item.status || 'Published',
-    summary: item.summary,
-    content: item.content,
-    coverImage: item.cover_image || item.coverImage,
-    gallery: item.gallery || [],
-    videoUrl: item.video_url || item.videoUrl,
-    tags: item.tags || [],
+    summary: item.summary || '',
+    content: item.content || '',
+    coverImage: item.cover_image || item.coverImage || 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?q=80&w=1200&auto=format&fit=crop',
+    gallery: Array.isArray(item.gallery) ? item.gallery : [],
+    videoUrl: item.video_url || item.videoUrl || undefined,
+    tags: Array.isArray(item.tags) ? item.tags : [],
   });
 
-  // Fetch news from Supabase or fallback to LocalStorage
+  // Fetch news from Supabase or fallback to LocalStorage/INITIAL_NEWS
   const fetchNews = async () => {
     if (isSupabaseConfigured() && supabase) {
       try {
@@ -82,35 +83,37 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           return;
         }
       } catch (err) {
-        console.warn('Supabase fetch failed, falling back to local storage:', err);
+        console.warn('Supabase fetch notice, falling back to local storage:', err);
       }
     }
 
     // Fallback to localStorage
-    const savedNews = localStorage.getItem('punjabu_news');
-    if (savedNews) {
-      try {
-        const parsed = JSON.parse(savedNews);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          setNewsList(parsed);
-          setStats((prev) => ({ ...prev, totalNews: parsed.length }));
-          return;
+    if (typeof window !== 'undefined') {
+      const savedNews = localStorage.getItem('punjabu_news');
+      if (savedNews) {
+        try {
+          const parsed = JSON.parse(savedNews);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            setNewsList(parsed);
+            setStats((prev) => ({ ...prev, totalNews: parsed.length }));
+            return;
+          }
+        } catch (e) {
+          console.error('Error loading news from storage:', e);
         }
-      } catch (e) {
-        console.error('Error loading news from storage:', e);
       }
     }
 
-    // If nothing found in Supabase or localStorage, fallback to INITIAL_NEWS
+    // Default fallback to INITIAL_NEWS
     setNewsList(INITIAL_NEWS);
     setStats((prev) => ({ ...prev, totalNews: INITIAL_NEWS.length }));
   };
 
   useEffect(() => {
-    const savedTheme = localStorage.getItem('punjabu_theme') as 'dark' | 'light' | null;
-    const savedUser = localStorage.getItem('punjabu_user');
+    if (typeof window !== 'undefined') {
+      const savedTheme = localStorage.getItem('punjabu_theme') as 'dark' | 'light' | null;
+      const savedUser = localStorage.getItem('punjabu_user');
 
-    queueMicrotask(() => {
       if (savedTheme) setTheme(savedTheme);
       if (savedUser) {
         try {
@@ -121,17 +124,42 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       }
       fetchNews();
       setMounted(true);
-    });
+    }
+
+    // Supabase Auth state listener
+    if (isSupabaseConfigured() && supabase) {
+      const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+        if (session?.user) {
+          const email = session.user.email || '';
+          const name = session.user.user_metadata?.name || session.user.user_metadata?.full_name || email.split('@')[0];
+          const isAdmin = email.toLowerCase().includes('admin') || session.user.user_metadata?.role === 'admin';
+          const loggedUser: User = {
+            name,
+            email,
+            role: isAdmin ? 'admin' : 'visitor',
+            avatar: session.user.user_metadata?.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=059669&color=fff`,
+          };
+          setUser(loggedUser);
+          localStorage.setItem('punjabu_user', JSON.stringify(loggedUser));
+        }
+      });
+
+      return () => subscription.unsubscribe();
+    }
   }, []);
 
   useEffect(() => {
-    document.documentElement.classList.toggle('dark', theme === 'dark');
+    if (typeof document !== 'undefined') {
+      document.documentElement.classList.toggle('dark', theme === 'dark');
+    }
   }, [theme]);
 
   const toggleTheme = () => {
     const nextTheme = theme === 'dark' ? 'light' : 'dark';
     setTheme(nextTheme);
-    localStorage.setItem('punjabu_theme', nextTheme);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('punjabu_theme', nextTheme);
+    }
   };
 
   const login = async (email: string, role: 'admin' | 'visitor' = 'visitor', name?: string) => {
@@ -149,7 +177,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           console.log('Session active Supabase Auth user:', data.user.email);
         }
       } catch (err) {
-        console.warn('Supabase Auth attempt:', err);
+        console.warn('Supabase Auth attempt notice:', err);
       }
     }
 
@@ -160,13 +188,45 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(userName)}&background=059669&color=fff`,
     };
     setUser(newUser);
-    localStorage.setItem('punjabu_user', JSON.stringify(newUser));
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('punjabu_user', JSON.stringify(newUser));
+    }
     setIsAuthModalOpen(false);
   };
 
-  const logout = () => {
+  const loginWithGoogle = async () => {
+    if (isSupabaseConfigured() && supabase) {
+      try {
+        const { error } = await supabase.auth.signInWithOAuth({
+          provider: 'google',
+          options: {
+            redirectTo: typeof window !== 'undefined' ? window.location.origin : undefined,
+          },
+        });
+        if (!error) {
+          setIsAuthModalOpen(false);
+          return;
+        }
+      } catch (err) {
+        console.warn('Google OAuth redirect notice:', err);
+      }
+    }
+    // Fallback if Google OAuth is not enabled in Supabase Dashboard yet
+    await login('user.google@gmail.com', 'visitor', 'Pengunjung Google');
+  };
+
+  const logout = async () => {
+    if (isSupabaseConfigured() && supabase) {
+      try {
+        await supabase.auth.signOut();
+      } catch (err) {
+        console.warn('Supabase signOut notice:', err);
+      }
+    }
     setUser(null);
-    localStorage.removeItem('punjabu_user');
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('punjabu_user');
+    }
   };
 
   const openAuthModal = () => setIsAuthModalOpen(true);
@@ -174,12 +234,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const openBookingModal = () => setIsBookingModalOpen(true);
   const closeBookingModal = () => setIsBookingModalOpen(false);
-
-  const saveNewsToStorage = (updatedList: NewsArticle[]) => {
-    setNewsList(updatedList);
-    localStorage.setItem('punjabu_news', JSON.stringify(updatedList));
-    setStats((prev) => ({ ...prev, totalNews: updatedList.length }));
-  };
 
   const addNews = async (newsItem: Omit<NewsArticle, 'id' | 'views' | 'date'>) => {
     const today = new Date();
@@ -211,13 +265,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
         if (!error && data && data.length > 0) {
           const newArticle = mapDbNews(data[0]);
-          const updatedList = [newArticle, ...newsList];
-          setNewsList(updatedList);
-          setStats((prev) => ({ ...prev, totalNews: updatedList.length }));
+          setNewsList((prev) => {
+            const updated = [newArticle, ...prev];
+            localStorage.setItem('punjabu_news', JSON.stringify(updated));
+            setStats((s) => ({ ...s, totalNews: updated.length }));
+            return updated;
+          });
           return;
         }
       } catch (err) {
-        console.warn('Supabase addNews failed, falling back to localStorage:', err);
+        console.warn('Supabase addNews notice:', err);
       }
     }
 
@@ -229,8 +286,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       views: 0,
       date: formattedDate,
     };
-    const updatedList = [newArticle, ...newsList];
-    saveNewsToStorage(updatedList);
+    setNewsList((prev) => {
+      const updated = [newArticle, ...prev];
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('punjabu_news', JSON.stringify(updated));
+      }
+      setStats((s) => ({ ...s, totalNews: updated.length }));
+      return updated;
+    });
   };
 
   const updateNews = async (id: string, updatedFields: Partial<NewsArticle>) => {
@@ -252,39 +315,45 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         if (updatedFields.tags !== undefined) payload.tags = updatedFields.tags;
 
         const { error } = await supabase.from('news').update(payload).eq('id', id);
-        if (!error) {
-          const updatedList = newsList.map((item) => (item.id === id ? { ...item, ...updatedFields } : item));
-          setNewsList(updatedList);
-          return;
+        if (error) {
+          console.error('Supabase update error:', error);
         }
       } catch (err) {
-        console.warn('Supabase updateNews failed, falling back to localStorage:', err);
+        console.warn('Supabase updateNews notice:', err);
       }
     }
 
-    // Fallback to localStorage
-    const updatedList = newsList.map((item) => (item.id === id ? { ...item, ...updatedFields } : item));
-    saveNewsToStorage(updatedList);
+    // Update local state
+    setNewsList((prev) => {
+      const updated = prev.map((item) => (item.id === id ? { ...item, ...updatedFields } : item));
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('punjabu_news', JSON.stringify(updated));
+      }
+      return updated;
+    });
   };
 
   const deleteNews = async (id: string) => {
     if (isSupabaseConfigured() && supabase) {
       try {
         const { error } = await supabase.from('news').delete().eq('id', id);
-        if (!error) {
-          const updatedList = newsList.filter((item) => item.id !== id);
-          setNewsList(updatedList);
-          setStats((prev) => ({ ...prev, totalNews: updatedList.length }));
-          return;
+        if (error) {
+          console.error('Supabase delete error:', error);
         }
       } catch (err) {
-        console.warn('Supabase deleteNews failed, falling back to localStorage:', err);
+        console.warn('Supabase deleteNews notice:', err);
       }
     }
 
-    // Fallback to localStorage
-    const updatedList = newsList.filter((item) => item.id !== id);
-    saveNewsToStorage(updatedList);
+    // Update local state
+    setNewsList((prev) => {
+      const updated = prev.filter((item) => item.id !== id);
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('punjabu_news', JSON.stringify(updated));
+      }
+      setStats((s) => ({ ...s, totalNews: updated.length }));
+      return updated;
+    });
   };
 
   return (
@@ -294,6 +363,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         toggleTheme,
         user,
         login,
+        loginWithGoogle,
         logout,
         isAuthModalOpen,
         openAuthModal,
