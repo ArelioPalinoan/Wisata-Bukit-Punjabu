@@ -81,7 +81,7 @@ CREATE TABLE IF NOT EXISTS visitor_reviews (
 );
 
 -- ====================================================================
--- ROW LEVEL SECURITY (RLS) & POLICIES
+-- ROW LEVEL SECURITY (RLS) & POLICIES (SAFE IDEMPOTENT)
 -- ====================================================================
 
 ALTER TABLE news ENABLE ROW LEVEL SECURITY;
@@ -89,6 +89,19 @@ ALTER TABLE tourism_spots ENABLE ROW LEVEL SECURITY;
 ALTER TABLE umkm_products ENABLE ROW LEVEL SECURITY;
 ALTER TABLE bookings ENABLE ROW LEVEL SECURITY;
 ALTER TABLE visitor_reviews ENABLE ROW LEVEL SECURITY;
+
+-- Drop Policy jika sudah ada sebelumnya agar tidak Error 42710
+DROP POLICY IF EXISTS "Public Read News" ON news;
+DROP POLICY IF EXISTS "Public Read Tourism Spots" ON tourism_spots;
+DROP POLICY IF EXISTS "Public Read UMKM Products" ON umkm_products;
+DROP POLICY IF EXISTS "Public Read Reviews" ON visitor_reviews;
+DROP POLICY IF EXISTS "Public Insert Bookings" ON bookings;
+DROP POLICY IF EXISTS "Public Read Own Bookings" ON bookings;
+
+DROP POLICY IF EXISTS "Admin Full Access News" ON news;
+DROP POLICY IF EXISTS "Admin Full Access Tourism" ON tourism_spots;
+DROP POLICY IF EXISTS "Admin Full Access UMKM" ON umkm_products;
+DROP POLICY IF EXISTS "Admin Full Access Bookings" ON bookings;
 
 -- Policy untuk Pembaca Publik (SELECT terbuka untuk umum)
 CREATE POLICY "Public Read News" ON news FOR SELECT USING (true);
