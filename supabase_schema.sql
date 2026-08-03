@@ -80,6 +80,14 @@ CREATE TABLE IF NOT EXISTS visitor_reviews (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- 6. TABEL ANALITIK KUNJUNGAN WEBSITE (site_visits)
+CREATE TABLE IF NOT EXISTS site_visits (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  visited_at TIMESTAMPTZ DEFAULT NOW(),
+  page_path TEXT DEFAULT '/',
+  user_agent TEXT
+);
+
 -- ====================================================================
 -- ROW LEVEL SECURITY (RLS) & POLICIES (SAFE IDEMPOTENT)
 -- ====================================================================
@@ -89,6 +97,7 @@ ALTER TABLE tourism_spots ENABLE ROW LEVEL SECURITY;
 ALTER TABLE umkm_products ENABLE ROW LEVEL SECURITY;
 ALTER TABLE bookings ENABLE ROW LEVEL SECURITY;
 ALTER TABLE visitor_reviews ENABLE ROW LEVEL SECURITY;
+ALTER TABLE site_visits ENABLE ROW LEVEL SECURITY;
 
 -- Drop Policy jika sudah ada sebelumnya agar tidak Error 42710
 DROP POLICY IF EXISTS "Public Read News" ON news;
@@ -97,6 +106,8 @@ DROP POLICY IF EXISTS "Public Read UMKM Products" ON umkm_products;
 DROP POLICY IF EXISTS "Public Read Reviews" ON visitor_reviews;
 DROP POLICY IF EXISTS "Public Insert Bookings" ON bookings;
 DROP POLICY IF EXISTS "Public Read Own Bookings" ON bookings;
+DROP POLICY IF EXISTS "Public Insert Visits" ON site_visits;
+DROP POLICY IF EXISTS "Public Read Visits" ON site_visits;
 
 DROP POLICY IF EXISTS "Admin Full Access News" ON news;
 DROP POLICY IF EXISTS "Admin Full Access Tourism" ON tourism_spots;
@@ -108,10 +119,12 @@ CREATE POLICY "Public Read News" ON news FOR SELECT USING (true);
 CREATE POLICY "Public Read Tourism Spots" ON tourism_spots FOR SELECT USING (true);
 CREATE POLICY "Public Read UMKM Products" ON umkm_products FOR SELECT USING (true);
 CREATE POLICY "Public Read Reviews" ON visitor_reviews FOR SELECT USING (true);
+CREATE POLICY "Public Read Visits" ON site_visits FOR SELECT USING (true);
 
--- Policy untuk Pengunjung Melakukan Booking (INSERT terbuka)
+-- Policy untuk Pengunjung Melakukan Booking & Log Kunjungan Website (INSERT terbuka)
 CREATE POLICY "Public Insert Bookings" ON bookings FOR INSERT WITH CHECK (true);
 CREATE POLICY "Public Read Own Bookings" ON bookings FOR SELECT USING (true);
+CREATE POLICY "Public Insert Visits" ON site_visits FOR INSERT WITH CHECK (true);
 
 -- Policy untuk Admin / Service Role (FULL ACCESS CRUD)
 CREATE POLICY "Admin Full Access News" ON news FOR ALL USING (true) WITH CHECK (true);

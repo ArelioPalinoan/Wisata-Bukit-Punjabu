@@ -129,6 +129,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [umkmProducts, setUmkmProducts] = useState<UMKMProduct[]>(UMKM_PRODUCTS);
   const [reviews, setReviews] = useState<VisitorReview[]>(VISITOR_REVIEWS);
   const [bookings, setBookings] = useState<BookingRecord[]>([]);
+  const [totalWebVisits, setTotalWebVisits] = useState<number>(0);
 
   const [stats, setStats] = useState<VillageStats>({ ...INITIAL_STATS, totalNews: INITIAL_NEWS.length });
   const [mounted, setMounted] = useState(false);
@@ -237,21 +238,42 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             }))
           );
         }
+
+        // Record & Fetch Real-Time Web Visits
+        try {
+          if (typeof window !== 'undefined' && !sessionStorage.getItem('punjabu_visit_logged')) {
+            await supabase.from('site_visits').insert([
+              {
+                page_path: window.location.pathname,
+                user_agent: navigator.userAgent,
+              },
+            ]);
+            sessionStorage.setItem('punjabu_visit_logged', 'true');
+          }
+          const { count: visitsCount } = await supabase.from('site_visits').select('*', { count: 'exact', head: true });
+          if (visitsCount !== null && visitsCount !== undefined) {
+            setTotalWebVisits(visitsCount);
+          }
+        } catch (vErr) {
+          console.warn('Site visit tracking notice:', vErr);
+        }
       } catch (err) {
         console.warn('Error fetching Supabase data, utilizing active state fallbacks:', err);
       }
     }
   }, [mapDbNews]);
 
-  // Update Stats based on dynamic state
+  // Update Stats based on 100% real database state counts
   useEffect(() => {
+    const realVisitorsCount = bookings.reduce((sum, b) => sum + (b.ticketQty || 1), 0);
     setStats({
-      totalVisitors: 18450 + bookings.length * 3,
+      totalVisitors: realVisitorsCount,
+      totalWebVisits: totalWebVisits,
       totalNews: newsList.length,
       activeAttractions: tourismSpots.length,
-      totalInquiries: 310 + bookings.length,
+      totalInquiries: bookings.length,
     });
-  }, [newsList.length, tourismSpots.length, bookings.length]);
+  }, [newsList.length, tourismSpots.length, bookings, totalWebVisits]);
 
   useEffect(() => {
     queueMicrotask(() => {

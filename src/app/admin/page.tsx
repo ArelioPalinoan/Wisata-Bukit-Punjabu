@@ -383,59 +383,59 @@ export default function AdminDashboardPage() {
       </div>
 
       {/* ══════════════════════════════════════════════
-          2. ANALYTICS KPI CARDS
+          2. ANALYTICS KPI CARDS (OVERALL VILLAGE STATS)
       ══════════════════════════════════════════════ */}
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
-        {/* Card 1: News */}
+        {/* Card 1: Total Web Visits & Ticketed Visitors */}
         <div className="p-5 rounded-2xl bg-zinc-900/80 border border-zinc-800 backdrop-blur-md hover:border-emerald-500/40 transition-all group">
           <div className="flex items-center justify-between text-zinc-400 text-xs font-semibold mb-2">
-            <span>Berita Desa</span>
-            <Newspaper className="w-4 h-4 text-emerald-400 group-hover:scale-110 transition-transform" />
+            <span>Kunjungan Website</span>
+            <Users className="w-4 h-4 text-emerald-400 group-hover:scale-110 transition-transform" />
           </div>
-          <p className="text-2xl sm:text-3xl font-black text-white">{stats.totalNews}</p>
-          <span className="text-[11px] text-emerald-400 font-medium mt-1 block">Artikel Terbit</span>
+          <p className="text-2xl sm:text-3xl font-black text-white">{stats.totalWebVisits.toLocaleString('id-ID')}</p>
+          <span className="text-[11px] text-emerald-400 font-medium mt-1 block">Live Traffic • {stats.totalVisitors} Tiket Pemesan</span>
         </div>
 
-        {/* Card 2: Spots */}
+        {/* Card 2: News Count */}
         <div className="p-5 rounded-2xl bg-zinc-900/80 border border-zinc-800 backdrop-blur-md hover:border-teal-500/40 transition-all group">
           <div className="flex items-center justify-between text-zinc-400 text-xs font-semibold mb-2">
-            <span>Spot Wisata</span>
-            <Compass className="w-4 h-4 text-teal-400 group-hover:scale-110 transition-transform" />
+            <span>Berita &amp; Liputan</span>
+            <Newspaper className="w-4 h-4 text-teal-400 group-hover:scale-110 transition-transform" />
           </div>
-          <p className="text-2xl sm:text-3xl font-black text-white">{tourismSpots.length}</p>
-          <span className="text-[11px] text-teal-400 font-medium mt-1 block">Destinasi Aktif</span>
+          <p className="text-2xl sm:text-3xl font-black text-white">{stats.totalNews}</p>
+          <span className="text-[11px] text-teal-400 font-medium mt-1 block">Artikel Terbit</span>
         </div>
 
-        {/* Card 3: UMKM */}
+        {/* Card 3: Active Attractions */}
         <div className="p-5 rounded-2xl bg-zinc-900/80 border border-zinc-800 backdrop-blur-md hover:border-amber-500/40 transition-all group">
           <div className="flex items-center justify-between text-zinc-400 text-xs font-semibold mb-2">
-            <span>Katalog UMKM</span>
-            <ShoppingBag className="w-4 h-4 text-amber-400 group-hover:scale-110 transition-transform" />
+            <span>Attraksi Wisata</span>
+            <Compass className="w-4 h-4 text-amber-400 group-hover:scale-110 transition-transform" />
           </div>
-          <p className="text-2xl sm:text-3xl font-black text-white">{umkmProducts.length}</p>
-          <span className="text-[11px] text-amber-400 font-medium mt-1 block">Produk Lokal</span>
+          <p className="text-2xl sm:text-3xl font-black text-white">{stats.activeAttractions}</p>
+          <span className="text-[11px] text-amber-400 font-medium mt-1 block">Spot Ikonik Sidrap</span>
         </div>
 
-        {/* Card 4: Bookings & Revenue */}
+        {/* Card 4: Total Inquiries & Bookings */}
         <div className="p-5 rounded-2xl bg-zinc-900/80 border border-zinc-800 backdrop-blur-md hover:border-purple-500/40 transition-all group">
           <div className="flex items-center justify-between text-zinc-400 text-xs font-semibold mb-2">
-            <span>Reservasi Tiket</span>
+            <span>Inquiry &amp; Reservasi</span>
             <Ticket className="w-4 h-4 text-purple-400 group-hover:scale-110 transition-transform" />
           </div>
-          <p className="text-2xl sm:text-3xl font-black text-white">{bookings.length}</p>
+          <p className="text-2xl sm:text-3xl font-black text-white">{stats.totalInquiries}</p>
           <span className="text-[11px] text-purple-400 font-medium mt-1 block">
             {pendingBookings > 0 ? `${pendingBookings} Menunggu Konfirmasi` : 'Semua Terkonfirmasi'}
           </span>
         </div>
 
-        {/* Card 5: Reviews */}
-        <div className="p-5 rounded-2xl bg-zinc-900/80 border border-zinc-800 backdrop-blur-md hover:border-amber-400/40 transition-all group col-span-2 lg:col-span-1">
+        {/* Card 5: Revenue & Rating */}
+        <div className="p-5 rounded-2xl bg-zinc-900/80 border border-zinc-800 backdrop-blur-md hover:border-emerald-400/40 transition-all group col-span-2 lg:col-span-1">
           <div className="flex items-center justify-between text-zinc-400 text-xs font-semibold mb-2">
-            <span>Rating Pengunjung</span>
-            <Star className="w-4 h-4 text-amber-400 fill-amber-400 group-hover:scale-110 transition-transform" />
+            <span>Omset Reservasi</span>
+            <DollarSign className="w-4 h-4 text-emerald-400 group-hover:scale-110 transition-transform" />
           </div>
-          <p className="text-2xl sm:text-3xl font-black text-white">★ {avgRating}</p>
-          <span className="text-[11px] text-zinc-400 font-medium mt-1 block">Dari {reviews.length} Ulasan</span>
+          <p className="text-2xl sm:text-3xl font-black text-white">Rp {totalRevenue.toLocaleString('id-ID')}</p>
+          <span className="text-[11px] text-amber-400 font-medium mt-1 block">Rating: ★ {avgRating} ({reviews.length} ulasan)</span>
         </div>
       </div>
 

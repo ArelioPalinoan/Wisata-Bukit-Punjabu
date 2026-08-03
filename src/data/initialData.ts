@@ -68,6 +68,7 @@ export interface TravelRoute {
 
 export interface VillageStats {
   totalVisitors: number;
+  totalWebVisits: number;
   totalNews: number;
   activeAttractions: number;
   totalInquiries: number;
@@ -89,10 +90,11 @@ export interface BookingRecord {
 }
 
 export const INITIAL_STATS: VillageStats = {
-  totalVisitors: 18450,
-  totalNews: 12,
-  activeAttractions: 8,
-  totalInquiries: 310,
+  totalVisitors: 0,
+  totalWebVisits: 0,
+  totalNews: 0,
+  activeAttractions: 0,
+  totalInquiries: 0,
 };
 
 export const TOURISM_SPOTS: TourismSpot[] = [
