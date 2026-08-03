@@ -182,6 +182,22 @@ VALUES
   'https://images.unsplash.com/photo-1448375240586-882707db888b?q=80&w=1200&auto=format&fit=crop',
   'Off-Road Trail',
   4.8
+),
+(
+  'Kedai Kopi & Saung Perkebunan Punjabu',
+  'Kuliner & Perkebunan',
+  'Nikmati Kopi Punjabu (Robusta & Arabika) dan camilan tradisional Gula Tappo langsung di area saung santai tepi lereng bukit.',
+  'https://images.unsplash.com/photo-1447933601403-0c6688de566e?q=80&w=1200&auto=format&fit=crop',
+  'Khas Buntu Buangin',
+  4.8
+),
+(
+  'Panorama Pegunungan Latimojong & Teluk Bone',
+  'Lanskap Alam',
+  'Dari ketinggian 527 mdpl, nikmati pemandangan cakrawala luas memandang deretan Pegunungan Latimojong hingga kilau Teluk Bone.',
+  'https://images.unsplash.com/photo-1500382017468-9049fed747ef?q=80&w=1200&auto=format&fit=crop',
+  'Lanskap 360°',
+  4.7
 );
 
 -- SEED DATA PRODUK UMKM (umkm_products)
@@ -198,54 +214,65 @@ VALUES
   'Khas Ikonik'
 ),
 (
-  'Kopi Punjabu Petik Merah - Roasted Beans (200g)',
-  35000,
-  'kemasan 200g',
-  'Olahan Kopi Lokal',
-  'Kelompok Tani Kopi Pegunungan Pitu Riase',
-  'Biji kopi pilihan olahan petik merah dari lereng Pegunungan Punjabu. Memiliki cita rasa fruity khas kopi dataran tinggi.',
-  'https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?q=80&w=800&auto=format&fit=crop',
-  'Biji Pilihan'
+  'Gula Merah Aren Murni Organik (1 kg)',
+  25000,
+  'kemasan 1kg',
+  'Olahan Tradisional',
+  'Petani Aren Dusun Jambu-jambu',
+  'Gula aren cetak murni tanpa campuran bahan kimia, diolah secara alami dari sadapan nira pohon aren perbukitan Buntu Buangin.',
+  'https://images.unsplash.com/photo-1587049352847-4a222e784d38?q=80&w=800&auto=format&fit=crop',
+  '100% Organik'
 ),
 (
-  'Gula Merah Aren Murni Buntu Buangin (1 kg)',
-  25000,
-  'kemasan 1 kg',
-  'Hasil Perkebunan',
-  'Pengrajin Aren Dusun Jambu-jambu',
-  'Gula aren cetak tradisional dari nira pohon aren murni tanpa campuran bahan kimia, cocok untuk bumbu masak & pemanis kopi.',
-  'https://images.unsplash.com/photo-1581441363689-1f3c3c414635?q=80&w=800&auto=format&fit=crop',
-  '100% Organik'
+  'Kopi Punjabu Petik Merah Robusta (250g)',
+  35000,
+  'pouch 250g',
+  'Kopi Organik',
+  'Kelompok Tani Kopi Buntu Buangin',
+  'Biji kopi robusta pilihan dari lereng Bukit Punjabu ketinggian 527 mdpl, diolah honey process dengan aroma mantap cokelat hangat.',
+  'https://images.unsplash.com/photo-1447933601403-0c6688de566e?q=80&w=800&auto=format&fit=crop',
+  'Best Seller'
+),
+(
+  'Kopi Punjabu Special Arabika (200g)',
+  45000,
+  'pouch 200g',
+  'Kopi Premium',
+  'Pokdarwis & Kopdes Punjabu Sidrap',
+  'Kopi arabika pegunungan Pitu Riase dengan rasa asam buah yang lembut dan karakter aroma segar khas perkebunan Buntu Buangin.',
+  'https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?q=80&w=800&auto=format&fit=crop',
+  'Pilihan Petani'
 );
 
 -- SEED DATA ULASAN VISITOR (visitor_reviews)
 INSERT INTO visitor_reviews (name, origin, rating, date, comment, avatar, spot)
 VALUES
 (
-  'Andi Hermawan',
+  'Rahmat Hidayat',
   'Makassar',
   5,
-  '25 Juli 2026',
-  'Pemandangan samudera awannya luar biasa indah! Udara sejuk dan fasilitas camping sangat memadai. Sangat direkomendasikan untuk liburan keluarga.',
-  'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?q=80&w=150&auto=format&fit=crop',
+  '24 Juli 2026',
+  'Luar biasa indah! Lautan awan jam 6 pagi di Bukit Punjabu Sidrap betul-betul mempesona. Udara sejuk di 527 mdpl dan rasa Gula Tappo serta Kopi Punjabu-nya sangat nikmat!',
+  'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?q=80&w=200&auto=format&fit=crop',
   'Puncak Samudera Awan'
 ),
 (
-  'Nur Hidayah',
+  'Nurlaila Azizah',
   'Parepare',
   5,
   '18 Juli 2026',
-  'Gula Tappo khas Buntu Buangin enak banget, kopi arennya juara pas dinikmati di saung lereng bukit saat terbit matahari.',
-  'https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=150&auto=format&fit=crop',
-  'Kedai Kopi Punjabu'
+  'Tempat camping yang sangat recommended bersama keluarga. Hamparan kebun cengkihnya tertata rapi, warga Dusun Jambu-jambu ramah, dan MCK-nya bersih.',
+  'https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=200&auto=format&fit=crop',
+  'Camping Ground Punjabu'
 ),
 (
-  'Fajar Ramadhan',
-  'Sidrap',
+  'Andi M. Risky',
+  'Sengkang, Wajo',
   5,
-  '10 Juli 2026',
-  'Jalur off-road menuju puncak sangat memacu adrenalin. Pengelola Pokdarwisnya juga sangat ramah dan membantu mendirikan tenda.',
-  'https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?q=80&w=150&auto=format&fit=crop',
-  'Camping Ground Punjabu'
+  '12 Juli 2026',
+  'Panorama 360 derajatnya mantap! Dari puncak kelihatan siluet Pegunungan Latimojong dan spot foto bentuk hati-nya sangat estetik buat dokumentasi.',
+  'https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?q=80&w=200&auto=format&fit=crop',
+  'Spot Siluet Hati Punjabu'
 );
+
 
