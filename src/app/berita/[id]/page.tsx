@@ -21,26 +21,22 @@ import {
 
 export default function DetailBeritaPage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = use(params);
-  const { newsList } = useApp();
+  const { newsList, incrementNewsViews, fetchNewsComments, addNewsComment, user } = useApp();
   const [commentText, setCommentText] = useState('');
-  const [comments, setComments] = useState<Array<{ id: string; author: string; text: string; date: string }>>([
-    {
-      id: 'c1',
-      author: 'Rian Pratama',
-      text: 'Informasinya sangat membanggakan! Kebetulan saya berencana camping minggu depan bersama teman-teman.',
-      date: '2 jam yang lalu',
-    },
-    {
-      id: 'c2',
-      author: 'Dewi Lestari',
-      text: 'Semoga Bukit Punjabu semakin maju dan keasrian alamnya tetap terjaga.',
-      date: '5 jam yang lalu',
-    },
-  ]);
+  const [authorNameInput, setAuthorNameInput] = useState('');
+  const [comments, setComments] = useState<Array<{ id: string; author: string; text: string; date: string }>>([]);
   const [copiedLink, setCopiedLink] = useState(false);
   const [lightboxImage, setLightboxImage] = useState<string | null>(null);
 
   const article = newsList.find((n) => n.id === resolvedParams.id || n.slug === resolvedParams.id) || newsList[0];
+
+  // Auto increment view count & load real comments on mount
+  React.useEffect(() => {
+    if (article?.id) {
+      incrementNewsViews(article.id);
+      fetchNewsComments(article.id).then((data) => setComments(data));
+    }
+  }, [article?.id]);
 
   if (!article) {
     return (
@@ -55,25 +51,28 @@ export default function DetailBeritaPage({ params }: { params: Promise<{ id: str
 
   const isUnsplashCover = article.coverImage?.includes('images.unsplash.com');
 
+  // Dynamic Word Count & Read Time Calculation
+  const wordCount = (article.content || article.summary || '').split(/\s+/).filter(Boolean).length;
+  const calculatedReadTime = `${Math.max(1, Math.ceil(wordCount / 150))} min baca`;
+  const displayReadTime = article.readTime || calculatedReadTime;
+
   // Related articles in same category or recent
   const relatedArticles = newsList
     .filter((n) => n.id !== article.id && (!n.status || n.status.toLowerCase() === 'published'))
     .slice(0, 3);
 
-  const handleAddComment = (e: React.FormEvent) => {
+  const handleAddComment = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!commentText.trim()) return;
 
-    setComments([
-      {
-        id: Date.now().toString(),
-        author: 'Pengunjung',
-        text: commentText,
-        date: 'Baru saja',
-      },
-      ...comments,
-    ]);
+    const author = user?.name || authorNameInput.trim() || 'Pengunjung Desa';
+    const newComment = await addNewsComment(article.id, author, commentText.trim());
+
+    if (newComment) {
+      setComments((prev) => [newComment, ...prev]);
+    }
     setCommentText('');
+    setAuthorNameInput('');
   };
 
   const handleCopyLink = () => {
@@ -137,7 +136,7 @@ export default function DetailBeritaPage({ params }: { params: Promise<{ id: str
               </span>
               <span className="flex items-center gap-1">
                 <Clock className="w-4 h-4 text-zinc-400" />
-                {article.readTime}
+                {displayReadTime}
               </span>
               <span className="flex items-center gap-1">
                 <Eye className="w-4 h-4 text-zinc-400" />
@@ -244,6 +243,15 @@ export default function DetailBeritaPage({ params }: { params: Promise<{ id: str
 
           {/* Comment Form */}
           <form onSubmit={handleAddComment} className="space-y-3">
+            {!user && (
+              <input
+                type="text"
+                placeholder="Nama Anda (contoh: Rahmat - Makassar)"
+                value={authorNameInput}
+                onChange={(e) => setAuthorNameInput(e.target.value)}
+                className="w-full p-3 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl text-zinc-900 dark:text-white text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500 transition"
+              />
+            )}
             <textarea
               rows={3}
               required

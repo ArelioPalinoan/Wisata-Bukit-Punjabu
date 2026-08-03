@@ -13,6 +13,12 @@ import {
   VillageStats,
   INITIAL_STATS,
   BookingRecord,
+  FAQItem,
+  FAQS,
+  TravelRoute,
+  TRAVEL_ROUTES,
+  GalleryItem,
+  INITIAL_GALLERY,
 } from '@/data/initialData';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 
@@ -85,6 +91,9 @@ interface AppContextType {
   addNews: (newsItem: Omit<NewsArticle, 'id' | 'views' | 'date'>) => Promise<void>;
   updateNews: (id: string, updatedFields: Partial<NewsArticle>) => Promise<void>;
   deleteNews: (id: string) => Promise<void>;
+  incrementNewsViews: (id: string) => Promise<void>;
+  fetchNewsComments: (newsId: string) => Promise<Array<{ id: string; author: string; text: string; date: string }>>;
+  addNewsComment: (newsId: string, authorName: string, commentText: string) => Promise<{ id: string; author: string; text: string; date: string } | null>;
 
   // Tourism Spots CMS
   tourismSpots: TourismSpot[];
@@ -106,6 +115,15 @@ interface AppContextType {
   bookings: BookingRecord[];
   createBooking: (bookingData: Omit<BookingRecord, 'id' | 'status' | 'createdAt'>) => Promise<BookingRecord | null>;
   updateBookingStatus: (id: string, status: 'Pending' | 'Confirmed' | 'Cancelled') => Promise<void>;
+
+  // FAQs, Routes & Gallery
+  faqs: FAQItem[];
+  addFaq: (faq: Omit<FAQItem, 'id'>) => Promise<void>;
+  deleteFaq: (id: string) => Promise<void>;
+  travelRoutes: TravelRoute[];
+  galleryItems: GalleryItem[];
+  addGalleryItem: (item: Omit<GalleryItem, 'id'>) => Promise<void>;
+  deleteGalleryItem: (id: string) => Promise<void>;
 
   // System State
   stats: VillageStats;
@@ -129,7 +147,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [umkmProducts, setUmkmProducts] = useState<UMKMProduct[]>(UMKM_PRODUCTS);
   const [reviews, setReviews] = useState<VisitorReview[]>(VISITOR_REVIEWS);
   const [bookings, setBookings] = useState<BookingRecord[]>([]);
+  const [faqs, setFaqs] = useState<FAQItem[]>(FAQS);
+  const [travelRoutes, setTravelRoutes] = useState<TravelRoute[]>(TRAVEL_ROUTES);
+  const [galleryItems, setGalleryItems] = useState<GalleryItem[]>(INITIAL_GALLERY);
   const [totalWebVisits, setTotalWebVisits] = useState<number>(0);
+  const [monthlyWebVisits, setMonthlyWebVisits] = useState<number>(0);
 
   const [stats, setStats] = useState<VillageStats>({ ...INITIAL_STATS, totalNews: INITIAL_NEWS.length });
   const [mounted, setMounted] = useState(false);
@@ -239,7 +261,49 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           );
         }
 
-        // Record & Fetch Real-Time Web Visits
+        // Fetch FAQs
+        const { data: faqsData } = await supabase.from('faqs').select('*').order('created_at', { ascending: true });
+        if (faqsData && faqsData.length > 0) {
+          setFaqs(
+            faqsData.map((f: { id: string; question: string; answer: string; category: string }) => ({
+              id: String(f.id),
+              question: f.question,
+              answer: f.answer,
+              category: f.category as FAQItem['category'],
+            }))
+          );
+        }
+
+        // Fetch Travel Routes
+        const { data: routesData } = await supabase.from('travel_routes').select('*').order('created_at', { ascending: true });
+        if (routesData && routesData.length > 0) {
+          setTravelRoutes(
+            routesData.map((r: { id: string; from_location: string; distance: string; duration: string; road_condition: string; vehicle_advice: string }) => ({
+              id: String(r.id),
+              from: r.from_location,
+              distance: r.distance,
+              duration: r.duration,
+              roadCondition: r.road_condition,
+              vehicleAdvice: r.vehicle_advice,
+            }))
+          );
+        }
+
+        // Fetch Gallery Images
+        const { data: galleryData } = await supabase.from('gallery_images').select('*').order('created_at', { ascending: false });
+        if (galleryData && galleryData.length > 0) {
+          setGalleryItems(
+            galleryData.map((g: { id: string; title: string; category: string; image_url: string; description?: string }) => ({
+              id: String(g.id),
+              title: g.title,
+              category: g.category,
+              imageUrl: g.image_url,
+              description: g.description || undefined,
+            }))
+          );
+        }
+
+        // Record & Fetch Real-Time Web Visits (All-Time & Monthly Auto-Reset)
         try {
           if (typeof window !== 'undefined' && !sessionStorage.getItem('punjabu_visit_logged')) {
             await supabase.from('site_visits').insert([
@@ -250,9 +314,23 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             ]);
             sessionStorage.setItem('punjabu_visit_logged', 'true');
           }
+
+          // All-Time Visits Count
           const { count: visitsCount } = await supabase.from('site_visits').select('*', { count: 'exact', head: true });
           if (visitsCount !== null && visitsCount !== undefined) {
             setTotalWebVisits(visitsCount);
+          }
+
+          // Current Month Visits Count (Auto-Reset every 1st of month)
+          const now = new Date();
+          const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+          const { count: monthlyCount } = await supabase
+            .from('site_visits')
+            .select('*', { count: 'exact', head: true })
+            .gte('visited_at', startOfMonth);
+
+          if (monthlyCount !== null && monthlyCount !== undefined) {
+            setMonthlyWebVisits(monthlyCount);
           }
         } catch (vErr) {
           console.warn('Site visit tracking notice:', vErr);
@@ -269,11 +347,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setStats({
       totalVisitors: realVisitorsCount,
       totalWebVisits: totalWebVisits,
+      monthlyWebVisits: monthlyWebVisits,
       totalNews: newsList.length,
       activeAttractions: tourismSpots.length,
       totalInquiries: bookings.length,
     });
-  }, [newsList.length, tourismSpots.length, bookings, totalWebVisits]);
+  }, [newsList.length, tourismSpots.length, bookings, totalWebVisits, monthlyWebVisits]);
 
   useEffect(() => {
     queueMicrotask(() => {
@@ -488,6 +567,115 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       }
     }
     setNewsList((prev) => prev.filter((item) => item.id !== id));
+  };
+
+  const incrementNewsViews = async (id: string) => {
+    if (!id) return;
+
+    // Session check: ensure a single tab session only increments once per article view
+    if (typeof window !== 'undefined') {
+      const sessionKey = `punjabu_news_viewed_${id}`;
+      if (sessionStorage.getItem(sessionKey)) {
+        return; // Already counted in this session
+      }
+      sessionStorage.setItem(sessionKey, 'true');
+    }
+
+    if (isSupabaseConfigured() && supabase) {
+      try {
+        // Call atomic SQL function in Supabase (prevents stale overwrites)
+        const { error: rpcError } = await supabase.rpc('increment_news_views', { target_id: id });
+
+        if (rpcError) {
+          // Fallback: Fetch current latest views directly from DB before incrementing
+          const { data: dbNews } = await supabase.from('news').select('views').eq('id', id).single();
+          const currentViews = dbNews?.views ?? 0;
+          const nextViews = currentViews + 1;
+          await supabase.from('news').update({ views: nextViews }).eq('id', id);
+
+          setNewsList((prev) =>
+            prev.map((item) => (item.id === id ? { ...item, views: nextViews } : item))
+          );
+          return;
+        }
+
+        // Fetch exact updated view count from database
+        const { data: updatedNews } = await supabase.from('news').select('views').eq('id', id).single();
+        if (updatedNews && updatedNews.views !== undefined) {
+          setNewsList((prev) =>
+            prev.map((item) => (item.id === id ? { ...item, views: updatedNews.views } : item))
+          );
+          return;
+        }
+      } catch (err) {
+        console.warn('Supabase incrementNewsViews notice:', err);
+      }
+    }
+
+    // Local fallback if offline
+    setNewsList((prev) =>
+      prev.map((item) => (item.id === id ? { ...item, views: item.views + 1 } : item))
+    );
+  };
+
+  const fetchNewsComments = async (newsId: string): Promise<Array<{ id: string; author: string; text: string; date: string }>> => {
+    if (isSupabaseConfigured() && supabase) {
+      try {
+        const { data, error } = await supabase
+          .from('news_comments')
+          .select('*')
+          .eq('news_id', newsId)
+          .order('created_at', { ascending: false });
+
+        if (!error && data) {
+          return data.map((c: { id: string; author_name: string; comment_text: string; created_at: string }) => ({
+            id: String(c.id),
+            author: c.author_name,
+            text: c.comment_text,
+            date: new Date(c.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }),
+          }));
+        }
+      } catch (err) {
+        console.warn('Supabase fetchNewsComments notice:', err);
+      }
+    }
+    return [];
+  };
+
+  const addNewsComment = async (newsId: string, authorName: string, commentText: string): Promise<{ id: string; author: string; text: string; date: string } | null> => {
+    const formattedDate = new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+    if (isSupabaseConfigured() && supabase) {
+      try {
+        const { data, error } = await supabase
+          .from('news_comments')
+          .insert([
+            {
+              news_id: newsId,
+              author_name: authorName,
+              comment_text: commentText,
+            },
+          ])
+          .select('*');
+
+        if (!error && data && data.length > 0) {
+          return {
+            id: String(data[0].id),
+            author: data[0].author_name,
+            text: data[0].comment_text,
+            date: new Date(data[0].created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }),
+          };
+        }
+      } catch (err) {
+        console.warn('Supabase addNewsComment notice:', err);
+      }
+    }
+
+    return {
+      id: Date.now().toString(),
+      author: authorName,
+      text: commentText,
+      date: formattedDate,
+    };
   };
 
   // ========================
@@ -716,6 +904,77 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setBookings((prev) => prev.map((b) => (b.id === id ? { ...b, status } : b)));
   };
 
+  const addFaq = async (faq: Omit<FAQItem, 'id'>) => {
+    if (isSupabaseConfigured() && supabase) {
+      try {
+        const { data, error } = await supabase.from('faqs').insert([faq]).select('*');
+        if (!error && data && data.length > 0) {
+          const newFaq: FAQItem = {
+            id: String(data[0].id),
+            question: data[0].question,
+            answer: data[0].answer,
+            category: data[0].category as FAQItem['category'],
+          };
+          setFaqs((prev) => [...prev, newFaq]);
+          return;
+        }
+      } catch (err) {
+        console.warn('Supabase addFaq error:', err);
+      }
+    }
+    setFaqs((prev) => [...prev, { ...faq, id: Date.now().toString() }]);
+  };
+
+  const deleteFaq = async (id: string) => {
+    if (isSupabaseConfigured() && supabase) {
+      try {
+        await supabase.from('faqs').delete().eq('id', id);
+      } catch (err) {
+        console.warn('Supabase deleteFaq error:', err);
+      }
+    }
+    setFaqs((prev) => prev.filter((f) => f.id !== id));
+  };
+
+  const addGalleryItem = async (item: Omit<GalleryItem, 'id'>) => {
+    if (isSupabaseConfigured() && supabase) {
+      try {
+        const { data, error } = await supabase.from('gallery_images').insert([{
+          title: item.title,
+          category: item.category,
+          image_url: item.imageUrl,
+          description: item.description,
+        }]).select('*');
+
+        if (!error && data && data.length > 0) {
+          const newItem: GalleryItem = {
+            id: String(data[0].id),
+            title: data[0].title,
+            category: data[0].category,
+            imageUrl: data[0].image_url,
+            description: data[0].description || undefined,
+          };
+          setGalleryItems((prev) => [newItem, ...prev]);
+          return;
+        }
+      } catch (err) {
+        console.warn('Supabase addGalleryItem error:', err);
+      }
+    }
+    setGalleryItems((prev) => [{ ...item, id: Date.now().toString() }, ...prev]);
+  };
+
+  const deleteGalleryItem = async (id: string) => {
+    if (isSupabaseConfigured() && supabase) {
+      try {
+        await supabase.from('gallery_images').delete().eq('id', id);
+      } catch (err) {
+        console.warn('Supabase deleteGalleryItem error:', err);
+      }
+    }
+    setGalleryItems((prev) => prev.filter((g) => g.id !== id));
+  };
+
   return (
     <AppContext.Provider
       value={{
@@ -740,6 +999,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         addNews,
         updateNews,
         deleteNews,
+        incrementNewsViews,
+        fetchNewsComments,
+        addNewsComment,
 
         // Tourism Spots
         tourismSpots,
@@ -761,6 +1023,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         bookings,
         createBooking,
         updateBookingStatus,
+
+        // FAQs, Routes, Gallery
+        faqs,
+        addFaq,
+        deleteFaq,
+        travelRoutes,
+        galleryItems,
+        addGalleryItem,
+        deleteGalleryItem,
 
         // System
         stats,

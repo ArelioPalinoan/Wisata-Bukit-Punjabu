@@ -90,3 +90,64 @@ model VisitorReview {
 
   @@map("visitor_reviews")
 }
+
+model SiteVisit {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  visitedAt DateTime @default(now()) @map("visited_at") @db.Timestamptz()
+  pagePath  String?  @default("/") @map("page_path") @db.Text
+  userAgent String?  @map("user_agent") @db.Text
+
+  @@map("site_visits")
+}
+
+model NewsComment {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  newsId     String   @map("news_id") @db.Text
+  authorName String   @map("author_name") @db.Text
+  commentText String  @map("comment_text") @db.Text
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz()
+
+  @@map("news_comments")
+}
+
+model Faq {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  question  String   @db.Text
+  answer    String   @db.Text
+  category  String   @db.Text
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz()
+
+  @@map("faqs")
+}
+
+model TravelRoute {
+  id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  fromLocation  String   @map("from_location") @db.Text
+  distance      String   @db.Text
+  duration      String   @db.Text
+  roadCondition String   @map("road_condition") @db.Text
+  vehicleAdvice String   @map("vehicle_advice") @db.Text
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz()
+
+  @@map("travel_routes")
+}
+
+model GalleryImage {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  title       String   @db.Text
+  category    String   @db.Text
+  imageUrl    String   @map("image_url") @db.Text
+  description String?  @db.Text
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz()
+
+  @@map("gallery_images")
+}
+
+model VillageSetting {
+  key       String   @id @db.Text
+  value     String   @db.Text
+  updatedAt DateTime @default(now()) @map("updated_at") @db.Timestamptz()
+
+  @@map("village_settings")
+}
+

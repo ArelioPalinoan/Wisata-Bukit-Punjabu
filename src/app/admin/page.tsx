@@ -386,14 +386,16 @@ export default function AdminDashboardPage() {
           2. ANALYTICS KPI CARDS (OVERALL VILLAGE STATS)
       ══════════════════════════════════════════════ */}
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
-        {/* Card 1: Total Web Visits & Ticketed Visitors */}
+        {/* Card 1: Monthly Web Visits (Auto-Reset) */}
         <div className="p-5 rounded-2xl bg-zinc-900/80 border border-zinc-800 backdrop-blur-md hover:border-emerald-500/40 transition-all group">
           <div className="flex items-center justify-between text-zinc-400 text-xs font-semibold mb-2">
-            <span>Kunjungan Website</span>
+            <span>Kunjungan Bulan Ini</span>
             <Users className="w-4 h-4 text-emerald-400 group-hover:scale-110 transition-transform" />
           </div>
-          <p className="text-2xl sm:text-3xl font-black text-white">{stats.totalWebVisits.toLocaleString('id-ID')}</p>
-          <span className="text-[11px] text-emerald-400 font-medium mt-1 block">Live Traffic • {stats.totalVisitors} Tiket Pemesan</span>
+          <p className="text-2xl sm:text-3xl font-black text-white">{stats.monthlyWebVisits.toLocaleString('id-ID')}</p>
+          <span className="text-[11px] text-emerald-400 font-medium mt-1 block">
+            Reset Awal Bulan • {stats.totalWebVisits.toLocaleString('id-ID')} Total All-Time
+          </span>
         </div>
 
         {/* Card 2: News Count */}

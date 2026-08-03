@@ -18,6 +18,14 @@ export interface NewsArticle {
   tags: string[];
 }
 
+export interface NewsComment {
+  id: string;
+  newsId: string;
+  authorName: string;
+  commentText: string;
+  createdAt: string;
+}
+
 export interface TourismSpot {
   id: string;
   title: string;
@@ -59,6 +67,7 @@ export interface VisitorReview {
 }
 
 export interface TravelRoute {
+  id?: string;
   from: string;
   distance: string;
   duration: string;
@@ -66,9 +75,18 @@ export interface TravelRoute {
   vehicleAdvice: string;
 }
 
+export interface GalleryItem {
+  id: string;
+  title: string;
+  category: string;
+  imageUrl: string;
+  description?: string;
+}
+
 export interface VillageStats {
   totalVisitors: number;
   totalWebVisits: number;
+  monthlyWebVisits: number;
   totalNews: number;
   activeAttractions: number;
   totalInquiries: number;
@@ -92,6 +110,7 @@ export interface BookingRecord {
 export const INITIAL_STATS: VillageStats = {
   totalVisitors: 0,
   totalWebVisits: 0,
+  monthlyWebVisits: 0,
   totalNews: 0,
   activeAttractions: 0,
   totalInquiries: 0,
@@ -275,6 +294,7 @@ export const VISITOR_REVIEWS: VisitorReview[] = [
 
 export const TRAVEL_ROUTES: TravelRoute[] = [
   {
+    id: 'tr1',
     from: 'Pangkajene (Ibukota Kab. Sidrap)',
     distance: '± 50 km',
     duration: '± 1,5 - 2 jam',
@@ -282,6 +302,7 @@ export const TRAVEL_ROUTES: TravelRoute[] = [
     vehicleAdvice: 'Sepeda motor, Mobil MPV/SUV',
   },
   {
+    id: 'tr2',
     from: 'Kota Parepare',
     distance: '± 75 km',
     duration: '± 2 jam',
@@ -289,11 +310,50 @@ export const TRAVEL_ROUTES: TravelRoute[] = [
     vehicleAdvice: 'Semua jenis kendaraan darat',
   },
   {
+    id: 'tr3',
     from: 'Kota Makassar',
     distance: '± 200 km',
     duration: '± 4 jam (ke Sidrap) + 1.5 jam (ke Desa)',
     roadCondition: 'Jalan Utama Trans-Sulawesi & Poros Perbukitan',
     vehicleAdvice: 'Mobil pribadi / Rombongan bus mikro',
+  },
+];
+
+export const INITIAL_GALLERY: GalleryItem[] = [
+  {
+    id: 'g1',
+    title: 'Lautan Awan Pagi Hari 527 mdpl',
+    category: 'Samudera Awan',
+    imageUrl: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?q=80&w=1200&auto=format&fit=crop',
+    description: 'Pemandangan kabut putih bergulung di puncak bukit saat terbit matahari',
+  },
+  {
+    id: 'g2',
+    title: 'Camping Ground Perkebunan Cengkih',
+    category: 'Camping',
+    imageUrl: 'https://images.unsplash.com/photo-1510312305653-8ed496efae75?q=80&w=1200&auto=format&fit=crop',
+    description: 'Area tenda perkemahan yang sejuk di tengah lanskap cengkih',
+  },
+  {
+    id: 'g3',
+    title: 'Spot Photo Siluet Hati',
+    category: 'Spot Foto',
+    imageUrl: 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?q=80&w=1200&auto=format&fit=crop',
+    description: 'Panggung kayu panoramik ikonik berlatar perbukitan Pitu Riase',
+  },
+  {
+    id: 'g4',
+    title: 'Trek Off-Road Perbukitan Punjabu',
+    category: 'Petualangan',
+    imageUrl: 'https://images.unsplash.com/photo-1448375240586-882707db888b?q=80&w=1200&auto=format&fit=crop',
+    description: 'Jalur menantang 3 km favorit komunitas motor trail dan jeep',
+  },
+  {
+    id: 'g5',
+    title: 'Gula Tappo & Seduhan Kopi Punjabu',
+    category: 'Kuliner & Perkebunan',
+    imageUrl: 'https://images.unsplash.com/photo-1447933601403-0c6688de566e?q=80&w=1200&auto=format&fit=crop',
+    description: 'Camilan khas dan kopi petik merah olahan warga lokal',
   },
 ];
 

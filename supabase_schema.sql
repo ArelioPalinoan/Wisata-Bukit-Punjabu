@@ -88,6 +88,63 @@ CREATE TABLE IF NOT EXISTS site_visits (
   user_agent TEXT
 );
 
+-- 7. TABEL KOMENTAR BERITA DESA (news_comments)
+CREATE TABLE IF NOT EXISTS news_comments (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  news_id TEXT NOT NULL,
+  author_name TEXT NOT NULL,
+  comment_text TEXT NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 8. TABEL FAQ / PERTANYAAN UMUM (faqs)
+CREATE TABLE IF NOT EXISTS faqs (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  question TEXT NOT NULL,
+  answer TEXT NOT NULL,
+  category TEXT NOT NULL CHECK (category IN ('Fasilitas & Layanan', 'Akses & Tiket', 'Camping & Sunrise', 'Aturan & Keamanan')),
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 9. TABEL RUTE PERJALANAN (travel_routes)
+CREATE TABLE IF NOT EXISTS travel_routes (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  from_location TEXT NOT NULL,
+  distance TEXT NOT NULL,
+  duration TEXT NOT NULL,
+  road_condition TEXT NOT NULL,
+  vehicle_advice TEXT NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 10. TABEL GALERI FOTO WISATA (gallery_images)
+CREATE TABLE IF NOT EXISTS gallery_images (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  title TEXT NOT NULL,
+  category TEXT NOT NULL,
+  image_url TEXT NOT NULL,
+  description TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 11. TABEL PENGATURAN & STATISTIK PORTAL (village_settings)
+CREATE TABLE IF NOT EXISTS village_settings (
+  key TEXT PRIMARY KEY,
+  value TEXT NOT NULL,
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- ====================================================================
+-- INDEKS OPTIMALISASI KINERJA (PERFORMANCE INDEXES)
+-- ====================================================================
+
+CREATE INDEX IF NOT EXISTS idx_news_slug ON news(slug);
+CREATE INDEX IF NOT EXISTS idx_news_category ON news(category);
+CREATE INDEX IF NOT EXISTS idx_comments_news_id ON news_comments(news_id);
+CREATE INDEX IF NOT EXISTS idx_bookings_date_status ON bookings(booking_date, status);
+CREATE INDEX IF NOT EXISTS idx_visits_visited_at ON site_visits(visited_at);
+CREATE INDEX IF NOT EXISTS idx_faqs_category ON faqs(category);
+
 -- ====================================================================
 -- ROW LEVEL SECURITY (RLS) & POLICIES (SAFE IDEMPOTENT)
 -- ====================================================================
@@ -98,6 +155,11 @@ ALTER TABLE umkm_products ENABLE ROW LEVEL SECURITY;
 ALTER TABLE bookings ENABLE ROW LEVEL SECURITY;
 ALTER TABLE visitor_reviews ENABLE ROW LEVEL SECURITY;
 ALTER TABLE site_visits ENABLE ROW LEVEL SECURITY;
+ALTER TABLE news_comments ENABLE ROW LEVEL SECURITY;
+ALTER TABLE faqs ENABLE ROW LEVEL SECURITY;
+ALTER TABLE travel_routes ENABLE ROW LEVEL SECURITY;
+ALTER TABLE gallery_images ENABLE ROW LEVEL SECURITY;
+ALTER TABLE village_settings ENABLE ROW LEVEL SECURITY;
 
 -- Drop Policy jika sudah ada sebelumnya agar tidak Error 42710
 DROP POLICY IF EXISTS "Public Read News" ON news;
@@ -108,11 +170,21 @@ DROP POLICY IF EXISTS "Public Insert Bookings" ON bookings;
 DROP POLICY IF EXISTS "Public Read Own Bookings" ON bookings;
 DROP POLICY IF EXISTS "Public Insert Visits" ON site_visits;
 DROP POLICY IF EXISTS "Public Read Visits" ON site_visits;
+DROP POLICY IF EXISTS "Public Read News Comments" ON news_comments;
+DROP POLICY IF EXISTS "Public Insert News Comments" ON news_comments;
+DROP POLICY IF EXISTS "Public Read FAQs" ON faqs;
+DROP POLICY IF EXISTS "Public Read Travel Routes" ON travel_routes;
+DROP POLICY IF EXISTS "Public Read Gallery Images" ON gallery_images;
+DROP POLICY IF EXISTS "Public Read Village Settings" ON village_settings;
 
 DROP POLICY IF EXISTS "Admin Full Access News" ON news;
 DROP POLICY IF EXISTS "Admin Full Access Tourism" ON tourism_spots;
 DROP POLICY IF EXISTS "Admin Full Access UMKM" ON umkm_products;
 DROP POLICY IF EXISTS "Admin Full Access Bookings" ON bookings;
+DROP POLICY IF EXISTS "Admin Full Access FAQs" ON faqs;
+DROP POLICY IF EXISTS "Admin Full Access Routes" ON travel_routes;
+DROP POLICY IF EXISTS "Admin Full Access Gallery" ON gallery_images;
+DROP POLICY IF EXISTS "Admin Full Access Settings" ON village_settings;
 
 -- Policy untuk Pembaca Publik (SELECT terbuka untuk umum)
 CREATE POLICY "Public Read News" ON news FOR SELECT USING (true);
@@ -120,17 +192,40 @@ CREATE POLICY "Public Read Tourism Spots" ON tourism_spots FOR SELECT USING (tru
 CREATE POLICY "Public Read UMKM Products" ON umkm_products FOR SELECT USING (true);
 CREATE POLICY "Public Read Reviews" ON visitor_reviews FOR SELECT USING (true);
 CREATE POLICY "Public Read Visits" ON site_visits FOR SELECT USING (true);
+CREATE POLICY "Public Read News Comments" ON news_comments FOR SELECT USING (true);
+CREATE POLICY "Public Read FAQs" ON faqs FOR SELECT USING (true);
+CREATE POLICY "Public Read Travel Routes" ON travel_routes FOR SELECT USING (true);
+CREATE POLICY "Public Read Gallery Images" ON gallery_images FOR SELECT USING (true);
+CREATE POLICY "Public Read Village Settings" ON village_settings FOR SELECT USING (true);
 
--- Policy untuk Pengunjung Melakukan Booking & Log Kunjungan Website (INSERT terbuka)
+-- Policy untuk Pengunjung Melakukan Booking, Log Visits, & Komentar (INSERT terbuka)
 CREATE POLICY "Public Insert Bookings" ON bookings FOR INSERT WITH CHECK (true);
 CREATE POLICY "Public Read Own Bookings" ON bookings FOR SELECT USING (true);
 CREATE POLICY "Public Insert Visits" ON site_visits FOR INSERT WITH CHECK (true);
+CREATE POLICY "Public Insert News Comments" ON news_comments FOR INSERT WITH CHECK (true);
+
+-- ====================================================================
+-- FUNGSI ATOMIC INCREMENT VIEW BERITA (Mencegah Stale Race Condition)
+-- ====================================================================
+
+CREATE OR REPLACE FUNCTION increment_news_views(target_id TEXT)
+RETURNS void AS $$
+BEGIN
+  UPDATE news
+  SET views = COALESCE(views, 0) + 1
+  WHERE id::text = target_id OR slug = target_id;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
 
 -- Policy untuk Admin / Service Role (FULL ACCESS CRUD)
 CREATE POLICY "Admin Full Access News" ON news FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Admin Full Access Tourism" ON tourism_spots FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Admin Full Access UMKM" ON umkm_products FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Admin Full Access Bookings" ON bookings FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Admin Full Access FAQs" ON faqs FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Admin Full Access Routes" ON travel_routes FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Admin Full Access Gallery" ON gallery_images FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Admin Full Access Settings" ON village_settings FOR ALL USING (true) WITH CHECK (true);
 
 -- ====================================================================
 -- SEED DATA AWAL (DATA CONTOH PORTAL PUNJABU)
@@ -300,5 +395,99 @@ VALUES
   'https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?q=80&w=200&auto=format&fit=crop',
   'Spot Siluet Hati Punjabu'
 );
+
+-- SEED DATA FAQ (faqs)
+INSERT INTO faqs (question, answer, category)
+VALUES
+(
+  'Mengapa dinamakan Wisata Bukit Punjabu dan apa keistimewaannya?',
+  'Nama "Punjabu" merupakan akronim resmi dari "Puncak Jambu-Jambu" yang terletak di Dusun Jambu-jambu, Desa Buntu Buangin. Berada pada ketinggian 527 mdpl, tempat ini terkenal dengan fenomena Samudera Awan 360°, kebun cengkih yang asri, serta spot foto berbentuk siluet hati (love shape).',
+  'Camping & Sunrise'
+),
+(
+  'Berapa tarif tiket masuk harian dan biaya paket camping?',
+  'Tiket masuk harian Rp 10.000 / orang. Untuk paket Camping Night Rp 20.000 / orang (sudah termasuk izin area perkemahan, MCK, dan penerangan umum).',
+  'Akses & Tiket'
+),
+(
+  'Apa prestasi nasional yang pernah diraih Desa Wisata Buntu Buangin & Bukit Punjabu?',
+  'Wisata Bukit Punjabu berhasil masuk dalam 300 Besar Anugerah Desa Wisata Indonesia (ADWI) 2021 oleh Kemenparekraf RI serta meraih Juara 2 Nasional Lomba Promosi Desa Wisata Nusantara (LPDWN) 2022 oleh Kemendes PDTT RI.',
+  'Aturan & Keamanan'
+),
+(
+  'Bagaimana akses rute dari pusat desa menuju puncak bukit?',
+  'Dari pusat Desa Buntu Buangin menuju puncak Bukit Punjabu berjarak sekitar 2,8 hingga 3 km. Jalur ini dapat ditempuh dengan kendaraan off-road, motor trail, maupun berjalan kaki (trekking) sekitar 15 menit.',
+  'Akses & Tiket'
+),
+(
+  'Oleh-oleh khas apa yang wajib dicoba saat berkunjung ke Buntu Buangin?',
+  'Sangat direkomendasikan mencoba "Gula Tappo", camilan tradisional olahan kelapa sangrai dan gula merah aren murni, serta Kopi Punjabu petik merah dan Gula Merah Aren cetak khas Dusun Jambu-jambu.',
+  'Fasilitas & Layanan'
+),
+(
+  'Apakah tersedia fasilitas homestay di Desa Buntu Buangin?',
+  'Ya, selain camping ground di puncak bukit, pengunjung yang ingin menginap dengan suasana hangat khas pedesaan dapat memanfaatkan homestay yang dikelola warga lokal Desa Buntu Buangin.',
+  'Fasilitas & Layanan'
+);
+
+-- SEED DATA RUTE PERJALANAN (travel_routes)
+INSERT INTO travel_routes (from_location, distance, duration, road_condition, vehicle_advice)
+VALUES
+(
+  'Pangkajene (Ibukota Kab. Sidrap)',
+  '± 50 km',
+  '± 1,5 - 2 jam',
+  'Jalan poros Pitu Riase beraspal & cor desa',
+  'Sepeda motor, Mobil MPV/SUV'
+),
+(
+  'Kota Parepare',
+  '± 75 km',
+  '± 2 jam',
+  'Jalan Poros Trans-Sulawesi & Pitu Riase',
+  'Semua jenis kendaraan darat'
+),
+(
+  'Kota Makassar',
+  '± 200 km',
+  '± 4 jam (ke Sidrap) + 1.5 jam (ke Desa)',
+  'Jalan Utama Trans-Sulawesi & Poros Perbukitan',
+  'Mobil pribadi / Rombongan bus mikro'
+);
+
+-- SEED DATA GALERI FOTO (gallery_images)
+INSERT INTO gallery_images (title, category, image_url, description)
+VALUES
+(
+  'Lautan Awan Pagi Hari 527 mdpl',
+  'Samudera Awan',
+  'https://images.unsplash.com/photo-1506744038136-46273834b3fb?q=80&w=1200&auto=format&fit=crop',
+  'Pemandangan kabut putih bergulung di puncak bukit saat terbit matahari'
+),
+(
+  'Camping Ground Perkebunan Cengkih',
+  'Camping',
+  'https://images.unsplash.com/photo-1510312305653-8ed496efae75?q=80&w=1200&auto=format&fit=crop',
+  'Area tenda perkemahan yang sejuk di tengah lanskap cengkih'
+),
+(
+  'Spot Photo Siluet Hati',
+  'Spot Foto',
+  'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?q=80&w=1200&auto=format&fit=crop',
+  'Panggung kayu panoramik ikonik berlatar perbukitan Pitu Riase'
+),
+(
+  'Trek Off-Road Perbukitan Punjabu',
+  'Petualangan',
+  'https://images.unsplash.com/photo-1448375240586-882707db888b?q=80&w=1200&auto=format&fit=crop',
+  'Jalur menantang 3 km favorit komunitas motor trail dan jeep'
+),
+(
+  'Gula Tappo & Seduhan Kopi Punjabu',
+  'Kuliner & Perkebunan',
+  'https://images.unsplash.com/photo-1447933601403-0c6688de566e?q=80&w=1200&auto=format&fit=crop',
+  'Camilan khas dan kopi petik merah olahan warga lokal'
+);
+
 
 
