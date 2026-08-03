@@ -29,6 +29,7 @@ model News {
   tags       String[] @default([])
   createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz()
 
+  @@index([category])
   @@map("news")
 }
 
@@ -74,6 +75,7 @@ model Booking {
   status        String   @default("Pending") @db.Text
   createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz()
 
+  @@index([bookingDate, status])
   @@map("bookings")
 }
 
@@ -97,6 +99,7 @@ model SiteVisit {
   pagePath  String?  @default("/") @map("page_path") @db.Text
   userAgent String?  @map("user_agent") @db.Text
 
+  @@index([visitedAt])
   @@map("site_visits")
 }
 
@@ -107,6 +110,7 @@ model NewsComment {
   commentText String  @map("comment_text") @db.Text
   createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz()
 
+  @@index([newsId])
   @@map("news_comments")
 }
 
@@ -117,6 +121,7 @@ model Faq {
   category  String   @db.Text
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz()
 
+  @@index([category])
   @@map("faqs")
 }
 
@@ -150,4 +155,5 @@ model VillageSetting {
 
   @@map("village_settings")
 }
+
 
