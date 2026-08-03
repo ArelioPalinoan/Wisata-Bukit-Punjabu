@@ -1,0 +1,92 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model News {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  title      String   @db.Text
+  slug       String   @unique @db.Text
+  category   String   @db.Text
+  author     String   @default("Tim Media Desa") @db.Text
+  authorRole String   @default("Pengelola Wisata") @map("author_role") @db.Text
+  date       String   @db.Text
+  readTime   String   @default("3 min baca") @map("read_time") @db.Text
+  views      Int      @default(0)
+  featured   Boolean  @default(false)
+  status     String   @default("Published") @db.Text
+  summary    String   @db.Text
+  content    String   @db.Text
+  coverImage String   @map("cover_image") @db.Text
+  gallery    String[] @default([])
+  videoUrl   String?  @map("video_url") @db.Text
+  tags       String[] @default([])
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz()
+
+  @@map("news")
+}
+
+model TourismSpot {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  title       String   @db.Text
+  category    String   @db.Text
+  description String   @db.Text
+  image       String   @db.Text
+  badge       String   @db.Text
+  rating      Float    @default(5.0)
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz()
+
+  @@map("tourism_spots")
+}
+
+model UmkmProduct {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name        String   @db.Text
+  price       Int
+  priceUnit   String   @map("price_unit") @db.Text
+  category    String   @db.Text
+  seller      String   @db.Text
+  description String   @db.Text
+  image       String   @db.Text
+  badge       String?  @db.Text
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz()
+
+  @@map("umkm_products")
+}
+
+model Booking {
+  id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userName      String   @map("user_name") @db.Text
+  userPhone     String   @map("user_phone") @db.Text
+  userEmail     String?  @map("user_email") @db.Text
+  bookingDate   DateTime @map("booking_date") @db.Date
+  ticketQty     Int      @default(1) @map("ticket_qty")
+  tentQty       Int      @default(0) @map("tent_qty")
+  guideIncluded Boolean  @default(false) @map("guide_included")
+  totalPrice    Int      @map("total_price")
+  notes         String?  @db.Text
+  status        String   @default("Pending") @db.Text
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz()
+
+  @@map("bookings")
+}
+
+model VisitorReview {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name      String   @db.Text
+  origin    String   @db.Text
+  rating    Int
+  date      String   @db.Text
+  comment   String   @db.Text
+  avatar    String?  @db.Text
+  spot      String   @db.Text
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz()
+
+  @@map("visitor_reviews")
+}

@@ -57,6 +57,7 @@
 | **Type Safety** | [TypeScript](https://www.typescriptlang.org/) | `5.0+` | Type-safety untuk kode Javascript yang aman & terpelihara |
 | **Styling & Layout** | [Tailwind CSS](https://tailwindcss.com/) & PostCSS | `v4.0` | Utility-first CSS framework dengan dark mode & responsive design |
 | **Database & Cloud Backend** | [Supabase Database](https://supabase.com/) | PostgreSQL | Database cloud terpusat untuk menyimpan berita, booking, & umkm |
+| **ORM Layer** | [Prisma ORM](https://www.prisma.io/) | `v7.9.1` | Type-safe ORM & API Route handlers untuk Next.js Server-side |
 | **Autentikasi & Security** | [Supabase Auth](https://supabase.com/auth) | `@supabase/supabase-js` | Autentikasi Email/Password & Google OAuth dengan RLS Policies |
 | **Icon Set** | [Lucide React](https://lucide.dev/) | `^1.28.0` | Koleksi ikon SVG modern dan ringan |
 | **State Management** | React Context API | React Native Hooks | Pengelolaan state global theme, auth, news, & stats |

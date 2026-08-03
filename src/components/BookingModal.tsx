@@ -1,284 +1,354 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useApp } from '@/context/AppContext';
-import {
-  X, Ticket, Tent, Calendar, Users, Check,
-  MessageSquare, ShieldCheck, Plus, Minus,
-} from 'lucide-react';
+import { showToast } from '@/components/Toast';
+import { X, Calendar, Ticket, Tent, Compass, User, Phone, Mail, FileText, CheckCircle2, MessageSquare } from 'lucide-react';
 
 export const BookingModal: React.FC = () => {
-  const { isBookingModalOpen, closeBookingModal } = useApp();
+  const { isBookingModalOpen, closeBookingModal, createBooking } = useApp();
 
-  const [bookingType, setBookingType] = useState<'harian' | 'camping'>('camping');
-  const [visitorCount, setVisitorCount] = useState(2);
-  const [visitDate, setVisitDate] = useState('');
-  const [name, setName] = useState('');
-  const [phone, setPhone] = useState('');
+  const [userName, setUserName] = useState('');
+  const [userPhone, setUserPhone] = useState('');
+  const [userEmail, setUserEmail] = useState('');
+  const [bookingDate, setBookingDate] = useState(() => {
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    return tomorrow.toISOString().split('T')[0];
+  });
+  const [ticketQty, setTicketQty] = useState(1);
+  const [tentQty, setTentQty] = useState(0);
+  const [guideIncluded, setGuideIncluded] = useState(false);
+  const [notes, setNotes] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [confirmedBooking, setConfirmedBooking] = useState<{ id: string; total: number } | null>(null);
 
-  // Add-on rentals
-  const [rentTenda, setRentTenda] = useState(1);
-  const [rentSleepingBag, setRentSleepingBag] = useState(2);
-  const [rentMatras, setRentMatras] = useState(2);
+  if (!isBookingModalOpen) return null;
 
-  // Safely initialize date & reset state on client side using queueMicrotask
-  // to avoid React 19 / Next.js set-state-in-effect linter errors
-  useEffect(() => {
-    if (isBookingModalOpen) {
-      queueMicrotask(() => {
-        setBookingType('camping');
-        setVisitorCount(2);
-        setName('');
-        setPhone('');
-        setRentTenda(1);
-        setRentSleepingBag(2);
-        setRentMatras(2);
+  const TICKET_PRICE = 10000;
+  const TENT_PRICE = 50000;
+  const GUIDE_PRICE = 100000;
 
-        const tomorrow = new Date();
-        tomorrow.setDate(tomorrow.getDate() + 1);
-        setVisitDate(tomorrow.toISOString().split('T')[0]);
-      });
-    }
-  }, [isBookingModalOpen]);
-
-  // Reservation feature disabled per instruction
-  return null;
-
-  // --- Price calculation ---
-  const pricePerPerson = bookingType === 'harian' ? 10000 : 20000;
-  const totalTiket = visitorCount * pricePerPerson;
-  const totalSewa =
-    bookingType === 'camping'
-      ? rentTenda * 60000 + rentSleepingBag * 15000 + rentMatras * 10000
-      : 0;
-  const grandTotal = totalTiket + totalSewa;
+  const totalPrice = ticketQty * TICKET_PRICE + tentQty * TENT_PRICE + (guideIncluded ? GUIDE_PRICE : 0);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!userName.trim() || !userPhone.trim() || !bookingDate) {
+      showToast('Form Belum Lengkap', 'Mohon isi nama lengkap, nomor Whatsapp, dan tanggal kunjungan.', 'error');
+      return;
+    }
 
-    // Async save to Supabase if configured
+    setIsSubmitting(true);
     try {
-      const { supabase, isSupabaseConfigured } = await import('@/lib/supabase');
-      if (isSupabaseConfigured() && supabase) {
-        await supabase.from('bookings').insert([
-          {
-            user_name: name || 'Pengunjung',
-            user_phone: phone || '-',
-            booking_date: visitDate || new Date().toISOString().split('T')[0],
-            ticket_qty: visitorCount,
-            tent_qty: rentTenda,
-            total_price: grandTotal,
-            notes: `Type: ${bookingType}, SB: ${rentSleepingBag}, Matras: ${rentMatras}`,
-            status: 'Pending',
-          },
-        ]);
+      const result = await createBooking({
+        userName: userName.trim(),
+        userPhone: userPhone.trim(),
+        userEmail: userEmail.trim() || undefined,
+        bookingDate,
+        ticketQty,
+        tentQty,
+        guideIncluded,
+        totalPrice,
+        notes: notes.trim() || undefined,
+      });
+
+      if (result) {
+        setConfirmedBooking({ id: result.id, total: totalPrice });
+        showToast('Reservasi Berhasil!', `Kode Pemesanan Anda: #${result.id.slice(0, 8)}. Data telah tersimpan di sistem.`, 'success');
       }
     } catch (err) {
-      console.warn('Could not save booking to Supabase:', err);
+      console.error('Booking submission error:', err);
+      showToast('Gagal Memproses Pemesanan', 'Terjadi kesalahan sistem. Silakan coba lagi.', 'error');
+    } finally {
+      setIsSubmitting(false);
     }
+  };
 
-    const fmt = new Intl.NumberFormat('id-ID', {
-      style: 'currency',
-      currency: 'IDR',
-      maximumFractionDigits: 0,
-    }).format(grandTotal);
+  const handleOpenWhatsAppConfirmation = () => {
+    if (!confirmedBooking) return;
+    const message = `Halo Pokdarwis Bukit Punjabu! Saya telah melakukan pemesanan tiket online:%0A%0A` +
+      `📌 *Kode Booking:* #${confirmedBooking.id.slice(0, 8)}%0A` +
+      `👤 *Nama:* ${encodeURIComponent(userName)}%0A` +
+      `📱 *No HP:* ${encodeURIComponent(userPhone)}%0A` +
+      `📅 *Tanggal Kunjungan:* ${encodeURIComponent(bookingDate)}%0A` +
+      `🎟️ *Jumlah Tiket:* ${ticketQty}x (Rp ${ (ticketQty * TICKET_PRICE).toLocaleString('id-ID') })%0A` +
+      `⛺ *Tenda Camping:* ${tentQty}x (Rp ${ (tentQty * TENT_PRICE).toLocaleString('id-ID') })%0A` +
+      `🧭 *Pemandu Lokal:* ${guideIncluded ? 'Ya (Rp 100.000)' : 'Tidak'}%0A` +
+      `💰 *Total Pembayaran:* Rp ${confirmedBooking.total.toLocaleString('id-ID')}%0A%0A` +
+      `Mohon konfirmasi pendaftaran tiket kami. Terima kasih!`;
 
-    let detail = `• Jenis Tiket: ${bookingType === 'harian' ? 'Tiket Masuk Harian (Rp 10.000)' : 'Tiket Camping Night (Rp 20.000)'}\n`;
-    detail += `• Jumlah Pengunjung: ${visitorCount} orang\n`;
-    detail += `• Tanggal Kunjungan: ${visitDate}\n`;
+    window.open(`https://wa.me/6282291117360?text=${message}`, '_blank');
+  };
 
-    if (bookingType === 'camping' && (rentTenda > 0 || rentSleepingBag > 0 || rentMatras > 0)) {
-      detail += `\n*Perlengkapan Tambahan:*\n`;
-      if (rentTenda > 0) detail += `  - Tenda Dome (4p): ${rentTenda} unit\n`;
-      if (rentSleepingBag > 0) detail += `  - Sleeping Bag: ${rentSleepingBag} pcs\n`;
-      if (rentMatras > 0) detail += `  - Matras Camping: ${rentMatras} pcs\n`;
-    }
-
-    const msg =
-      `Halo Pokdarwis Bukit Punjabu Sidrap! 👋\nSaya ingin melakukan reservasi tiket wisata:\n\n` +
-      `*Data Pemesan:*\n• Nama: ${name || 'Pengunjung'}\n• No HP: ${phone || '-'}\n\n` +
-      `*Rincian Reservasi:*\n${detail}\n*Total Estimasi Biaya:* ${fmt}\n\n` +
-      `Mohon informasi konfirmasi ketersediaan tempat dan cara pembayarannya. Terima kasih!`;
-
-    window.open(`https://wa.me/6285255558910?text=${encodeURIComponent(msg)}`, '_blank');
+  const handleResetAndClose = () => {
+    setConfirmedBooking(null);
+    setUserName('');
+    setUserPhone('');
+    setUserEmail('');
+    setNotes('');
+    setTicketQty(1);
+    setTentQty(0);
+    setGuideIncluded(false);
     closeBookingModal();
   };
 
-  const noFocus: React.CSSProperties = {
-    outline: 'none',
-    boxShadow: 'none',
-    WebkitTapHighlightColor: 'transparent',
-  };
-
-  const rentalItems = [
-    { name: 'Tenda Dome (Kapasitas 4 orang)', price: 60000, unit: 'tenda/malam', val: rentTenda, set: setRentTenda },
-    { name: 'Sleeping Bag Warm', price: 15000, unit: 'pcs/malam', val: rentSleepingBag, set: setRentSleepingBag },
-    { name: 'Matras Outdoor Waterproof', price: 10000, unit: 'pcs/malam', val: rentMatras, set: setRentMatras },
-  ];
-
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in"
-      onClick={closeBookingModal}
-    >
-      <div
-        className="relative w-full max-w-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl shadow-2xl overflow-hidden animate-scale-in max-h-[92vh] flex flex-col"
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* Header */}
-        <div className="px-6 py-5 bg-gradient-to-r from-emerald-600 to-teal-700 text-white flex items-center justify-between shrink-0">
-          <div className="flex items-center gap-3">
-            <div className="p-2 rounded-xl bg-white/20">
-              <Ticket className="w-5 h-5" />
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-md animate-fade-in overflow-y-auto">
+      <div className="relative w-full max-w-xl bg-zinc-900 border border-emerald-500/30 rounded-2xl shadow-2xl overflow-hidden my-8">
+        {/* Header Modal */}
+        <div className="flex items-center justify-between p-6 bg-gradient-to-r from-emerald-900/60 to-zinc-900 border-b border-zinc-800">
+          <div className="flex items-center space-x-3">
+            <div className="p-2.5 bg-emerald-500/20 text-emerald-400 rounded-xl">
+              <Ticket className="w-6 h-6" />
             </div>
             <div>
-              <h2 className="text-lg font-bold">Reservasi Tiket &amp; Camping</h2>
-              <p className="text-xs text-emerald-100">Wisata Bukit Punjabu Desa Buntu Buangin • Sidrap</p>
+              <h2 className="text-xl font-bold text-white">Reservasi Tiket & Camping</h2>
+              <p className="text-xs text-zinc-400">Puncak Bukit Punjabu Sidrap (527 mdpl)</p>
             </div>
           </div>
-          <button onClick={closeBookingModal} style={noFocus} className="p-2 rounded-xl bg-white/10 hover:bg-white/20 text-white transition-colors">
+          <button
+            onClick={handleResetAndClose}
+            className="p-2 text-zinc-400 hover:text-white rounded-lg hover:bg-zinc-800 transition-colors"
+          >
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        {/* Scrollable Form */}
-        <form onSubmit={handleSubmit} className="p-6 overflow-y-auto flex-1 space-y-5 text-zinc-900 dark:text-white">
+        {/* Dynamic Content: Confirmed state vs Form state */}
+        {confirmedBooking ? (
+          <div className="p-8 text-center space-y-6">
+            <div className="w-16 h-16 bg-emerald-500/20 text-emerald-400 rounded-full flex items-center justify-center mx-auto border border-emerald-500/30">
+              <CheckCircle2 className="w-10 h-10 animate-bounce" />
+            </div>
 
-          {/* Booking Type */}
-          <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 mb-2">
-              Pilih Jenis Kunjungan
-            </label>
-            <div className="grid grid-cols-2 gap-3">
-              {(
-                [
-                  { type: 'harian' as const, label: 'Masuk Harian', price: 'Rp 10.000 / orang', Icon: Ticket },
-                  { type: 'camping' as const, label: 'Camping Night',  price: 'Rp 20.000 / orang', Icon: Tent  },
-                ] as const
-              ).map(({ type, label, price, Icon }) => (
-                <button
-                  key={type}
-                  type="button"
-                  onClick={() => setBookingType(type)}
-                  style={noFocus}
-                  className={`p-4 rounded-2xl border text-left transition-colors flex items-center justify-between ${
-                    bookingType === type
-                      ? 'border-emerald-500 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-bold'
-                      : 'border-zinc-200 dark:border-zinc-800 hover:border-emerald-500/40 text-zinc-700 dark:text-zinc-300'
-                  }`}
-                >
-                  <div>
-                    <div className="flex items-center gap-2 text-sm">
-                      <Icon className="w-4 h-4" />
-                      <span>{label}</span>
-                    </div>
-                    <span className="text-xs text-zinc-400 mt-1 block">{price}</span>
-                  </div>
-                  {bookingType === type && <Check className="w-5 h-5 text-emerald-500 shrink-0" />}
-                </button>
-              ))}
+            <div>
+              <h3 className="text-2xl font-bold text-white">Pemesanan Berhasil Disimpan!</h3>
+              <p className="text-zinc-400 text-sm mt-1">
+                Kode Booking Anda: <span className="text-emerald-400 font-mono font-bold">#{confirmedBooking.id.slice(0, 8)}</span>
+              </p>
+            </div>
+
+            <div className="p-4 bg-zinc-800/80 rounded-xl text-left border border-zinc-700 text-sm space-y-2">
+              <div className="flex justify-between">
+                <span className="text-zinc-400">Atas Nama:</span>
+                <span className="font-semibold text-white">{userName}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-zinc-400">Tanggal Kunjungan:</span>
+                <span className="font-semibold text-white">{bookingDate}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-zinc-400">Tiket Masuk:</span>
+                <span className="text-white">{ticketQty} Orang</span>
+              </div>
+              {tentQty > 0 && (
+                <div className="flex justify-between">
+                  <span className="text-zinc-400">Sewa Tenda:</span>
+                  <span className="text-white">{tentQty} Tenda</span>
+                </div>
+              )}
+              <div className="pt-2 border-t border-zinc-700 flex justify-between font-bold text-base">
+                <span className="text-emerald-400">Total Biaya:</span>
+                <span className="text-emerald-400">Rp {confirmedBooking.total.toLocaleString('id-ID')}</span>
+              </div>
+            </div>
+
+            <div className="flex flex-col sm:flex-row gap-3 pt-2">
+              <button
+                type="button"
+                onClick={handleOpenWhatsAppConfirmation}
+                className="flex-1 flex items-center justify-center space-x-2 py-3 px-4 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold rounded-xl transition-all shadow-lg shadow-emerald-900/30"
+              >
+                <MessageSquare className="w-5 h-5" />
+                <span>Konfirmasi via WhatsApp</span>
+              </button>
+              <button
+                type="button"
+                onClick={handleResetAndClose}
+                className="py-3 px-5 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 font-semibold rounded-xl transition-colors"
+              >
+                Tutup
+              </button>
             </div>
           </div>
+        ) : (
+          <form onSubmit={handleSubmit} className="p-6 space-y-5">
+            {/* Informasi Pengunjung */}
+            <div className="space-y-4">
+              <h3 className="text-sm font-semibold text-emerald-400 uppercase tracking-wider">Identitas Pemesan</h3>
+              
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs text-zinc-400 mb-1">Nama Lengkap *</label>
+                  <div className="relative">
+                    <User className="w-4 h-4 absolute left-3 top-3 text-zinc-500" />
+                    <input
+                      type="text"
+                      required
+                      placeholder="Masukkan nama"
+                      value={userName}
+                      onChange={(e) => setUserName(e.target.value)}
+                      className="w-full pl-9 pr-3 py-2 bg-zinc-800/80 border border-zinc-700 rounded-xl text-white text-sm focus:outline-none focus:border-emerald-500"
+                    />
+                  </div>
+                </div>
 
-          {/* Date & Count */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 mb-1.5">
-                <Calendar className="w-3.5 h-3.5 text-emerald-500" />
-                Tanggal Kunjungan
-              </label>
-              <input
-                type="date"
-                required
-                value={visitDate}
-                onChange={(e) => setVisitDate(e.target.value)}
-                style={noFocus}
-                className="w-full px-4 py-2.5 rounded-xl bg-zinc-100 dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 text-sm transition-colors focus:border-emerald-500"
-              />
-            </div>
-            <div>
-              <label className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 mb-1.5">
-                <Users className="w-3.5 h-3.5 text-emerald-500" />
-                Jumlah Pengunjung
-              </label>
-              <div className="flex items-center justify-between px-4 py-2 rounded-xl bg-zinc-100 dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700">
-                <span className="text-sm font-bold">{visitorCount} Orang</span>
-                <div className="flex items-center gap-2">
-                  <button type="button" onClick={() => setVisitorCount(Math.max(1, visitorCount - 1))} style={noFocus} className="p-1 rounded-lg bg-zinc-200 dark:bg-zinc-700 hover:bg-emerald-500 hover:text-white transition-colors">
-                    <Minus className="w-3.5 h-3.5" />
-                  </button>
-                  <button type="button" onClick={() => setVisitorCount(visitorCount + 1)} style={noFocus} className="p-1 rounded-lg bg-zinc-200 dark:bg-zinc-700 hover:bg-emerald-500 hover:text-white transition-colors">
-                    <Plus className="w-3.5 h-3.5" />
-                  </button>
+                <div>
+                  <label className="block text-xs text-zinc-400 mb-1">No. WhatsApp *</label>
+                  <div className="relative">
+                    <Phone className="w-4 h-4 absolute left-3 top-3 text-zinc-500" />
+                    <input
+                      type="tel"
+                      required
+                      placeholder="0812xxxxxxx"
+                      value={userPhone}
+                      onChange={(e) => setUserPhone(e.target.value)}
+                      className="w-full pl-9 pr-3 py-2 bg-zinc-800/80 border border-zinc-700 rounded-xl text-white text-sm focus:outline-none focus:border-emerald-500"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs text-zinc-400 mb-1">Email (Opsional)</label>
+                <div className="relative">
+                  <Mail className="w-4 h-4 absolute left-3 top-3 text-zinc-500" />
+                  <input
+                    type="email"
+                    placeholder="email@example.com"
+                    value={userEmail}
+                    onChange={(e) => setUserEmail(e.target.value)}
+                    className="w-full pl-9 pr-3 py-2 bg-zinc-800/80 border border-zinc-700 rounded-xl text-white text-sm focus:outline-none focus:border-emerald-500"
+                  />
                 </div>
               </div>
             </div>
-          </div>
 
-          {/* Name & Phone */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 mb-1.5">Nama Pemesan</label>
-              <input type="text" placeholder="Contoh: Ahmad Hidayat" value={name} onChange={(e) => setName(e.target.value)} style={noFocus} className="w-full px-4 py-2.5 rounded-xl bg-zinc-100 dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 text-sm" />
-            </div>
-            <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 mb-1.5">No. WhatsApp</label>
-              <input type="tel" placeholder="0812xxxxxxxx" value={phone} onChange={(e) => setPhone(e.target.value)} style={noFocus} className="w-full px-4 py-2.5 rounded-xl bg-zinc-100 dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 text-sm" />
-            </div>
-          </div>
+            {/* Tanggal & Pilihan Tiket */}
+            <div className="space-y-4 pt-2 border-t border-zinc-800">
+              <h3 className="text-sm font-semibold text-emerald-400 uppercase tracking-wider">Detail Kunjungan</h3>
 
-          {/* Add-on rentals (camping only) */}
-          {bookingType === 'camping' && (
-            <div className="p-4 rounded-2xl bg-zinc-100/80 dark:bg-zinc-800/50 border border-zinc-200 dark:border-zinc-700/60 space-y-3">
-              <span className="block text-xs font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
-                Sewa Perlengkapan Camping (Opsional)
-              </span>
-              {rentalItems.map((item) => (
-                <div key={item.name} className="flex items-center justify-between text-xs py-1.5 border-b border-zinc-200/60 dark:border-zinc-700/40 last:border-none">
+              <div>
+                <label className="block text-xs text-zinc-400 mb-1">Tanggal Kunjungan *</label>
+                <div className="relative">
+                  <Calendar className="w-4 h-4 absolute left-3 top-3 text-zinc-500" />
+                  <input
+                    type="date"
+                    required
+                    min={new Date().toISOString().split('T')[0]}
+                    value={bookingDate}
+                    onChange={(e) => setBookingDate(e.target.value)}
+                    className="w-full pl-9 pr-3 py-2 bg-zinc-800/80 border border-zinc-700 rounded-xl text-white text-sm focus:outline-none focus:border-emerald-500"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {/* Tiket Masuk */}
+                <div className="p-3 bg-zinc-800/60 rounded-xl border border-zinc-700 flex items-center justify-between">
                   <div>
-                    <span className="font-semibold block text-zinc-800 dark:text-zinc-200">{item.name}</span>
-                    <span className="text-zinc-500">Rp {item.price.toLocaleString('id-ID')} / {item.unit}</span>
+                    <div className="flex items-center space-x-2 text-white font-medium text-sm">
+                      <Ticket className="w-4 h-4 text-emerald-400" />
+                      <span>Tiket Masuk</span>
+                    </div>
+                    <span className="text-xs text-zinc-400">Rp 10.000 / orang</span>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <button type="button" onClick={() => item.set(Math.max(0, item.val - 1))} style={noFocus} className="p-1 rounded-md bg-zinc-200 dark:bg-zinc-700 hover:bg-emerald-500 hover:text-white transition-colors">
-                      <Minus className="w-3.5 h-3.5" />
+                  <div className="flex items-center space-x-2">
+                    <button
+                      type="button"
+                      onClick={() => setTicketQty(Math.max(1, ticketQty - 1))}
+                      className="w-7 h-7 bg-zinc-700 hover:bg-zinc-600 text-white rounded-lg font-bold"
+                    >
+                      -
                     </button>
-                    <span className="font-bold w-4 text-center">{item.val}</span>
-                    <button type="button" onClick={() => item.set(item.val + 1)} style={noFocus} className="p-1 rounded-md bg-zinc-200 dark:bg-zinc-700 hover:bg-emerald-500 hover:text-white transition-colors">
-                      <Plus className="w-3.5 h-3.5" />
+                    <span className="w-6 text-center font-bold text-white text-sm">{ticketQty}</span>
+                    <button
+                      type="button"
+                      onClick={() => setTicketQty(ticketQty + 1)}
+                      className="w-7 h-7 bg-zinc-700 hover:bg-zinc-600 text-white rounded-lg font-bold"
+                    >
+                      +
                     </button>
                   </div>
                 </div>
-              ))}
-            </div>
-          )}
 
-          {/* Price Summary */}
-          <div className="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-between">
-            <div>
-              <span className="text-xs text-zinc-500 dark:text-zinc-400 block font-medium">Total Estimasi Pembayaran:</span>
-              <span className="text-2xl font-extrabold text-emerald-600 dark:text-emerald-400">
-                Rp {grandTotal.toLocaleString('id-ID')}
-              </span>
-            </div>
-            <div className="text-right text-[11px] text-zinc-400">
-              <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-semibold justify-end">
-                <ShieldCheck className="w-3.5 h-3.5" /> Resmi Pokdarwis
-              </span>
-              <span>Bayar di lokasi / transfer WA</span>
-            </div>
-          </div>
+                {/* Sewa Tenda */}
+                <div className="p-3 bg-zinc-800/60 rounded-xl border border-zinc-700 flex items-center justify-between">
+                  <div>
+                    <div className="flex items-center space-x-2 text-white font-medium text-sm">
+                      <Tent className="w-4 h-4 text-emerald-400" />
+                      <span>Sewa Tenda</span>
+                    </div>
+                    <span className="text-xs text-zinc-400">Rp 50.000 / unit</span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <button
+                      type="button"
+                      onClick={() => setTentQty(Math.max(0, tentQty - 1))}
+                      className="w-7 h-7 bg-zinc-700 hover:bg-zinc-600 text-white rounded-lg font-bold"
+                    >
+                      -
+                    </button>
+                    <span className="w-6 text-center font-bold text-white text-sm">{tentQty}</span>
+                    <button
+                      type="button"
+                      onClick={() => setTentQty(tentQty + 1)}
+                      className="w-7 h-7 bg-zinc-700 hover:bg-zinc-600 text-white rounded-lg font-bold"
+                    >
+                      +
+                    </button>
+                  </div>
+                </div>
+              </div>
 
-          {/* Submit */}
-          <button
-            type="submit"
-            style={noFocus}
-            className="w-full py-4 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-2xl shadow-lg shadow-emerald-600/30 transition-colors flex items-center justify-center gap-2 text-base cursor-pointer active:scale-95"
-          >
-            <MessageSquare className="w-5 h-5" />
-            Lanjut Reservasi via WhatsApp
-          </button>
-        </form>
+              {/* Opsi Pemandu & Catatan */}
+              <div className="flex items-center justify-between p-3 bg-zinc-800/60 rounded-xl border border-zinc-700">
+                <div className="flex items-center space-x-3">
+                  <Compass className="w-5 h-5 text-emerald-400" />
+                  <div>
+                    <span className="block text-sm font-medium text-white">Layanan Pemandu Lokal (Pokdarwis)</span>
+                    <span className="text-xs text-zinc-400">Rp 100.000 / grup (Jelajah puncak & spot sunrise)</span>
+                  </div>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={guideIncluded}
+                  onChange={(e) => setGuideIncluded(e.target.checked)}
+                  className="w-5 h-5 text-emerald-500 rounded border-zinc-700 bg-zinc-900 focus:ring-emerald-500 cursor-pointer"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs text-zinc-400 mb-1">Catatan Tambahan (Opsional)</label>
+                <div className="relative">
+                  <FileText className="w-4 h-4 absolute left-3 top-3 text-zinc-500" />
+                  <textarea
+                    rows={2}
+                    placeholder="Contoh: Bawa anak kecil, request lokasi camp dekat musholla"
+                    value={notes}
+                    onChange={(e) => setNotes(e.target.value)}
+                    className="w-full pl-9 pr-3 py-2 bg-zinc-800/80 border border-zinc-700 rounded-xl text-white text-sm focus:outline-none focus:border-emerald-500"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Total Biaya & Tombol Submit */}
+            <div className="p-4 bg-emerald-950/40 border border-emerald-500/20 rounded-xl flex items-center justify-between mt-4">
+              <div>
+                <span className="text-xs text-zinc-400 uppercase tracking-wider block">Total Pembayaran</span>
+                <span className="text-2xl font-extrabold text-emerald-400">Rp {totalPrice.toLocaleString('id-ID')}</span>
+              </div>
+              <button
+                type="submit"
+                disabled={isSubmitting}
+                className="py-3 px-6 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white font-bold rounded-xl shadow-lg shadow-emerald-950 transition-all flex items-center space-x-2"
+              >
+                <span>{isSubmitting ? 'Memproses...' : 'Pesan Sekarang'}</span>
+              </button>
+            </div>
+          </form>
+        )}
       </div>
     </div>
   );

@@ -1,7 +1,19 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { NewsArticle, INITIAL_NEWS, VillageStats, INITIAL_STATS } from '@/data/initialData';
+import {
+  NewsArticle,
+  INITIAL_NEWS,
+  TourismSpot,
+  TOURISM_SPOTS,
+  UMKMProduct,
+  UMKM_PRODUCTS,
+  VisitorReview,
+  VISITOR_REVIEWS,
+  VillageStats,
+  INITIAL_STATS,
+  BookingRecord,
+} from '@/data/initialData';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 
 export interface User {
@@ -64,13 +76,42 @@ interface AppContextType {
   isBookingModalOpen: boolean;
   openBookingModal: () => void;
   closeBookingModal: () => void;
+  isCalculatorOpen: boolean;
+  openCalculator: () => void;
+  closeCalculator: () => void;
+
+  // News CMS
   newsList: NewsArticle[];
   addNews: (newsItem: Omit<NewsArticle, 'id' | 'views' | 'date'>) => Promise<void>;
   updateNews: (id: string, updatedFields: Partial<NewsArticle>) => Promise<void>;
   deleteNews: (id: string) => Promise<void>;
+
+  // Tourism Spots CMS
+  tourismSpots: TourismSpot[];
+  addTourismSpot: (spot: Omit<TourismSpot, 'id'>) => Promise<void>;
+  updateTourismSpot: (id: string, spot: Partial<TourismSpot>) => Promise<void>;
+  deleteTourismSpot: (id: string) => Promise<void>;
+
+  // UMKM Products CMS
+  umkmProducts: UMKMProduct[];
+  addUmkmProduct: (product: Omit<UMKMProduct, 'id'>) => Promise<void>;
+  updateUmkmProduct: (id: string, product: Partial<UMKMProduct>) => Promise<void>;
+  deleteUmkmProduct: (id: string) => Promise<void>;
+
+  // Reviews
+  reviews: VisitorReview[];
+  addReview: (review: Omit<VisitorReview, 'id' | 'date'>) => Promise<void>;
+
+  // Bookings
+  bookings: BookingRecord[];
+  createBooking: (bookingData: Omit<BookingRecord, 'id' | 'status' | 'createdAt'>) => Promise<BookingRecord | null>;
+  updateBookingStatus: (id: string, status: 'Pending' | 'Confirmed' | 'Cancelled') => Promise<void>;
+
+  // System State
   stats: VillageStats;
   mounted: boolean;
   supabaseActive: boolean;
+  refreshAllData: () => Promise<void>;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -80,12 +121,20 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [user, setUser] = useState<User | null>(null);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
+  const [isCalculatorOpen, setIsCalculatorOpen] = useState(false);
+
+  // Dynamic States
   const [newsList, setNewsList] = useState<NewsArticle[]>(INITIAL_NEWS);
+  const [tourismSpots, setTourismSpots] = useState<TourismSpot[]>(TOURISM_SPOTS);
+  const [umkmProducts, setUmkmProducts] = useState<UMKMProduct[]>(UMKM_PRODUCTS);
+  const [reviews, setReviews] = useState<VisitorReview[]>(VISITOR_REVIEWS);
+  const [bookings, setBookings] = useState<BookingRecord[]>([]);
+
   const [stats, setStats] = useState<VillageStats>({ ...INITIAL_STATS, totalNews: INITIAL_NEWS.length });
   const [mounted, setMounted] = useState(false);
   const [supabaseActive, setSupabaseActive] = useState(false);
 
-  // Bulletproof mapping from Database record to NewsArticle interface
+  // Mapping from Database record to NewsArticle
   const mapDbNews = useCallback((item: SupabaseNewsRecord): NewsArticle => ({
     id: String(item.id),
     title: item.title || 'Tanpa Judul',
@@ -106,49 +155,103 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     tags: Array.isArray(item.tags) ? item.tags : [],
   }), []);
 
-  // Fetch news from Supabase or fallback to LocalStorage/INITIAL_NEWS
-  const fetchNews = useCallback(async () => {
-    await Promise.resolve();
+  // Fetch all data from Supabase
+  const refreshAllData = useCallback(async () => {
     if (isSupabaseConfigured() && supabase) {
+      setSupabaseActive(true);
       try {
-        const { data, error } = await supabase
-          .from('news')
-          .select('*')
-          .order('created_at', { ascending: false });
+        // Fetch News
+        const { data: newsData } = await supabase.from('news').select('*').order('created_at', { ascending: false });
+        if (newsData && newsData.length > 0) {
+          setNewsList((newsData as SupabaseNewsRecord[]).map(mapDbNews));
+        }
 
-        if (!error && data && data.length > 0) {
-          const mapped = (data as SupabaseNewsRecord[]).map(mapDbNews);
-          setNewsList(mapped);
-          setStats((prev) => ({ ...prev, totalNews: mapped.length }));
-          setSupabaseActive(true);
-          return;
+        // Fetch Tourism Spots
+        const { data: spotsData } = await supabase.from('tourism_spots').select('*').order('created_at', { ascending: false });
+        if (spotsData && spotsData.length > 0) {
+          setTourismSpots(
+            spotsData.map((s: { id: string; title: string; category: string; description: string; image: string; badge: string; rating?: number }) => ({
+              id: String(s.id),
+              title: s.title,
+              category: s.category,
+              description: s.description,
+              image: s.image,
+              badge: s.badge,
+              rating: Number(s.rating) || 4.9,
+            }))
+          );
+        }
+
+        // Fetch UMKM Products
+        const { data: umkmData } = await supabase.from('umkm_products').select('*').order('created_at', { ascending: false });
+        if (umkmData && umkmData.length > 0) {
+          setUmkmProducts(
+            umkmData.map((u: { id: string; name: string; price: number; price_unit: string; category: string; seller: string; description: string; image: string; badge?: string }) => ({
+              id: String(u.id),
+              name: u.name,
+              price: Number(u.price),
+              priceUnit: u.price_unit,
+              category: u.category,
+              seller: u.seller,
+              description: u.description,
+              image: u.image,
+              badge: u.badge || undefined,
+            }))
+          );
+        }
+
+        // Fetch Visitor Reviews
+        const { data: reviewsData } = await supabase.from('visitor_reviews').select('*').order('created_at', { ascending: false });
+        if (reviewsData && reviewsData.length > 0) {
+          setReviews(
+            reviewsData.map((r: { id: string; name: string; origin: string; rating: number; date: string; comment: string; avatar?: string; spot: string }) => ({
+              id: String(r.id),
+              name: r.name,
+              origin: r.origin,
+              rating: Number(r.rating) || 5,
+              date: r.date,
+              comment: r.comment,
+              avatar: r.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(r.name)}&background=059669&color=fff`,
+              spot: r.spot,
+            }))
+          );
+        }
+
+        // Fetch Bookings
+        const { data: bookingsData } = await supabase.from('bookings').select('*').order('created_at', { ascending: false });
+        if (bookingsData) {
+          setBookings(
+            bookingsData.map((b: { id: string; user_name: string; user_phone: string; user_email?: string; booking_date: string; ticket_qty: number; tent_qty: number; guide_included: boolean; total_price: number; notes?: string; status: string; created_at?: string }) => ({
+              id: String(b.id),
+              userName: b.user_name,
+              userPhone: b.user_phone,
+              userEmail: b.user_email || undefined,
+              bookingDate: b.booking_date,
+              ticketQty: Number(b.ticket_qty) || 1,
+              tentQty: Number(b.tent_qty) || 0,
+              guideIncluded: Boolean(b.guide_included),
+              totalPrice: Number(b.total_price),
+              notes: b.notes || undefined,
+              status: (b.status as BookingRecord['status']) || 'Pending',
+              createdAt: b.created_at,
+            }))
+          );
         }
       } catch (err) {
-        console.warn('Supabase fetch notice, falling back to local storage:', err);
+        console.warn('Error fetching Supabase data, utilizing active state fallbacks:', err);
       }
     }
-
-    // Fallback to localStorage
-    if (typeof window !== 'undefined') {
-      const savedNews = localStorage.getItem('punjabu_news');
-      if (savedNews) {
-        try {
-          const parsed = JSON.parse(savedNews);
-          if (Array.isArray(parsed) && parsed.length > 0) {
-            setNewsList(parsed);
-            setStats((prev) => ({ ...prev, totalNews: parsed.length }));
-            return;
-          }
-        } catch (e) {
-          console.error('Error loading news from storage:', e);
-        }
-      }
-    }
-
-    // Default fallback to INITIAL_NEWS
-    setNewsList(INITIAL_NEWS);
-    setStats((prev) => ({ ...prev, totalNews: INITIAL_NEWS.length }));
   }, [mapDbNews]);
+
+  // Update Stats based on dynamic state
+  useEffect(() => {
+    setStats({
+      totalVisitors: 18450 + bookings.length * 3,
+      totalNews: newsList.length,
+      activeAttractions: tourismSpots.length,
+      totalInquiries: 310 + bookings.length,
+    });
+  }, [newsList.length, tourismSpots.length, bookings.length]);
 
   useEffect(() => {
     queueMicrotask(() => {
@@ -167,10 +270,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         }
       }
       setMounted(true);
-      fetchNews();
+      refreshAllData();
     });
 
-    // Supabase Auth state listener
     if (isSupabaseConfigured() && supabase) {
       const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
         if (session?.user) {
@@ -190,7 +292,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
       return () => subscription.unsubscribe();
     }
-  }, [fetchNews]);
+  }, [refreshAllData]);
 
   useEffect(() => {
     if (typeof document !== 'undefined') {
@@ -213,13 +315,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     if (isSupabaseConfigured() && supabase) {
       try {
-        const { data } = await supabase.auth.signInWithPassword({
+        await supabase.auth.signInWithPassword({
           email: email,
           password: 'AdminPunjabu2026!',
         });
-        if (data?.user) {
-          console.log('Session active Supabase Auth user:', data.user.email);
-        }
       } catch (err) {
         console.warn('Supabase Auth attempt notice:', err);
       }
@@ -252,10 +351,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           return;
         }
       } catch (err) {
-        console.warn('Google OAuth redirect notice:', err);
+        console.warn('Google OAuth notice:', err);
       }
     }
-    // Fallback if Google OAuth is not enabled in Supabase Dashboard yet
     await login('user.google@gmail.com', 'visitor', 'Pengunjung Google');
   };
 
@@ -279,6 +377,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const openBookingModal = () => setIsBookingModalOpen(true);
   const closeBookingModal = () => setIsBookingModalOpen(false);
 
+  const openCalculator = () => setIsCalculatorOpen(true);
+  const closeCalculator = () => setIsCalculatorOpen(false);
+
+  // ========================
+  // NEWS CRUD
+  // ========================
   const addNews = async (newsItem: Omit<NewsArticle, 'id' | 'views' | 'date'>) => {
     const today = new Date();
     const formattedDate = today.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
@@ -309,20 +413,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
         if (!error && data && data.length > 0) {
           const newArticle = mapDbNews(data[0]);
-          setNewsList((prev) => {
-            const updated = [newArticle, ...prev];
-            localStorage.setItem('punjabu_news', JSON.stringify(updated));
-            setStats((s) => ({ ...s, totalNews: updated.length }));
-            return updated;
-          });
+          setNewsList((prev) => [newArticle, ...prev]);
           return;
         }
       } catch (err) {
-        console.warn('Supabase addNews notice:', err);
+        console.warn('Supabase addNews error:', err);
       }
     }
 
-    // Fallback to localStorage
     const newArticle: NewsArticle = {
       ...newsItem,
       id: Date.now().toString(),
@@ -330,14 +428,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       views: 0,
       date: formattedDate,
     };
-    setNewsList((prev) => {
-      const updated = [newArticle, ...prev];
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('punjabu_news', JSON.stringify(updated));
-      }
-      setStats((s) => ({ ...s, totalNews: updated.length }));
-      return updated;
-    });
+    setNewsList((prev) => [newArticle, ...prev]);
   };
 
   const updateNews = async (id: string, updatedFields: Partial<NewsArticle>) => {
@@ -358,46 +449,249 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         if (updatedFields.videoUrl !== undefined) payload.video_url = updatedFields.videoUrl;
         if (updatedFields.tags !== undefined) payload.tags = updatedFields.tags;
 
-        const { error } = await supabase.from('news').update(payload).eq('id', id);
-        if (error) {
-          console.error('Supabase update error:', error);
-        }
+        await supabase.from('news').update(payload).eq('id', id);
       } catch (err) {
-        console.warn('Supabase updateNews notice:', err);
+        console.warn('Supabase updateNews error:', err);
       }
     }
-
-    // Update local state
-    setNewsList((prev) => {
-      const updated = prev.map((item) => (item.id === id ? { ...item, ...updatedFields } : item));
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('punjabu_news', JSON.stringify(updated));
-      }
-      return updated;
-    });
+    setNewsList((prev) => prev.map((item) => (item.id === id ? { ...item, ...updatedFields } : item)));
   };
 
   const deleteNews = async (id: string) => {
     if (isSupabaseConfigured() && supabase) {
       try {
-        const { error } = await supabase.from('news').delete().eq('id', id);
-        if (error) {
-          console.error('Supabase delete error:', error);
+        await supabase.from('news').delete().eq('id', id);
+      } catch (err) {
+        console.warn('Supabase deleteNews error:', err);
+      }
+    }
+    setNewsList((prev) => prev.filter((item) => item.id !== id));
+  };
+
+  // ========================
+  // TOURISM SPOTS CRUD
+  // ========================
+  const addTourismSpot = async (spot: Omit<TourismSpot, 'id'>) => {
+    if (isSupabaseConfigured() && supabase) {
+      try {
+        const { data, error } = await supabase.from('tourism_spots').insert([{
+          title: spot.title,
+          category: spot.category,
+          description: spot.description,
+          image: spot.image,
+          badge: spot.badge,
+          rating: spot.rating,
+        }]).select('*');
+        if (!error && data && data.length > 0) {
+          const newSpot: TourismSpot = {
+            id: String(data[0].id),
+            title: data[0].title,
+            category: data[0].category,
+            description: data[0].description,
+            image: data[0].image,
+            badge: data[0].badge,
+            rating: Number(data[0].rating) || 4.9,
+          };
+          setTourismSpots((prev) => [newSpot, ...prev]);
+          return;
         }
       } catch (err) {
-        console.warn('Supabase deleteNews notice:', err);
+        console.warn('Supabase addTourismSpot error:', err);
+      }
+    }
+    const newSpot: TourismSpot = { ...spot, id: Date.now().toString() };
+    setTourismSpots((prev) => [newSpot, ...prev]);
+  };
+
+  const updateTourismSpot = async (id: string, spotFields: Partial<TourismSpot>) => {
+    if (isSupabaseConfigured() && supabase) {
+      try {
+        await supabase.from('tourism_spots').update(spotFields).eq('id', id);
+      } catch (err) {
+        console.warn('Supabase updateTourismSpot error:', err);
+      }
+    }
+    setTourismSpots((prev) => prev.map((s) => (s.id === id ? { ...s, ...spotFields } : s)));
+  };
+
+  const deleteTourismSpot = async (id: string) => {
+    if (isSupabaseConfigured() && supabase) {
+      try {
+        await supabase.from('tourism_spots').delete().eq('id', id);
+      } catch (err) {
+        console.warn('Supabase deleteTourismSpot error:', err);
+      }
+    }
+    setTourismSpots((prev) => prev.filter((s) => s.id !== id));
+  };
+
+  // ========================
+  // UMKM PRODUCTS CRUD
+  // ========================
+  const addUmkmProduct = async (product: Omit<UMKMProduct, 'id'>) => {
+    if (isSupabaseConfigured() && supabase) {
+      try {
+        const { data, error } = await supabase.from('umkm_products').insert([{
+          name: product.name,
+          price: product.price,
+          price_unit: product.priceUnit,
+          category: product.category,
+          seller: product.seller,
+          description: product.description,
+          image: product.image,
+          badge: product.badge,
+        }]).select('*');
+        if (!error && data && data.length > 0) {
+          const newProduct: UMKMProduct = {
+            id: String(data[0].id),
+            name: data[0].name,
+            price: Number(data[0].price),
+            priceUnit: data[0].price_unit,
+            category: data[0].category,
+            seller: data[0].seller,
+            description: data[0].description,
+            image: data[0].image,
+            badge: data[0].badge || undefined,
+          };
+          setUmkmProducts((prev) => [newProduct, ...prev]);
+          return;
+        }
+      } catch (err) {
+        console.warn('Supabase addUmkmProduct error:', err);
+      }
+    }
+    const newProduct: UMKMProduct = { ...product, id: Date.now().toString() };
+    setUmkmProducts((prev) => [newProduct, ...prev]);
+  };
+
+  const updateUmkmProduct = async (id: string, productFields: Partial<UMKMProduct>) => {
+    if (isSupabaseConfigured() && supabase) {
+      try {
+        const payload: Record<string, unknown> = {};
+        if (productFields.name !== undefined) payload.name = productFields.name;
+        if (productFields.price !== undefined) payload.price = productFields.price;
+        if (productFields.priceUnit !== undefined) payload.price_unit = productFields.priceUnit;
+        if (productFields.category !== undefined) payload.category = productFields.category;
+        if (productFields.seller !== undefined) payload.seller = productFields.seller;
+        if (productFields.description !== undefined) payload.description = productFields.description;
+        if (productFields.image !== undefined) payload.image = productFields.image;
+        if (productFields.badge !== undefined) payload.badge = productFields.badge;
+
+        await supabase.from('umkm_products').update(payload).eq('id', id);
+      } catch (err) {
+        console.warn('Supabase updateUmkmProduct error:', err);
+      }
+    }
+    setUmkmProducts((prev) => prev.map((p) => (p.id === id ? { ...p, ...productFields } : p)));
+  };
+
+  const deleteUmkmProduct = async (id: string) => {
+    if (isSupabaseConfigured() && supabase) {
+      try {
+        await supabase.from('umkm_products').delete().eq('id', id);
+      } catch (err) {
+        console.warn('Supabase deleteUmkmProduct error:', err);
+      }
+    }
+    setUmkmProducts((prev) => prev.filter((p) => p.id !== id));
+  };
+
+  // ========================
+  // REVIEWS & BOOKINGS
+  // ========================
+  const addReview = async (reviewData: Omit<VisitorReview, 'id' | 'date'>) => {
+    const formattedDate = new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+    if (isSupabaseConfigured() && supabase) {
+      try {
+        const { data, error } = await supabase.from('visitor_reviews').insert([{
+          name: reviewData.name,
+          origin: reviewData.origin,
+          rating: reviewData.rating,
+          date: formattedDate,
+          comment: reviewData.comment,
+          avatar: reviewData.avatar,
+          spot: reviewData.spot,
+        }]).select('*');
+        if (!error && data && data.length > 0) {
+          const newRev: VisitorReview = {
+            id: String(data[0].id),
+            name: data[0].name,
+            origin: data[0].origin,
+            rating: Number(data[0].rating),
+            date: data[0].date,
+            comment: data[0].comment,
+            avatar: data[0].avatar,
+            spot: data[0].spot,
+          };
+          setReviews((prev) => [newRev, ...prev]);
+          return;
+        }
+      } catch (err) {
+        console.warn('Supabase addReview error:', err);
+      }
+    }
+    const newRev: VisitorReview = { ...reviewData, id: Date.now().toString(), date: formattedDate };
+    setReviews((prev) => [newRev, ...prev]);
+  };
+
+  const createBooking = async (bookingData: Omit<BookingRecord, 'id' | 'status' | 'createdAt'>): Promise<BookingRecord | null> => {
+    if (isSupabaseConfigured() && supabase) {
+      try {
+        const { data, error } = await supabase.from('bookings').insert([{
+          user_name: bookingData.userName,
+          user_phone: bookingData.userPhone,
+          user_email: bookingData.userEmail,
+          booking_date: bookingData.bookingDate,
+          ticket_qty: bookingData.ticketQty,
+          tent_qty: bookingData.tentQty,
+          guide_included: bookingData.guideIncluded,
+          total_price: bookingData.totalPrice,
+          notes: bookingData.notes,
+          status: 'Pending',
+        }]).select('*');
+
+        if (!error && data && data.length > 0) {
+          const created: BookingRecord = {
+            id: String(data[0].id),
+            userName: data[0].user_name,
+            userPhone: data[0].user_phone,
+            userEmail: data[0].user_email,
+            bookingDate: data[0].booking_date,
+            ticketQty: data[0].ticket_qty,
+            tentQty: data[0].tent_qty,
+            guideIncluded: data[0].guide_included,
+            totalPrice: data[0].total_price,
+            notes: data[0].notes,
+            status: data[0].status as BookingRecord['status'],
+            createdAt: data[0].created_at,
+          };
+          setBookings((prev) => [created, ...prev]);
+          return created;
+        }
+      } catch (err) {
+        console.warn('Supabase createBooking error:', err);
       }
     }
 
-    // Update local state
-    setNewsList((prev) => {
-      const updated = prev.filter((item) => item.id !== id);
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('punjabu_news', JSON.stringify(updated));
+    const created: BookingRecord = {
+      ...bookingData,
+      id: Date.now().toString(),
+      status: 'Pending',
+      createdAt: new Date().toISOString(),
+    };
+    setBookings((prev) => [created, ...prev]);
+    return created;
+  };
+
+  const updateBookingStatus = async (id: string, status: 'Pending' | 'Confirmed' | 'Cancelled') => {
+    if (isSupabaseConfigured() && supabase) {
+      try {
+        await supabase.from('bookings').update({ status }).eq('id', id);
+      } catch (err) {
+        console.warn('Supabase updateBookingStatus error:', err);
       }
-      setStats((s) => ({ ...s, totalNews: updated.length }));
-      return updated;
-    });
+    }
+    setBookings((prev) => prev.map((b) => (b.id === id ? { ...b, status } : b)));
   };
 
   return (
@@ -415,13 +709,42 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         isBookingModalOpen,
         openBookingModal,
         closeBookingModal,
+        isCalculatorOpen,
+        openCalculator,
+        closeCalculator,
+
+        // News
         newsList,
         addNews,
         updateNews,
         deleteNews,
+
+        // Tourism Spots
+        tourismSpots,
+        addTourismSpot,
+        updateTourismSpot,
+        deleteTourismSpot,
+
+        // UMKM Products
+        umkmProducts,
+        addUmkmProduct,
+        updateUmkmProduct,
+        deleteUmkmProduct,
+
+        // Reviews
+        reviews,
+        addReview,
+
+        // Bookings
+        bookings,
+        createBooking,
+        updateBookingStatus,
+
+        // System
         stats,
         mounted,
         supabaseActive,
+        refreshAllData,
       }}
     >
       {children}

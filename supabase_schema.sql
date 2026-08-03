@@ -147,3 +147,105 @@ VALUES
   ARRAY['Kopi Punjabu', 'UMKM Sidrap', 'Petik Merah', 'Ekonomi Desa']
 )
 ON CONFLICT (slug) DO NOTHING;
+
+-- SEED DATA DESTINASI WISATA (tourism_spots)
+INSERT INTO tourism_spots (title, category, description, image, badge, rating)
+VALUES
+(
+  'Puncak Samudera Awan Punjabu',
+  'Pemandangan Alam Sidrap',
+  'Menyaksikan fenomena laut awan putih mempesona di ketinggian 527 mdpl Dusun Jambu-jambu, Desa Buntu Buangin saat terbit matahari dengan panorama 360 derajat.',
+  'https://images.unsplash.com/photo-1506744038136-46273834b3fb?q=80&w=1200&auto=format&fit=crop',
+  'Terfavorit Sidrap',
+  4.9
+),
+(
+  'Camping Ground & Kebun Cengkih Buntu Buangin',
+  'Aktivitas Outdoor',
+  'Area perkemahan sejuk di antara lanskap kebun cengkih yang tertata rapi, dilengkapi fasilitas MCK, tempat ibadah, dan pengawasan Pokdarwis Punjabu.',
+  'https://images.unsplash.com/photo-1510312305653-8ed496efae75?q=80&w=1200&auto=format&fit=crop',
+  'Populer',
+  4.8
+),
+(
+  'Spot Swafoto Siluet Hati (Love Shape)',
+  'Spot Foto Ikonik',
+  'Spot panggung panoramik di puncak bukit yang membentuk siluet hati unik, menjadi favorit wisatawan untuk fotografi lanskap & pre-wedding.',
+  'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?q=80&w=1200&auto=format&fit=crop',
+  'Ikonik',
+  4.9
+),
+(
+  'Jalur Petualangan Off-Road (2.8 - 3 km)',
+  'Wisata Petualangan',
+  'Trek menantang sepanjang 3 km dari pusat desa menuju puncak bukit, favorit pecinta motor trail, jeep 4x4, serta penjelajah alam.',
+  'https://images.unsplash.com/photo-1448375240586-882707db888b?q=80&w=1200&auto=format&fit=crop',
+  'Off-Road Trail',
+  4.8
+);
+
+-- SEED DATA PRODUK UMKM (umkm_products)
+INSERT INTO umkm_products (name, price, price_unit, category, seller, description, image, badge)
+VALUES
+(
+  'Gula Tappo Khas Buntu Buangin (Pack 250g)',
+  20000,
+  'kemasan 250g',
+  'Camilan Tradisional',
+  'Kelompok UMKM Ibu Desa Buntu Buangin',
+  'Camilan manis-gurih otentik Buntu Buangin hasil perpaduan kelapa parut sangrai berkualitas dan nira gula merah aren murni pilihan.',
+  'https://images.unsplash.com/photo-1608686207856-001b95cf60ca?q=80&w=800&auto=format&fit=crop',
+  'Khas Ikonik'
+),
+(
+  'Kopi Punjabu Petik Merah - Roasted Beans (200g)',
+  35000,
+  'kemasan 200g',
+  'Olahan Kopi Lokal',
+  'Kelompok Tani Kopi Pegunungan Pitu Riase',
+  'Biji kopi pilihan olahan petik merah dari lereng Pegunungan Punjabu. Memiliki cita rasa fruity khas kopi dataran tinggi.',
+  'https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?q=80&w=800&auto=format&fit=crop',
+  'Biji Pilihan'
+),
+(
+  'Gula Merah Aren Murni Buntu Buangin (1 kg)',
+  25000,
+  'kemasan 1 kg',
+  'Hasil Perkebunan',
+  'Pengrajin Aren Dusun Jambu-jambu',
+  'Gula aren cetak tradisional dari nira pohon aren murni tanpa campuran bahan kimia, cocok untuk bumbu masak & pemanis kopi.',
+  'https://images.unsplash.com/photo-1581441363689-1f3c3c414635?q=80&w=800&auto=format&fit=crop',
+  '100% Organik'
+);
+
+-- SEED DATA ULASAN VISITOR (visitor_reviews)
+INSERT INTO visitor_reviews (name, origin, rating, date, comment, avatar, spot)
+VALUES
+(
+  'Andi Hermawan',
+  'Makassar',
+  5,
+  '25 Juli 2026',
+  'Pemandangan samudera awannya luar biasa indah! Udara sejuk dan fasilitas camping sangat memadai. Sangat direkomendasikan untuk liburan keluarga.',
+  'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?q=80&w=150&auto=format&fit=crop',
+  'Puncak Samudera Awan'
+),
+(
+  'Nur Hidayah',
+  'Parepare',
+  5,
+  '18 Juli 2026',
+  'Gula Tappo khas Buntu Buangin enak banget, kopi arennya juara pas dinikmati di saung lereng bukit saat terbit matahari.',
+  'https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=150&auto=format&fit=crop',
+  'Kedai Kopi Punjabu'
+),
+(
+  'Fajar Ramadhan',
+  'Sidrap',
+  5,
+  '10 Juli 2026',
+  'Jalur off-road menuju puncak sangat memacu adrenalin. Pengelola Pokdarwisnya juga sangat ramah dan membantu mendirikan tenda.',
+  'https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?q=80&w=150&auto=format&fit=crop',
+  'Camping Ground Punjabu'
+);
+

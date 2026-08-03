@@ -4,8 +4,14 @@ import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useApp } from '@/context/AppContext';
-import { TOURISM_SPOTS, UMKM_PRODUCTS, FAQS, VISITOR_REVIEWS, TRAVEL_ROUTES } from '@/data/initialData';
+import { FAQS, TRAVEL_ROUTES } from '@/data/initialData';
 import { NewsCard } from '@/components/NewsCard';
+import { ScrollReveal } from '@/components/ScrollReveal';
+import { WeatherWidget } from '@/components/WeatherWidget';
+import { GallerySection } from '@/components/GalleryLightbox';
+
+import { showToast } from '@/components/Toast';
+
 import {
   Compass,
   MapPin,
@@ -27,62 +33,18 @@ import {
   PhoneCall,
   ExternalLink,
   HelpCircle,
+  Search,
 } from 'lucide-react';
 
-/** Attach IntersectionObserver to trigger .visible on .reveal / .reveal-left / .reveal-right elements. */
-function useRevealOnScroll(newsLength: number) {
-  useEffect(() => {
-    let observer: IntersectionObserver | null = null;
-
-    const initObserver = () => {
-      const els = document.querySelectorAll('.reveal:not(.visible), .reveal-left:not(.visible), .reveal-right:not(.visible)');
-      if (!els.length) return;
-
-      observer = new IntersectionObserver(
-        (entries) => {
-          entries.forEach((entry) => {
-            if (entry.isIntersecting) {
-              entry.target.classList.add('visible');
-              if (observer) observer.unobserve(entry.target);
-            }
-          });
-        },
-        { threshold: 0.05, rootMargin: '0px 0px 50px 0px' }
-      );
-
-      els.forEach((el) => {
-        const rect = el.getBoundingClientRect();
-        if (rect.top < window.innerHeight + 100) {
-          el.classList.add('visible');
-        } else if (observer) {
-          observer.observe(el);
-        }
-      });
-    };
-
-    initObserver();
-    const t1 = setTimeout(initObserver, 100);
-    const t2 = setTimeout(() => {
-      document.querySelectorAll('.reveal, .reveal-left, .reveal-right').forEach((el) => {
-        el.classList.add('visible');
-      });
-    }, 500);
-
-    return () => {
-      clearTimeout(t1);
-      clearTimeout(t2);
-      if (observer) observer.disconnect();
-    };
-  }, [newsLength]);
-}
 
 export default function Home() {
-  const { newsList } = useApp();
-  const [activeMediaModal, setActiveMediaModal] = useState<string | null>(null);
+  const { newsList, tourismSpots, umkmProducts, reviews, openBookingModal } = useApp();
   const [openFaqId, setOpenFaqId] = useState<string | null>('f1');
+  const [umkmCategory, setUmkmCategory] = useState<string>('Semua');
+  const [umkmSearch, setUmkmSearch] = useState<string>('');
   const heroRef = useRef<HTMLDivElement>(null);
   const [heroParallax, setHeroParallax] = useState(0);
-  useRevealOnScroll(newsList.length);
+
 
   // Subtle parallax on hero bg
   useEffect(() => {
@@ -94,33 +56,11 @@ export default function Home() {
   const published = newsList.filter((n) => !n.status || n.status.toLowerCase() === 'published');
   const recentNews = (published.length > 0 ? published : newsList).slice(0, 3);
 
-  const galleryImages = [
-    {
-      url: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?q=80&w=1200&auto=format&fit=crop',
-      title: 'Sunrise Samudera Awan Sidrap',
-      desc: 'Pesona fajar menyingsing di atas hamparan awan putih perbukitan Pitu Riase.',
-    },
-    {
-      url: 'https://images.unsplash.com/photo-1510312305653-8ed496efae75?q=80&w=1200&auto=format&fit=crop',
-      title: 'Suasana Camping Buntu Buangin',
-      desc: 'Pengalaman berkemah sejuk ramah keluarga di lokasi Camping Ground Punjabu.',
-    },
-    {
-      url: 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?q=80&w=1200&auto=format&fit=crop',
-      title: 'Gardu Pandang Skywalk 360°',
-      desc: 'Sudut swafoto favorit wisatawan dengan panorama pegunungan Sidrap.',
-    },
-    {
-      url: 'https://images.unsplash.com/photo-1447933601403-0c6688de566e?q=80&w=1200&auto=format&fit=crop',
-      title: 'Kopi Khas Punjabu Sidrap',
-      desc: 'Cita rasa Kopi Robusta & Arabika hasil petik merah warga Desa Buntu Buangin.',
-    },
-  ];
-
-  const handleOrderUmkm = (productName: string, price: number) => {
-    const text = encodeURIComponent(`Halo UMKM Desa Buntu Buangin Sidrap! 👋\nSaya ingin memesan produk: *${productName}* (Rp ${price.toLocaleString('id-ID')}).\nMohon informasi pemesanan & ketersediaannya. Terima kasih!`);
-    window.open(`https://wa.me/6285255558910?text=${text}`, '_blank');
+  const handleOrderUmkm = (productName: string, price: number, seller?: string) => {
+    const message = `Halo ${seller || 'Pokdarwis Punjabu'}, saya ingin memesan produk UMKM *${productName}* (Rp ${price.toLocaleString('id-ID')}). Apakah stok produk masih tersedia?`;
+    window.open(`https://wa.me/6282291117360?text=${encodeURIComponent(message)}`, '_blank');
   };
+
 
   const noFocusStyle: React.CSSProperties = {
     outline: 'none',
@@ -134,8 +74,8 @@ export default function Home() {
       {/* ══════════════════════════════════════════════
           HERO SECTION (id="top")
       ══════════════════════════════════════════════ */}
-      <section className="relative min-h-[95vh] flex items-center justify-center overflow-hidden pt-20" ref={heroRef}>
-        {/* Parallax Background */}
+      <section id="top" className="relative min-h-[85vh] sm:min-h-[90vh] flex items-center justify-center overflow-hidden pt-20 pb-20" ref={heroRef}>
+        {/* Parallax Background & Ambient Light Orbs */}
         <div className="absolute inset-0 z-0 overflow-hidden">
           <Image
             src="https://images.unsplash.com/photo-1506744038136-46273834b3fb?q=80&w=1920&auto=format&fit=crop"
@@ -153,14 +93,19 @@ export default function Home() {
               backgroundSize: '40px 40px',
             }}
           />
+
+          {/* Glowing Ambient Light Orbs */}
+          <div className="absolute top-1/4 left-1/4 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-emerald-500/20 rounded-full blur-3xl pointer-events-none animate-orb-float" />
+          <div className="absolute bottom-10 right-1/4 w-80 h-80 bg-teal-500/15 rounded-full blur-3xl pointer-events-none animate-orb-float animate-delay-300" />
         </div>
 
         {/* Hero Content */}
-        <div className="relative z-10 max-w-5xl mx-auto px-4 text-center text-white space-y-8 py-16">
+        <div className="relative z-10 max-w-5xl mx-auto px-4 text-center text-white space-y-8 py-12">
           {/* Location Badge */}
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 text-xs sm:text-sm font-semibold backdrop-blur-md animate-fade-in animate-delay-100">
+            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
             <Sparkles className="w-4 h-4 text-emerald-400 animate-float" />
-            <span>Desa Buntu Buangin, Kec. Pitu Riase, Kab. Sidrap • 850 mdpl</span>
+            <span>Desa Buntu Buangin, Kec. Pitu Riase, Kab. Sidrap • 527 mdpl</span>
           </div>
 
           <h1 className="text-4xl sm:text-6xl lg:text-7xl font-extrabold tracking-tight leading-tight sm:leading-none animate-fade-in animate-delay-200">
@@ -171,7 +116,7 @@ export default function Home() {
           </h1>
 
           <p className="max-w-3xl mx-auto text-base sm:text-xl text-zinc-300 font-normal leading-relaxed animate-fade-in animate-delay-300">
-            Portal informasi, reservasi tiket &amp; media resmi Wisata Bukit Punjabu, Desa Buntu Buangin, Kecamatan Pitu Riase, Kabupaten Sidenreng Rappang (Sidrap), Sulawesi Selatan.
+            Portal informasi, reservasi tiket &amp; media resmi Wisata Bukit Punjabu (Puncak Jambu-Jambu), Desa Buntu Buangin, Kecamatan Pitu Riase, Kabupaten Sidenreng Rappang (Sidrap), Sulawesi Selatan.
           </p>
 
           {/* Action Buttons */}
@@ -179,7 +124,7 @@ export default function Home() {
             <a
               href="#wisata"
               style={{ outline: 'none' }}
-              className="w-full sm:w-auto px-8 py-4 bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white font-bold rounded-2xl shadow-xl shadow-emerald-600/40 transition-all duration-300 hover:scale-105 flex items-center justify-center gap-2 text-base cursor-pointer"
+              className="w-full sm:w-auto px-8 py-4 bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white font-bold rounded-2xl shadow-xl shadow-emerald-600/40 transition-all duration-300 hover:scale-105 flex items-center justify-center gap-2 text-base cursor-pointer hover:shadow-emerald-500/50"
             >
               <Compass className="w-5 h-5 text-emerald-200" />
               Jelajahi Wisata Punjabu
@@ -195,16 +140,16 @@ export default function Home() {
           </div>
 
           {/* Stats Bar Real Sidrap Data */}
-          <div className="pt-10 grid grid-cols-2 md:grid-cols-4 gap-4 max-w-4xl mx-auto animate-fade-in animate-delay-500">
+          <div className="pt-8 grid grid-cols-2 md:grid-cols-4 gap-4 max-w-4xl mx-auto animate-fade-in animate-delay-500">
             {[
-              { val: '850 m', label: 'Ketinggian mdpl', color: 'text-emerald-400' },
+              { val: '527 m', label: 'Ketinggian mdpl', color: 'text-emerald-400' },
               { val: '4.9 ★', label: 'Rating Wisatawan', color: 'text-amber-400' },
-              { val: '18.4K+', label: 'Pengunjung / Tahun', color: 'text-teal-400' },
-              { val: 'Pokdarwis', label: 'Desa Buntu Buangin', color: 'text-emerald-400' },
+              { val: '300 Besar', label: 'ADWI Kemenparekraf', color: 'text-teal-400' },
+              { val: 'Juara 2', label: 'LPDWN Kemendes', color: 'text-emerald-400' },
             ].map((stat) => (
               <div
                 key={stat.label}
-                className="p-4 rounded-2xl bg-zinc-950/60 border border-zinc-800/70 backdrop-blur-md text-center hover:border-emerald-500/40 hover:bg-zinc-900/80 transition-all duration-300 group"
+                className="glow-card p-4 rounded-2xl bg-zinc-950/60 border border-zinc-800/70 backdrop-blur-md text-center hover:border-emerald-500/50 hover:bg-zinc-900/90 transition-all duration-300 group"
               >
                 <p className={`text-xl sm:text-2xl font-extrabold ${stat.color} group-hover:scale-105 transition-transform duration-300 inline-block`}>
                   {stat.val}
@@ -216,19 +161,30 @@ export default function Home() {
         </div>
 
         {/* Scroll indicator */}
-        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-10 flex flex-col items-center gap-2 animate-float">
-          <span className="text-xs text-zinc-400 tracking-widest uppercase">Scroll</span>
-          <div className="w-5 h-8 rounded-full border-2 border-zinc-400/60 flex items-start justify-center p-1">
-            <div className="w-1 h-2 bg-emerald-400 rounded-full animate-bounce" />
+        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-10 flex flex-col items-center gap-1.5 animate-float opacity-80">
+          <span className="text-[10px] text-zinc-400 tracking-widest uppercase font-semibold">Scroll</span>
+          <div className="w-4 h-7 rounded-full border-2 border-zinc-400/60 flex items-start justify-center p-1">
+            <div className="w-1 h-1.5 bg-emerald-400 rounded-full animate-bounce" />
           </div>
         </div>
       </section>
 
       {/* ══════════════════════════════════════════════
+          PRAKIRAAN CUACA & AWAN (527 mdpl)
+      ══════════════════════════════════════════════ */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-10 sm:-mt-14 relative z-20">
+        <ScrollReveal>
+          <WeatherWidget />
+        </ScrollReveal>
+      </section>
+
+
+
+      {/* ══════════════════════════════════════════════
           1. PESONA WISATA (id="wisata")
       ══════════════════════════════════════════════ */}
       <section id="wisata" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-14 scroll-mt-24">
-        <div className="text-center space-y-4 max-w-3xl mx-auto reveal">
+        <ScrollReveal className="text-center space-y-4 max-w-3xl mx-auto">
           <h2 className="text-xs font-bold uppercase tracking-widest text-emerald-600 dark:text-emerald-400">
             Daya Tarik Unggulan Sidrap
           </h2>
@@ -238,14 +194,14 @@ export default function Home() {
           <p className="text-zinc-600 dark:text-zinc-400 text-base">
             Objek wisata alam unggulan Desa Buntu Buangin, Kecamatan Pitu Riase, Kabupaten Sidrap yang menyuguhkan samudera awan, gardu pandang, dan camping ground ramah keluarga.
           </p>
-        </div>
+        </ScrollReveal>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {TOURISM_SPOTS.map((spot, i) => (
-            <div
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          {tourismSpots.map((spot, i) => (
+            <ScrollReveal
               key={spot.id}
-              className={`reveal group rounded-3xl bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800 shadow-md hover:shadow-2xl hover-lift transition-all duration-500 overflow-hidden flex flex-col`}
-              style={{ animationDelay: `${i * 0.08}s` }}
+              delay={i * 0.08}
+              className="group rounded-3xl bg-gradient-to-br from-emerald-50/80 via-white to-teal-50/60 dark:from-zinc-900 dark:via-zinc-900 dark:to-zinc-950 border border-zinc-200 dark:border-zinc-800 shadow-md hover:shadow-2xl hover-lift hover:border-emerald-500/50 transition-all duration-500 overflow-hidden flex flex-col"
             >
               <div className="relative h-60 overflow-hidden">
                 <Image
@@ -265,24 +221,24 @@ export default function Home() {
               </div>
               <div className="p-6 flex-1 flex flex-col justify-between space-y-4">
                 <div>
-                  <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400">
+                  <span className="text-xs font-bold text-emerald-700 dark:text-emerald-400">
                     {spot.category}
                   </span>
-                  <h3 className="text-xl font-bold text-zinc-900 dark:text-white mt-1 group-hover:text-emerald-500 transition-colors duration-300">
+                  <h3 className="text-xl font-bold text-zinc-900 dark:text-white mt-1 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors duration-300">
                     {spot.title}
                   </h3>
-                  <p className="text-zinc-600 dark:text-zinc-400 text-sm mt-2 leading-relaxed">
+                  <p className="text-zinc-700 dark:text-zinc-300 text-sm mt-2 leading-relaxed font-medium">
                     {spot.description}
                   </p>
                 </div>
-                <div className="pt-4 border-t border-zinc-100 dark:border-zinc-800/80 flex items-center justify-between text-xs font-medium text-zinc-500 dark:text-zinc-400">
+                <div className="pt-4 border-t border-zinc-200/80 dark:border-zinc-800/80 flex items-center justify-between text-xs font-semibold text-zinc-600 dark:text-zinc-400">
                   <span className="flex items-center gap-1">
-                    <MapPin className="w-3.5 h-3.5 text-emerald-500" /> Pitu Riase, Sidrap
+                    <MapPin className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-500" /> Pitu Riase, Sidrap
                   </span>
-                  <span className="text-emerald-600 dark:text-emerald-400 font-bold">Buka Setiap Hari</span>
+                  <span className="text-emerald-700 dark:text-emerald-400 font-extrabold">Buka Setiap Hari</span>
                 </div>
               </div>
-            </div>
+            </ScrollReveal>
           ))}
         </div>
       </section>
@@ -290,8 +246,8 @@ export default function Home() {
       {/* ══════════════════════════════════════════════
           2. PRODUK UMKM LOKAL (id="umkm")
       ══════════════════════════════════════════════ */}
-      <section id="umkm" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-14 scroll-mt-24">
-        <div className="text-center space-y-4 max-w-3xl mx-auto reveal">
+      <section id="umkm" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10 scroll-mt-24">
+        <ScrollReveal className="text-center space-y-4 max-w-3xl mx-auto">
           <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-xs font-bold">
             <ShoppingBag className="w-4 h-4" />
             <span>Ekonomi &amp; Produk Desa Buntu Buangin</span>
@@ -300,72 +256,130 @@ export default function Home() {
             Katalog Oleh-Oleh Khas Sidrap
           </h2>
           <p className="text-zinc-600 dark:text-zinc-400 text-base">
-            Dukung perekonomian warga lokal Desa Buntu Buangin dengan membeli olahan kopi organik, madu murni hutan, dan produk buatan tangan petani Sidrap.
+            Dukung perekonomian warga lokal Desa Buntu Buangin dengan membeli camilan tradisional Gula Tappo, Gula Merah Aren Murni, dan Kopi Punjabu petik merah hasil karya masyarakat Dusun Jambu-jambu.
           </p>
-        </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {UMKM_PRODUCTS.map((prod, i) => (
-            <div
-              key={prod.id}
-              className="reveal rounded-3xl bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800 shadow-md hover:shadow-xl hover-lift transition-all duration-300 overflow-hidden flex flex-col justify-between"
-              style={{ animationDelay: `${i * 0.1}s` }}
-            >
-              <div>
-                <div className="relative h-48 overflow-hidden">
-                  <Image
-                    src={prod.image}
-                    alt={prod.name}
-                    fill
-                    sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
-                    className="object-cover group-hover:scale-105 transition-transform duration-500"
-                  />
-                  {prod.badge && (
-                    <span className="absolute top-3 left-3 bg-emerald-600 text-white text-[11px] font-bold px-2.5 py-1 rounded-full shadow">
-                      {prod.badge}
-                    </span>
-                  )}
-                </div>
-                <div className="p-5 space-y-2">
-                  <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
-                    {prod.category}
-                  </span>
-                  <h3 className="text-base font-bold text-zinc-900 dark:text-white leading-snug">
-                    {prod.name}
-                  </h3>
-                  <p className="text-xs text-zinc-500 dark:text-zinc-400 leading-relaxed line-clamp-3">
-                    {prod.description}
-                  </p>
-                </div>
-              </div>
-
-              <div className="p-5 pt-0 space-y-3">
-                <div className="flex items-baseline justify-between border-t border-zinc-100 dark:border-zinc-800/80 pt-3">
-                  <span className="text-xs text-zinc-400">Harga:</span>
-                  <span className="text-lg font-extrabold text-emerald-600 dark:text-emerald-400">
-                    Rp {prod.price.toLocaleString('id-ID')}
-                  </span>
-                </div>
+          {/* Interactive Search Bar & Filters */}
+          <div className="pt-4 flex flex-col sm:flex-row items-center justify-center gap-3">
+            <div className="relative w-full sm:w-80">
+              <Search className="w-4 h-4 text-zinc-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+              <input
+                type="text"
+                placeholder="Cari Gula Tappo, Kopi..."
+                value={umkmSearch}
+                onChange={(e) => setUmkmSearch(e.target.value)}
+                className="w-full pl-10 pr-4 py-2.5 rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-xs sm:text-sm text-zinc-900 dark:text-white placeholder:text-zinc-400 focus:border-emerald-500 transition shadow-xs"
+              />
+              {umkmSearch && (
                 <button
-                  onClick={() => handleOrderUmkm(prod.name, prod.price)}
-                  style={noFocusStyle}
-                  className="w-full py-2.5 bg-emerald-600/90 hover:bg-emerald-500 active:scale-95 text-white font-bold text-xs rounded-xl shadow transition flex items-center justify-center gap-1.5 cursor-pointer"
+                  onClick={() => setUmkmSearch('')}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-200 text-xs font-bold"
                 >
-                  <PhoneCall className="w-3.5 h-3.5" />
-                  Pesan via WA UMKM
+                  ✕
                 </button>
-              </div>
+              )}
             </div>
-          ))}
-        </div>
+
+            <div className="flex flex-wrap items-center justify-center gap-1.5">
+              {['Semua', 'Gula Tappo', 'Kopi', 'Camilan'].map((cat) => (
+                <button
+                  key={cat}
+                  onClick={() => setUmkmCategory(cat)}
+                  className={`px-3.5 py-2 rounded-xl text-xs font-bold transition cursor-pointer ${
+                    umkmCategory === cat
+                      ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/30'
+                      : 'bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800'
+                  }`}
+                >
+                  {cat}
+                </button>
+              ))}
+            </div>
+          </div>
+        </ScrollReveal>
+
+        {/* Product Cards */}
+        {(() => {
+          const filteredUmkm = umkmProducts.filter((prod) => {
+            const matchesCat = umkmCategory === 'Semua' || prod.category.toLowerCase().includes(umkmCategory.toLowerCase()) || prod.name.toLowerCase().includes(umkmCategory.toLowerCase());
+            const matchesSearch = !umkmSearch || prod.name.toLowerCase().includes(umkmSearch.toLowerCase()) || prod.description.toLowerCase().includes(umkmSearch.toLowerCase());
+            return matchesCat && matchesSearch;
+          });
+
+          if (filteredUmkm.length === 0) {
+            return (
+              <div className="text-center py-12 text-zinc-500 dark:text-zinc-400 text-sm">
+                Produk tidak ditemukan. Coba kata kunci lain atau pilih kategori &quot;Semua&quot;.
+              </div>
+            );
+          }
+
+          return (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              {filteredUmkm.map((prod, i) => (
+                <ScrollReveal
+                  key={prod.id}
+                  delay={i * 0.1}
+                  className="rounded-3xl bg-gradient-to-br from-emerald-50/70 via-white to-zinc-50 dark:from-zinc-900 dark:via-zinc-900 dark:to-zinc-950 border border-zinc-200 dark:border-zinc-800 shadow-md hover:shadow-xl hover-lift hover:border-emerald-500/40 transition-all duration-300 overflow-hidden flex flex-col justify-between"
+                >
+                  <div>
+                    <div className="relative h-48 overflow-hidden">
+                      <Image
+                        src={prod.image}
+                        alt={prod.name}
+                        fill
+                        sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+                        className="object-cover group-hover:scale-105 transition-transform duration-500"
+                      />
+                      {prod.badge && (
+                        <span className="absolute top-3 left-3 bg-emerald-600 text-white text-[11px] font-bold px-2.5 py-1 rounded-full shadow">
+                          {prod.badge}
+                        </span>
+                      )}
+                    </div>
+                    <div className="p-5 space-y-2">
+                      <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-400">
+                        {prod.category}
+                      </span>
+                      <h3 className="text-base font-bold text-zinc-900 dark:text-white leading-snug">
+                        {prod.name}
+                      </h3>
+                      <p className="text-xs text-zinc-600 dark:text-zinc-400 font-medium leading-relaxed line-clamp-3">
+                        {prod.description}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="p-5 pt-0 space-y-3">
+                    <div className="flex items-baseline justify-between border-t border-zinc-200/80 dark:border-zinc-800/80 pt-3">
+                      <span className="text-xs text-zinc-600 dark:text-zinc-400 font-medium">Harga:</span>
+                      <span className="text-lg font-extrabold text-emerald-700 dark:text-emerald-400">
+                        Rp {prod.price.toLocaleString('id-ID')}
+                      </span>
+                    </div>
+                    <button
+                      onClick={() => handleOrderUmkm(prod.name, prod.price, prod.seller)}
+                      style={noFocusStyle}
+                      className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white font-bold text-xs rounded-xl shadow transition flex items-center justify-center gap-1.5 cursor-pointer"
+                    >
+                      <PhoneCall className="w-3.5 h-3.5" />
+                      Pesan via WA UMKM
+                    </button>
+                  </div>
+                </ScrollReveal>
+              ))}
+            </div>
+          );
+        })()}
       </section>
+
 
       {/* ══════════════════════════════════════════════
           3. PORTAL BERITA DESA (id="berita")
       ══════════════════════════════════════════════ */}
       <section id="berita" className="bg-zinc-100/80 dark:bg-zinc-900/40 py-24 border-y border-zinc-200/80 dark:border-zinc-800/60 scroll-mt-24">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-14">
-          <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 reveal">
+          <ScrollReveal className="flex flex-col md:flex-row md:items-end justify-between gap-6">
             <div className="space-y-3">
               <span className="text-xs font-bold uppercase tracking-widest text-emerald-600 dark:text-emerald-400">
                 Portal Berita Desa Buntu Buangin
@@ -385,17 +399,17 @@ export default function Home() {
               Lihat Semua Berita
               <ArrowRight className="w-4 h-4" />
             </Link>
-          </div>
+          </ScrollReveal>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {recentNews.map((article, i) => (
-              <div
+              <ScrollReveal
                 key={article.id}
-                className="reveal h-full"
-                style={{ transitionDelay: `${i * 0.12}s` }}
+                delay={i * 0.12}
+                className="h-full"
               >
                 <NewsCard article={article} />
-              </div>
+              </ScrollReveal>
             ))}
           </div>
         </div>
@@ -405,7 +419,7 @@ export default function Home() {
           4. TIKET & LOKASI (id="informasi")
       ══════════════════════════════════════════════ */}
       <section id="informasi" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 lg:grid-cols-12 gap-14 items-center scroll-mt-24">
-        <div className="lg:col-span-6 space-y-7 reveal-left">
+        <ScrollReveal variant="left" className="lg:col-span-6 space-y-7">
           <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-500/10 dark:bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 text-xs font-bold">
             <Ticket className="w-4 h-4" />
             <span>Retribusi Resmi Pokdarwis Punjabu</span>
@@ -419,24 +433,17 @@ export default function Home() {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
             {[
-              { label: 'Tiket Masuk Reguler', price: 'Rp 10.000', sub: '/ orang', desc: 'Termasuk akses gardu pandang & spot foto.', color: 'text-emerald-600 dark:text-emerald-400' },
-              { label: 'Tiket Camping Night',  price: 'Rp 20.000', sub: '/ orang', desc: 'Termasuk area tenda, MCK malam & penerangan.', color: 'text-amber-500' },
+              { label: 'Tiket Masuk Reguler', price: 'Rp 10.000', sub: '/ orang', desc: 'Termasuk akses gardu pandang & spot foto.', color: 'text-emerald-700 dark:text-emerald-400' },
+              { label: 'Tiket Camping Night',  price: 'Rp 20.000', sub: '/ orang', desc: 'Termasuk area tenda, MCK malam & penerangan.', color: 'text-amber-600 dark:text-amber-400' },
             ].map((t) => (
-              <div key={t.label} className="p-5 rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-md hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
-                <span className="text-xs font-semibold text-zinc-500 dark:text-zinc-400">{t.label}</span>
+              <div key={t.label} className="p-5 rounded-2xl bg-gradient-to-br from-emerald-50/80 via-white to-teal-50/60 dark:from-zinc-900 dark:via-zinc-900 dark:to-zinc-950 border border-zinc-200 dark:border-zinc-800 shadow-md hover:shadow-lg hover:-translate-y-1 hover:border-emerald-500/40 transition-all duration-300">
+                <span className="text-xs font-bold text-zinc-700 dark:text-zinc-300">{t.label}</span>
                 <p className={`text-2xl font-extrabold ${t.color} mt-1`}>
-                  {t.price} <span className="text-xs font-normal text-zinc-400">{t.sub}</span>
+                  {t.price} <span className="text-xs font-normal text-zinc-500 dark:text-zinc-400">{t.sub}</span>
                 </p>
-                <p className="text-[11px] text-zinc-400 mt-2">{t.desc}</p>
+                <p className="text-[11px] text-zinc-600 dark:text-zinc-400 mt-2 font-medium">{t.desc}</p>
               </div>
             ))}
-          </div>
-
-          <div className="pt-2">
-            <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-700 dark:text-amber-300 text-xs font-semibold flex items-center gap-2">
-              <Ticket className="w-4 h-4 shrink-0 text-amber-500" />
-              <span>Layanan Reservasi Tiket Online Ditutup Sementara oleh Pengelola Wisata Punjabu.</span>
-            </div>
           </div>
 
           <div className="space-y-3 pt-4 border-t border-zinc-200 dark:border-zinc-800">
@@ -446,47 +453,47 @@ export default function Home() {
               { bold: 'Akses Camping Ground:', text: '24 Jam dengan izin petugas Pokdarwis Punjabu' },
               { bold: 'Tarif Parkir:', text: 'Motor Rp 3.000 | Mobil Rp 5.000' },
             ].map((item) => (
-              <div key={item.bold} className="flex items-center gap-3 text-sm text-zinc-700 dark:text-zinc-300">
-                <CheckCircle2 className="w-5 h-5 text-emerald-500 shrink-0" />
-                <span><strong>{item.bold}</strong> {item.text}</span>
+              <div key={item.bold} className="flex items-center gap-3 text-sm text-zinc-800 dark:text-zinc-200 font-medium">
+                <CheckCircle2 className="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                <span><strong className="font-bold text-zinc-900 dark:text-white">{item.bold}</strong> {item.text}</span>
               </div>
             ))}
           </div>
-        </div>
+        </ScrollReveal>
 
-        <div className="lg:col-span-6 bg-gradient-to-br from-emerald-900/50 via-zinc-900 to-zinc-950 p-8 rounded-3xl border border-emerald-500/30 text-white shadow-2xl space-y-6 reveal-right hover:border-emerald-500/50 transition-colors duration-500">
-          <h3 className="text-2xl font-bold flex items-center gap-2">
-            <ShieldCheck className="w-6 h-6 text-emerald-400" />
+        <ScrollReveal variant="right" className="lg:col-span-6 bg-gradient-to-br from-emerald-100/90 via-white to-teal-100/80 dark:from-emerald-950/80 dark:via-zinc-900 dark:to-zinc-950 p-8 rounded-3xl border border-emerald-500/40 text-zinc-900 dark:text-white shadow-2xl space-y-6 hover:border-emerald-500/60 transition-colors duration-500">
+          <h3 className="text-2xl font-bold flex items-center gap-2 text-zinc-900 dark:text-white">
+            <ShieldCheck className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
             Fasilitas Pengunjung Bukit Punjabu
           </h3>
-          <p className="text-sm text-zinc-300 leading-relaxed">
+          <p className="text-sm text-zinc-700 dark:text-zinc-300 leading-relaxed font-medium">
             Pokdarwis Desa Buntu Buangin menyediakan fasilitas penunjang kenyamanan para wisatawan di puncak bukit:
           </p>
 
           <div className="grid grid-cols-2 gap-4 text-xs font-semibold">
             {[
-              { icon: <Coffee className="w-5 h-5 text-amber-400" />, label: 'Kedai Kopi Punjabu Sidrap' },
-              { icon: <Tent className="w-5 h-5 text-emerald-400" />, label: 'Sewa Tenda & Alat Camping' },
-              { icon: <Users className="w-5 h-5 text-teal-400" />, label: 'Fasilitas MCK & Sumber Air' },
-              { icon: <Zap className="w-5 h-5 text-yellow-400" />, label: 'Spot Charger & Gazebo Santai' },
+              { icon: <Coffee className="w-5 h-5 text-amber-600 dark:text-amber-400" />, label: 'Kedai Kopi Punjabu Sidrap' },
+              { icon: <Tent className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />, label: 'Sewa Tenda & Alat Camping' },
+              { icon: <Users className="w-5 h-5 text-teal-600 dark:text-teal-400" />, label: 'Fasilitas MCK & Sumber Air' },
+              { icon: <Zap className="w-5 h-5 text-amber-500 dark:text-yellow-400" />, label: 'Spot Charger & Gazebo Santai' },
             ].map((f) => (
               <div
                 key={f.label}
-                className="p-4 rounded-xl bg-zinc-900/80 border border-zinc-800 hover:border-emerald-500/30 hover:bg-zinc-800/60 flex items-center gap-3 transition-all duration-300 hover:-translate-y-0.5 cursor-default"
+                className="p-4 rounded-xl bg-white/90 dark:bg-zinc-900/80 border border-emerald-500/20 dark:border-zinc-800 hover:border-emerald-500/40 text-zinc-900 dark:text-white flex items-center gap-3 transition-all duration-300 hover:-translate-y-0.5 cursor-default shadow-xs"
               >
                 {f.icon}
-                <span>{f.label}</span>
+                <span className="font-bold">{f.label}</span>
               </div>
             ))}
           </div>
-        </div>
+        </ScrollReveal>
       </section>
 
       {/* ══════════════════════════════════════════════
           5. PANDUAN RUTE & AKSES (id="rute")
       ══════════════════════════════════════════════ */}
       <section id="rute" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12 scroll-mt-24">
-        <div className="text-center space-y-4 max-w-3xl mx-auto reveal">
+        <ScrollReveal className="text-center space-y-4 max-w-3xl mx-auto">
           <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-xs font-bold">
             <Navigation className="w-4 h-4" />
             <span>Petunjuk Akses Perjalanan</span>
@@ -497,38 +504,38 @@ export default function Home() {
           <p className="text-zinc-600 dark:text-zinc-400 text-base">
             Informasi estimasi waktu dan kondisi jalan dari kota-kota utama Sulawesi Selatan menuju Desa Buntu Buangin, Kecamatan Pitu Riase.
           </p>
-        </div>
+        </ScrollReveal>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {TRAVEL_ROUTES.map((route, i) => (
-            <div
+            <ScrollReveal
               key={route.from}
-              className="reveal p-6 rounded-3xl bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800 shadow-md hover:shadow-xl hover-lift transition-all duration-300 space-y-4"
-              style={{ animationDelay: `${i * 0.1}s` }}
+              delay={i * 0.1}
+              className="p-6 rounded-3xl bg-gradient-to-br from-emerald-50/80 via-white to-teal-50/60 dark:from-zinc-900 dark:via-zinc-900 dark:to-zinc-950 border border-zinc-200 dark:border-zinc-800 shadow-md hover:shadow-xl hover-lift hover:border-emerald-500/40 transition-all duration-300 space-y-4"
             >
               <div className="flex items-center justify-between">
-                <span className="text-xs font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
+                <span className="text-xs font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-400">
                   Dari {route.from}
                 </span>
-                <MapPin className="w-4 h-4 text-emerald-500" />
+                <MapPin className="w-4 h-4 text-emerald-600 dark:text-emerald-500" />
               </div>
 
               <div className="flex items-baseline gap-3">
                 <span className="text-2xl font-extrabold text-zinc-900 dark:text-white">{route.distance}</span>
-                <span className="text-sm font-semibold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+                <span className="text-sm font-semibold text-emerald-700 dark:text-emerald-400 flex items-center gap-1">
                   <Clock className="w-3.5 h-3.5" /> {route.duration}
                 </span>
               </div>
 
-              <div className="space-y-2 text-xs text-zinc-600 dark:text-zinc-400 border-t border-zinc-100 dark:border-zinc-800 pt-3">
-                <p><strong>Kondisi Jalan:</strong> {route.roadCondition}</p>
-                <p><strong>Rekomendasi:</strong> {route.vehicleAdvice}</p>
+              <div className="space-y-2 text-xs text-zinc-700 dark:text-zinc-300 font-medium border-t border-zinc-200/80 dark:border-zinc-800 pt-3">
+                <p><strong className="font-bold text-zinc-900 dark:text-white">Kondisi Jalan:</strong> {route.roadCondition}</p>
+                <p><strong className="font-bold text-zinc-900 dark:text-white">Rekomendasi:</strong> {route.vehicleAdvice}</p>
               </div>
-            </div>
+            </ScrollReveal>
           ))}
         </div>
 
-        <div className="text-center reveal">
+        <ScrollReveal className="text-center">
           <a
             href="https://maps.google.com/?q=Bukit+Punjabu+Desa+Buntu+Buangin+Sidrap"
             target="_blank"
@@ -540,110 +547,57 @@ export default function Home() {
             Buka Navigasi Google Maps Langsung
             <ExternalLink className="w-4 h-4" />
           </a>
-        </div>
+        </ScrollReveal>
       </section>
 
       {/* ══════════════════════════════════════════════
-          6. GALERI FOTO (id="galeri")
+          6. GALERI FOTO (id="galeri") - Interactive Component
       ══════════════════════════════════════════════ */}
-      <section id="galeri" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10 scroll-mt-24">
-        <div className="text-center space-y-3 reveal">
-          <span className="text-xs font-bold uppercase tracking-widest text-emerald-600 dark:text-emerald-400">
-            Galeri Keindahan Sidrap
-          </span>
-          <h2 className="text-3xl sm:text-4xl font-extrabold text-zinc-900 dark:text-white">
-            Dokumentasi Bukit Punjabu Sidrap
-          </h2>
-          <p className="text-zinc-600 dark:text-zinc-400 text-sm max-w-xl mx-auto">
-            Potret keindahan panorama pesona alam Desa Buntu Buangin Kecamatan Pitu Riase Kabupaten Sidrap.
-          </p>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {galleryImages.map((img, idx) => (
-            <div
-              key={idx}
-              onClick={() => setActiveMediaModal(img.url)}
-              style={{ transitionDelay: `${idx * 0.08}s` }}
-              className="reveal group relative h-64 rounded-2xl overflow-hidden cursor-pointer shadow-md hover:shadow-2xl hover-lift"
-            >
-              <Image
-                src={img.url}
-                alt={img.title}
-                fill
-                sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
-                className="object-cover group-hover:scale-110 transition-transform duration-600 ease-out brightness-90 group-hover:brightness-105"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-350 flex flex-col justify-end p-4 text-white z-10">
-                <span className="font-bold text-sm translate-y-2 group-hover:translate-y-0 transition-transform duration-350">{img.title}</span>
-                <span className="text-xs text-zinc-300 opacity-0 group-hover:opacity-100 transition-opacity duration-500 delay-100">{img.desc}</span>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {/* Lightbox */}
-        {activeMediaModal && (
-          <div
-            onClick={() => setActiveMediaModal(null)}
-            className="fixed inset-0 z-50 bg-black/95 flex items-center justify-center p-4 cursor-pointer animate-scale-in"
-          >
-            <div className="relative max-w-5xl w-full h-[85vh]">
-              <Image
-                src={activeMediaModal}
-                alt="Preview"
-                fill
-                className="rounded-3xl object-contain shadow-2xl"
-              />
-              <p className="absolute bottom-2 left-0 right-0 text-center text-zinc-400 text-xs tracking-wider z-10">Klik di mana saja untuk menutup</p>
-            </div>
-          </div>
-        )}
-      </section>
+      <GallerySection />
 
       {/* ══════════════════════════════════════════════
           7. ULASAN WISATAWAN
       ══════════════════════════════════════════════ */}
       <section className="bg-zinc-100/60 dark:bg-zinc-900/40 py-20 border-y border-zinc-200/80 dark:border-zinc-800/60">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
-          <div className="text-center space-y-3 reveal">
-            <span className="text-xs font-bold uppercase tracking-widest text-emerald-600 dark:text-emerald-400">
+          <ScrollReveal className="text-center space-y-3">
+            <span className="text-xs font-bold uppercase tracking-widest text-emerald-700 dark:text-emerald-400">
               Kesan &amp; Pengalaman Pengunjung
             </span>
             <h2 className="text-3xl sm:text-4xl font-extrabold text-zinc-900 dark:text-white">
               Ulasan Asli Wisatawan
             </h2>
-          </div>
+          </ScrollReveal>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {VISITOR_REVIEWS.map((rev, i) => (
-              <div
+            {reviews.map((rev, i) => (
+              <ScrollReveal
                 key={rev.id}
-                className="reveal p-6 rounded-3xl bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800 shadow-md space-y-4 flex flex-col justify-between"
-                style={{ animationDelay: `${i * 0.1}s` }}
+                delay={i * 0.1}
+                className="p-6 rounded-3xl bg-gradient-to-br from-emerald-50/70 via-white to-zinc-50 dark:from-zinc-900 dark:via-zinc-900 dark:to-zinc-950 border border-zinc-200 dark:border-zinc-800 shadow-md space-y-4 flex flex-col justify-between hover:border-emerald-500/30 transition-all duration-300"
               >
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-1 text-amber-400 text-sm">
+                    <div className="flex items-center gap-1 text-amber-500 text-sm">
                       {[...Array(rev.rating)].map((_, idx) => (
                         <Star key={idx} className="w-4 h-4 fill-amber-400 text-amber-400" />
                       ))}
                     </div>
-                    <Quote className="w-6 h-6 text-emerald-500/30" />
+                    <Quote className="w-6 h-6 text-emerald-600/30 dark:text-emerald-500/30" />
                   </div>
-                  <p className="text-xs sm:text-sm text-zinc-600 dark:text-zinc-300 italic leading-relaxed">
+                  <p className="text-xs sm:text-sm text-zinc-700 dark:text-zinc-300 italic leading-relaxed font-medium">
                     &ldquo;{rev.comment}&rdquo;
                   </p>
                 </div>
 
-                <div className="flex items-center gap-3 pt-3 border-t border-zinc-100 dark:border-zinc-800">
+                <div className="flex items-center gap-3 pt-3 border-t border-zinc-200/80 dark:border-zinc-800">
                   <Image src={rev.avatar} alt={rev.name} width={40} height={40} unoptimized className="w-10 h-10 rounded-full object-cover" />
                   <div>
                     <h4 className="text-sm font-bold text-zinc-900 dark:text-white">{rev.name}</h4>
-                    <p className="text-[11px] text-zinc-400">{rev.origin} • {rev.spot}</p>
+                    <p className="text-[11px] text-zinc-600 dark:text-zinc-400 font-medium">{rev.origin} • {rev.spot}</p>
                   </div>
                 </div>
-              </div>
+              </ScrollReveal>
             ))}
           </div>
         </div>
@@ -653,46 +607,48 @@ export default function Home() {
           8. PERTANYAAN UMUM / FAQ (id="faq")
       ══════════════════════════════════════════════ */}
       <section id="faq" className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10 scroll-mt-24">
-        <div className="text-center space-y-3 reveal">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-xs font-bold">
+        <ScrollReveal className="text-center space-y-3">
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 text-xs font-bold">
             <HelpCircle className="w-4 h-4" />
             <span>Pertanyaan Sering Diajukan</span>
           </div>
           <h2 className="text-3xl sm:text-4xl font-extrabold text-zinc-900 dark:text-white">
             FAQ Wisata Bukit Punjabu Sidrap
           </h2>
-          <p className="text-zinc-600 dark:text-zinc-400 text-sm">
+          <p className="text-zinc-600 dark:text-zinc-400 text-sm font-medium">
             Temukan jawaban lengkap atas hal-hal yang sering ditanyakan para calon pengunjung.
           </p>
-        </div>
+        </ScrollReveal>
 
-        <div className="space-y-4 reveal">
+        <ScrollReveal className="space-y-4">
           {FAQS.map((faq) => {
             const isOpen = openFaqId === faq.id;
             return (
               <div
                 key={faq.id}
-                className="rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800 overflow-hidden shadow-sm transition"
+                className="rounded-2xl bg-gradient-to-r from-emerald-50/60 via-white to-teal-50/40 dark:from-zinc-900 dark:via-zinc-900 dark:to-zinc-900 border border-zinc-200 dark:border-zinc-800 overflow-hidden shadow-xs transition hover:border-emerald-500/40"
               >
                 <button
                   onClick={() => setOpenFaqId(isOpen ? null : faq.id)}
                   style={noFocusStyle}
-                  className="w-full px-6 py-4 text-left flex items-center justify-between gap-4 font-bold text-sm sm:text-base text-zinc-900 dark:text-white hover:text-emerald-500 transition cursor-pointer"
+                  className="w-full px-6 py-4 text-left flex items-center justify-between gap-4 font-bold text-sm sm:text-base text-zinc-900 dark:text-white hover:text-emerald-600 dark:hover:text-emerald-400 transition cursor-pointer"
                 >
                   <span>{faq.question}</span>
-                  <ChevronDown className={`w-5 h-5 text-emerald-500 shrink-0 transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`} />
+                  <ChevronDown className={`w-5 h-5 text-emerald-600 dark:text-emerald-500 shrink-0 transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`} />
                 </button>
                 {isOpen && (
-                  <div className="px-6 pb-5 text-xs sm:text-sm text-zinc-600 dark:text-zinc-400 leading-relaxed border-t border-zinc-100 dark:border-zinc-800/60 pt-3 animate-fade-in">
+                  <div className="px-6 pb-5 text-xs sm:text-sm text-zinc-700 dark:text-zinc-300 font-medium leading-relaxed border-t border-zinc-200/80 dark:border-zinc-800/60 pt-3 animate-fade-in">
                     {faq.answer}
                   </div>
                 )}
               </div>
             );
           })}
-        </div>
+        </ScrollReveal>
       </section>
 
     </div>
   );
 }
+
+

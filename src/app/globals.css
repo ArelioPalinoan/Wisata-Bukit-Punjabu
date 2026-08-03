@@ -157,31 +157,7 @@ body {
 /* ====================================
    SCROLL-TRIGGERED REVEAL
    ==================================== */
-.reveal, .reveal-left, .reveal-right {
-  opacity: 0;
-  will-change: opacity, transform;
-  transition: opacity 0.7s cubic-bezier(0.25, 0.46, 0.45, 0.94),
-              transform 0.7s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-}
-
-.reveal {
-  transform: translateY(28px);
-}
-
-.reveal-left {
-  transform: translateX(-28px);
-}
-
-.reveal-right {
-  transform: translateX(28px);
-}
-
-.reveal.visible,
-.reveal-left.visible,
-.reveal-right.visible {
-  opacity: 1;
-  transform: translate(0, 0);
-}
+/* Handled safely by React ScrollReveal component to guarantee elements never vanish on re-render */
 
 /* ====================================
    HOVER LIFT — Card micro-animations
@@ -232,3 +208,62 @@ body {
   opacity: 1;
   transform: scaleX(1);
 }
+
+/* ====================================
+   EXTRA UTILITY ANIMATIONS & EFFECTS
+   ==================================== */
+@keyframes slideUpUp {
+  from { opacity: 0; transform: translateY(20px) scale(0.95); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes pulseGlow {
+  0%, 100% { box-shadow: 0 0 15px rgba(16, 185, 129, 0.2); }
+  50%      { box-shadow: 0 0 30px rgba(16, 185, 129, 0.5); }
+}
+
+@keyframes toastIn {
+  from { opacity: 0; transform: translateY(16px) scale(0.9); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.animate-toast-in {
+  animation: toastIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-pulse-glow {
+  animation: pulseGlow 3s ease-in-out infinite;
+}
+
+.gpu-accelerated {
+  will-change: transform, opacity;
+  transform: translateZ(0);
+}
+
+/* ====================================
+   PREMIUM AMBIENT GLOW & GLASS UTILITIES
+   ==================================== */
+@keyframes orbFloat {
+  0%, 100% { transform: translateY(0px) scale(1); }
+  50%      { transform: translateY(-20px) scale(1.08); }
+}
+
+.animate-orb-float {
+  animation: orbFloat 8s ease-in-out infinite;
+}
+
+.glow-card {
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.glow-card:hover {
+  box-shadow: 0 12px 30px -8px rgba(16, 185, 129, 0.25), 0 0 1px 1px rgba(16, 185, 129, 0.4);
+}
+
+.emerald-glass {
+  background: rgba(9, 14, 26, 0.85);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(16, 185, 129, 0.2);
+}
+
+

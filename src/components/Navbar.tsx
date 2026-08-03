@@ -122,7 +122,7 @@ export const Navbar: React.FC = () => {
               Bukit Punjabu
             </span>
             <span className="text-[9px] tracking-widest uppercase font-bold text-emerald-600 dark:text-emerald-400 leading-none">
-              Sidrap
+              Desa Buntu Buangin
             </span>
           </div>
         </Link>

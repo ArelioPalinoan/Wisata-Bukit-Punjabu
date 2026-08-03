@@ -16,7 +16,7 @@ export const NewsCard: React.FC<NewsCardProps> = ({ article, featured = false })
 
   if (featured) {
     return (
-      <div className="group relative rounded-3xl overflow-hidden bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-2xl transition-all duration-300 hover:border-emerald-500/50">
+      <div className="group relative rounded-3xl overflow-hidden bg-gradient-to-br from-emerald-50/70 via-white to-zinc-50 dark:from-zinc-900 dark:via-zinc-900 dark:to-zinc-950 border border-zinc-200 dark:border-zinc-800 shadow-2xl transition-all duration-300 hover:border-emerald-500/50">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-0">
           <div className="lg:col-span-7 relative h-72 lg:h-auto overflow-hidden">
             <Image
@@ -34,16 +34,16 @@ export const NewsCard: React.FC<NewsCardProps> = ({ article, featured = false })
           </div>
           <div className="lg:col-span-5 p-6 sm:p-8 flex flex-col justify-between">
             <div>
-              <div className="flex flex-wrap items-center gap-4 text-xs font-medium text-emerald-600 dark:text-emerald-400 mb-3">
+              <div className="flex flex-wrap items-center gap-4 text-xs font-semibold text-emerald-700 dark:text-emerald-400 mb-3">
                 <span className="flex items-center gap-1">
                   <Calendar className="w-3.5 h-3.5" />
                   {article.date}
                 </span>
-                <span className="flex items-center gap-1 text-zinc-500 dark:text-zinc-400">
+                <span className="flex items-center gap-1 text-zinc-600 dark:text-zinc-400">
                   <Clock className="w-3.5 h-3.5" />
                   {article.readTime}
                 </span>
-                <span className="flex items-center gap-1 text-zinc-500 dark:text-zinc-400">
+                <span className="flex items-center gap-1 text-zinc-600 dark:text-zinc-400">
                   <Eye className="w-3.5 h-3.5" />
                   {article.views} pembaca
                 </span>
@@ -53,19 +53,19 @@ export const NewsCard: React.FC<NewsCardProps> = ({ article, featured = false })
                 {article.title}
               </h3>
 
-              <p className="text-zinc-600 dark:text-zinc-400 text-sm line-clamp-3 leading-relaxed mb-6">
+              <p className="text-zinc-700 dark:text-zinc-300 text-sm line-clamp-3 leading-relaxed mb-6 font-medium">
                 {article.summary}
               </p>
             </div>
 
-            <div className="flex items-center justify-between pt-4 border-t border-zinc-200 dark:border-zinc-800/80">
+            <div className="flex items-center justify-between pt-4 border-t border-zinc-200/80 dark:border-zinc-800/80">
               <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-full bg-emerald-600/20 text-emerald-600 dark:text-emerald-400 font-bold text-xs flex items-center justify-center border border-emerald-500/30">
+                <div className="w-8 h-8 rounded-full bg-emerald-600/20 text-emerald-700 dark:text-emerald-400 font-bold text-xs flex items-center justify-center border border-emerald-500/30">
                   {article.author.charAt(0)}
                 </div>
                 <div>
                   <p className="text-xs font-semibold text-zinc-900 dark:text-white">{article.author}</p>
-                  <p className="text-[10px] text-zinc-500 dark:text-zinc-400">{article.authorRole}</p>
+                  <p className="text-[10px] text-zinc-600 dark:text-zinc-400 font-medium">{article.authorRole}</p>
                 </div>
               </div>
 
@@ -84,7 +84,7 @@ export const NewsCard: React.FC<NewsCardProps> = ({ article, featured = false })
   }
 
   return (
-    <div className="group rounded-3xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800/80 shadow-md hover:shadow-2xl transition-all duration-300 flex flex-col h-full overflow-hidden hover:-translate-y-1">
+    <div className="group rounded-3xl bg-gradient-to-br from-emerald-50/60 via-white to-zinc-50 dark:from-zinc-900 dark:via-zinc-900 dark:to-zinc-950 border border-zinc-200 dark:border-zinc-800/80 shadow-md hover:shadow-2xl hover:border-emerald-500/40 transition-all duration-300 flex flex-col h-full overflow-hidden hover:-translate-y-1">
       {/* Cover Image */}
       <div className="relative h-48 sm:h-52 overflow-hidden">
         <Image
@@ -107,9 +107,9 @@ export const NewsCard: React.FC<NewsCardProps> = ({ article, featured = false })
       {/* Body Content */}
       <div className="p-5 flex-1 flex flex-col justify-between">
         <div>
-          <div className="flex items-center gap-3 text-xs text-zinc-500 dark:text-zinc-400 mb-2">
-            <span className="flex items-center gap-1">
-              <Calendar className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-500" />
+          <div className="flex items-center gap-3 text-xs text-zinc-600 dark:text-zinc-400 font-semibold mb-2">
+            <span className="flex items-center gap-1 text-emerald-700 dark:text-emerald-400 font-bold">
+              <Calendar className="w-3.5 h-3.5" />
               {article.date}
             </span>
             <span>•</span>
@@ -123,18 +123,18 @@ export const NewsCard: React.FC<NewsCardProps> = ({ article, featured = false })
             {article.title}
           </h3>
 
-          <p className="text-zinc-600 dark:text-zinc-400 text-xs line-clamp-3 leading-relaxed mb-4">
+          <p className="text-zinc-700 dark:text-zinc-300 text-xs line-clamp-3 leading-relaxed mb-4 font-medium">
             {article.summary}
           </p>
         </div>
 
-        <div className="pt-3 border-t border-zinc-100 dark:border-zinc-800/80 flex items-center justify-between">
-          <div className="text-xs text-zinc-500 dark:text-zinc-400 truncate max-w-[150px]">
-            Oleh: <span className="font-semibold text-zinc-800 dark:text-zinc-200">{article.author}</span>
+        <div className="pt-3 border-t border-zinc-200/80 dark:border-zinc-800/80 flex items-center justify-between">
+          <div className="text-xs text-zinc-600 dark:text-zinc-400 truncate max-w-[150px] font-medium">
+            Oleh: <span className="font-bold text-zinc-900 dark:text-zinc-200">{article.author}</span>
           </div>
           <Link
             href={`/berita/${article.id}`}
-            className="text-xs font-bold text-emerald-600 dark:text-emerald-400 group-hover:translate-x-1 transition flex items-center gap-1"
+            className="text-xs font-bold text-emerald-700 dark:text-emerald-400 group-hover:translate-x-1 transition flex items-center gap-1"
           >
             Selengkapnya <ArrowRight className="w-3.5 h-3.5" />
           </Link>

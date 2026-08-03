@@ -73,6 +73,21 @@ export interface VillageStats {
   totalInquiries: number;
 }
 
+export interface BookingRecord {
+  id: string;
+  userName: string;
+  userPhone: string;
+  userEmail?: string;
+  bookingDate: string;
+  ticketQty: number;
+  tentQty: number;
+  guideIncluded: boolean;
+  totalPrice: number;
+  notes?: string;
+  status: 'Pending' | 'Confirmed' | 'Cancelled';
+  createdAt?: string;
+}
+
 export const INITIAL_STATS: VillageStats = {
   totalVisitors: 18450,
   totalNews: 12,
@@ -85,54 +100,54 @@ export const TOURISM_SPOTS: TourismSpot[] = [
     id: '1',
     title: 'Puncak Samudera Awan Punjabu',
     category: 'Pemandangan Alam Sidrap',
-    description: 'Menyaksikan fenomena laut awan putih mempesona di ketinggian 850 mdpl Pegunungan Pitu Riase, Kabupaten Sidrap saat terbit matahari.',
+    description: 'Menyaksikan fenomena laut awan putih mempesona di ketinggian 527 mdpl Dusun Jambu-jambu, Desa Buntu Buangin saat terbit matahari dengan panorama 360 derajat.',
     image: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?q=80&w=1200&auto=format&fit=crop',
     badge: 'Terfavorit Sidrap',
     rating: 4.9,
   },
   {
     id: '2',
-    title: 'Camping Ground Desa Buntu Buangin',
+    title: 'Camping Ground & Kebun Cengkih Buntu Buangin',
     category: 'Aktivitas Outdoor',
-    description: 'Area perkemahan sejuk berselimut kabut pagi ramah keluarga dengan fasilitas MCK, sumber air bersih, dan pengawasan Pokdarwis Sidrap.',
+    description: 'Area perkemahan sejuk di antara lanskap kebun cengkih yang tertata rapi, dilengkapi fasilitas MCK, tempat ibadah, dan pengawasan Pokdarwis Punjabu.',
     image: 'https://images.unsplash.com/photo-1510312305653-8ed496efae75?q=80&w=1200&auto=format&fit=crop',
     badge: 'Populer',
     rating: 4.8,
   },
   {
     id: '3',
-    title: 'Gardu Pandang Skywalk Pitu Riase',
+    title: 'Spot Swafoto Siluet Hati (Love Shape)',
     category: 'Spot Foto Ikonik',
-    description: 'Panggung panorama kayu melayang di atas tebing dengan sudut pandang 360 derajat memandang lanskap bukit hijau Kabupaten Sidrap.',
+    description: 'Spot panggung panoramik di puncak bukit yang membentuk siluet hati unik, menjadi favorit wisatawan untuk fotografi lanskap & pre-wedding.',
     image: 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?q=80&w=1200&auto=format&fit=crop',
     badge: 'Ikonik',
     rating: 4.9,
   },
   {
     id: '4',
-    title: 'Kedai Kopi Olahan Desa Buntu Buangin',
-    category: 'Kuliner Lokal Sidrap',
-    description: 'Nikmati cita rasa khas Kopi Punjabu (Robusta & Arabika) hasil petik merah petani lokal Desa Buntu Buangin Kecamatan Pitu Riase.',
-    image: 'https://images.unsplash.com/photo-1447933601403-0c6688de566e?q=80&w=1200&auto=format&fit=crop',
-    badge: 'Khas Sidrap',
+    title: 'Jalur Petualangan Off-Road (2.8 - 3 km)',
+    category: 'Wisata Petualangan',
+    description: 'Trek menantang sepanjang 3 km dari pusat desa menuju puncak bukit, favorit pecinta motor trail, jeep 4x4, serta penjelajah alam.',
+    image: 'https://images.unsplash.com/photo-1448375240586-882707db888b?q=80&w=1200&auto=format&fit=crop',
+    badge: 'Off-Road Trail',
     rating: 4.8,
   },
   {
     id: '5',
-    title: 'Jalur Trekking Pegunungan Sidrap',
-    category: 'Petualangan Alam',
-    description: 'Rute jalan santai menyusuri pemandangan lereng bukit dan udara segar pegunungan Pitu Riase Sidrap yang menenangkan jiwa.',
-    image: 'https://images.unsplash.com/photo-1448375240586-882707db888b?q=80&w=1200&auto=format&fit=crop',
-    badge: 'Eksplorasi',
-    rating: 4.7,
+    title: 'Kedai Kopi & Saung Perkebunan Punjabu',
+    category: 'Kuliner & Perkebunan',
+    description: 'Nikmati Kopi Punjabu (Robusta & Arabika) dan camilan tradisional Gula Tappo langsung di area saung santai tepi lereng bukit.',
+    image: 'https://images.unsplash.com/photo-1447933601403-0c6688de566e?q=80&w=1200&auto=format&fit=crop',
+    badge: 'Khas Buntu Buangin',
+    rating: 4.8,
   },
   {
     id: '6',
-    title: 'Gazebo & Area Istirahat Wisatawan',
-    category: 'Fasilitas Pengunjung',
-    description: 'Pondok kayu santai bernuansa tradisional untuk berkumpul bersama keluarga sambil menikmati tiupan angin sejuk perbukitan.',
+    title: 'Panorama Pegunungan Latimojong & Teluk Bone',
+    category: 'Lanskap Alam',
+    description: 'Dari ketinggian 527 mdpl, nikmati pemandangan cakrawala luas memandang deretan Pegunungan Latimojong hingga kilau Teluk Bone.',
     image: 'https://images.unsplash.com/photo-1500382017468-9049fed747ef?q=80&w=1200&auto=format&fit=crop',
-    badge: 'Keluarga',
+    badge: 'Lanskap 360°',
     rating: 4.7,
   },
 ];
@@ -140,86 +155,86 @@ export const TOURISM_SPOTS: TourismSpot[] = [
 export const UMKM_PRODUCTS: UMKMProduct[] = [
   {
     id: 'u1',
-    name: 'Kopi Punjabu Petik Merah (Robusta 250g)',
+    name: 'Gula Tappo Khas Buntu Buangin (Pack 250g)',
+    price: 20000,
+    priceUnit: 'kemasan 250g',
+    category: 'Camilan Tradisional',
+    seller: 'Kelompok UMKM Ibu Desa Buntu Buangin',
+    description: 'Camilan manis-gurih otentik Buntu Buangin hasil perpaduan kelapa parut sangrai berkualitas dan nira gula merah aren murni pilihan.',
+    image: 'https://images.unsplash.com/photo-1608686207856-001b95cf60ca?q=80&w=800&auto=format&fit=crop',
+    badge: 'Khas Ikonik',
+  },
+  {
+    id: 'u2',
+    name: 'Gula Merah Aren Murni Organik (1 kg)',
+    price: 25000,
+    priceUnit: 'kemasan 1kg',
+    category: 'Olahan Tradisional',
+    seller: 'Petani Aren Dusun Jambu-jambu',
+    description: 'Gula aren cetak murni tanpa campuran bahan kimia, diolah secara alami dari sadapan nira pohon aren perbukitan Buntu Buangin.',
+    image: 'https://images.unsplash.com/photo-1587049352847-4a222e784d38?q=80&w=800&auto=format&fit=crop',
+    badge: '100% Organik',
+  },
+  {
+    id: 'u3',
+    name: 'Kopi Punjabu Petik Merah Robusta (250g)',
     price: 35000,
     priceUnit: 'pouch 250g',
     category: 'Kopi Organik',
-    seller: 'Kelompok Tani Buntu Buangin',
-    description: 'Biji kopi robusta pilihan tanah vulkanik Pitu Riase, diolah pasca panen honey process dengan aroma cokelat hangat alami.',
+    seller: 'Kelompok Tani Kopi Buntu Buangin',
+    description: 'Biji kopi robusta pilihan dari lereng Bukit Punjabu ketinggian 527 mdpl, diolah honey process dengan aroma mantap cokelat hangat.',
     image: 'https://images.unsplash.com/photo-1447933601403-0c6688de566e?q=80&w=800&auto=format&fit=crop',
     badge: 'Best Seller',
   },
   {
-    id: 'u2',
+    id: 'u4',
     name: 'Kopi Punjabu Special Arabika (200g)',
     price: 45000,
     priceUnit: 'pouch 200g',
     category: 'Kopi Premium',
-    seller: 'Kopdes Punjabu Sidrap',
-    description: 'Kopi arabika dataran tinggi 850 mdpl dengan asam buah yang lembut & cita rasa khas pegunungan Pitu Riase.',
+    seller: 'Pokdarwis & Kopdes Punjabu Sidrap',
+    description: 'Kopi arabika pegunungan Pitu Riase dengan rasa asam buah yang lembut dan karakter aroma segar khas perkebunan Buntu Buangin.',
     image: 'https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?q=80&w=800&auto=format&fit=crop',
     badge: 'Pilihan Petani',
-  },
-  {
-    id: 'u3',
-    name: 'Madu Murni Hutan Pitu Riase (350ml)',
-    price: 85000,
-    priceUnit: 'botol 350ml',
-    category: 'Hasil Hutan',
-    seller: 'Koperasi Warga Buntu Buangin',
-    description: 'Madu hutan liar murni kaya khasiat yang dipanen secara tradisional oleh warga desa dari kawasan perbukitan.',
-    image: 'https://images.unsplash.com/photo-1587049352847-4a222e784d38?q=80&w=800&auto=format&fit=crop',
-    badge: '100% Murni',
-  },
-  {
-    id: 'u4',
-    name: 'Gula Merah Aren Organik (1 kg)',
-    price: 25000,
-    priceUnit: 'kemasan 1kg',
-    category: 'Olahan Tradisional',
-    seller: 'Ibu-Ibu UMKM Desa',
-    description: 'Gula aren murni olahan nira pohon aren lokal tanpa bahan pengawet, harum dan sangat manis alami.',
-    image: 'https://images.unsplash.com/photo-1608686207856-001b95cf60ca?q=80&w=800&auto=format&fit=crop',
-    badge: 'Organik',
   },
 ];
 
 export const FAQS: FAQItem[] = [
   {
     id: 'f1',
-    question: 'Kapan waktu terbaik untuk menyaksikan fenomena Samudera Awan di Bukit Punjabu Sidrap?',
-    answer: 'Waktu emas (*golden hour*) terbaik adalah antara pukul 05.30 hingga 07.00 WITA. Biasanya samudera awan tebal paling indah terlihat setelah malam harinya cerah atau hujan ringan.',
+    question: 'Mengapa dinamakan Wisata Bukit Punjabu dan apa keistimewaannya?',
+    answer: 'Nama "Punjabu" merupakan akronim resmi dari "Puncak Jambu-Jambu" yang terletak di Dusun Jambu-jambu, Desa Buntu Buangin. Berada pada ketinggian 527 mdpl, tempat ini terkenal dengan fenomena Samudera Awan 360°, kebun cengkih yang asri, serta spot foto berbentuk siluet hati (love shape).',
     category: 'Camping & Sunrise',
   },
   {
     id: 'f2',
-    question: 'Berapa tarif tiket masuk harian dan biaya camping night?',
-    answer: 'Tiket masuk harian Rp 10.000 / orang. Untuk paket Camping Night Rp 20.000 / orang (sudah termasuk izin area tenda, penggunaan fasilitas MCK malam, dan lampu penerangan umum).',
+    question: 'Berapa tarif tiket masuk harian dan biaya paket camping?',
+    answer: 'Tiket masuk harian Rp 10.000 / orang. Untuk paket Camping Night Rp 20.000 / orang (sudah termasuk izin area perkemahan, MCK, dan penerangan umum).',
     category: 'Akses & Tiket',
   },
   {
     id: 'f3',
-    question: 'Apakah pengelola menyediakan sewa tenda dan perlengkapan camping?',
-    answer: 'Ya! Pokdarwis Punjabu menyediakan persewaan Tenda Dome kapasitas 4 orang (Rp 60.000/malam), Sleeping Bag (Rp 15.000), Matras (Rp 10.000), serta Kompor Portable. Bisa dipesan langsung secara online via website ini.',
-    category: 'Fasilitas & Layanan',
+    question: 'Apa prestasi nasional yang pernah diraih Desa Wisata Buntu Buangin & Bukit Punjabu?',
+    answer: 'Wisata Bukit Punjabu berhasil masuk dalam 300 Besar Anugerah Desa Wisata Indonesia (ADWI) 2021 oleh Kemenparekraf RI serta meraih Juara 2 Nasional Lomba Promosi Desa Wisata Nusantara (LPDWN) 2022 oleh Kemendes PDTT RI.',
+    category: 'Aturan & Keamanan',
   },
   {
     id: 'f4',
-    question: 'Bagaimana kondisi jaringan sinyal seluler dan fasilitas listrik di lokasi?',
-    answer: 'Di lokasi utama Bukit Punjabu sudah terjangkau sinyal seluler 4G Telkomsel & Indosat. Area gazebo utama juga dilengkapi fasilitas stopkontak (*charging spot*) bagi pengunjung.',
-    category: 'Fasilitas & Layanan',
-  },
-  {
-    id: 'f5',
-    question: 'Jenis kendaraan apa yang direkomendasikan menuju lokasi Bukit Punjabu?',
-    answer: 'Sepeda motor dan mobil pribadi (Sedan, MPV, SUV) dapat menjangkau area parkir utama. Jalanan beraspal dan cor hingga area parkir wisata di Desa Buntu Buangin.',
+    question: 'Bagaimana akses rute dari pusat desa menuju puncak bukit?',
+    answer: 'Dari pusat Desa Buntu Buangin menuju puncak Bukit Punjabu berjarak sekitar 2,8 hingga 3 km. Jalur ini dapat ditempuh dengan kendaraan off-road, motor trail, maupun berjalan kaki (trekking) sekitar 15 menit.',
     category: 'Akses & Tiket',
   },
   {
+    id: 'f5',
+    question: 'Oleh-oleh khas apa yang wajib dicoba saat berkunjung ke Buntu Buangin?',
+    answer: 'Sangat direkomendasikan mencoba "Gula Tappo", camilan tradisional olahan kelapa sangrai dan gula merah aren murni, serta Kopi Punjabu petik merah dan Gula Merah Aren cetak khas Dusun Jambu-jambu.',
+    category: 'Fasilitas & Layanan',
+  },
+  {
     id: 'f6',
-    question: 'Apakah boleh membawa perlengkapan foto dan menerbangkan Drone?',
-    answer: 'Sangat diperbolehkan! Bukit Punjabu adalah tempat favorit fotografi panorama & lanskap. Untuk menerbangkan drone tidak dikenakan biaya tambahan selama tetap memperhatikan keamanan pengunjung.',
-    category: 'Aturan & Keamanan',
+    question: 'Apakah tersedia fasilitas homestay di Desa Buntu Buangin?',
+    answer: 'Ya, selain camping ground di puncak bukit, pengunjung yang ingin menginap dengan suasana hangat khas pedesaan dapat memanfaatkan homestay yang dikelola warga lokal Desa Buntu Buangin.',
+    category: 'Fasilitas & Layanan',
   },
 ];
 
@@ -230,7 +245,7 @@ export const VISITOR_REVIEWS: VisitorReview[] = [
     origin: 'Makassar',
     rating: 5,
     date: '24 Juli 2026',
-    comment: 'Luar biasa indah! Lautan awan jam 6 pagi di Bukit Punjabu Sidrap betul-betul tidak kalah dari tempat wisata pulau Jawa. Udara sejuk dan kopi lokalnya sangat enak!',
+    comment: 'Luar biasa indah! Lautan awan jam 6 pagi di Bukit Punjabu Sidrap betul-betul mempesona. Udara sejuk di 527 mdpl dan rasa Gula Tappo serta Kopi Punjabu-nya sangat nikmat!',
     avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?q=80&w=200&auto=format&fit=crop',
     spot: 'Puncak Samudera Awan',
   },
@@ -240,7 +255,7 @@ export const VISITOR_REVIEWS: VisitorReview[] = [
     origin: 'Parepare',
     rating: 5,
     date: '18 Juli 2026',
-    comment: 'Tempat camping yang sangat direkomendasikan bersama keluarga. Petugas Pokdarwis Sidrap ramah, fasilitas kamar mandi bersih dan aman.',
+    comment: 'Tempat camping yang sangat recommended bersama keluarga. Hamparan kebun cengkihnya tertata rapi, warga Dusun Jambu-jambu ramah, dan MCK-nya bersih.',
     avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=200&auto=format&fit=crop',
     spot: 'Camping Ground Punjabu',
   },
@@ -250,32 +265,32 @@ export const VISITOR_REVIEWS: VisitorReview[] = [
     origin: 'Sengkang, Wajo',
     rating: 5,
     date: '12 Juli 2026',
-    comment: 'Pemandangan dari Gardu Pandang Skywalk 360 derajatnya sangat spektakuler. Spot foto favorit buat dokumentasi akhir pekan.',
+    comment: 'Panorama 360 derajatnya mantap! Dari puncak kelihatan siluet Pegunungan Latimojong dan spot foto bentuk hati-nya sangat estetik buat dokumentasi.',
     avatar: 'https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?q=80&w=200&auto=format&fit=crop',
-    spot: 'Skywalk Pitu Riase',
+    spot: 'Spot Siluet Hati Punjabu',
   },
 ];
 
 export const TRAVEL_ROUTES: TravelRoute[] = [
   {
-    from: 'Pangkajene (Pusat Kota Sidrap)',
-    distance: '38 km',
-    duration: '± 50 menit',
-    roadCondition: 'Aspal mulus & betonisasi desa',
-    vehicleAdvice: 'Motor, Mobil MPV/SUV/Sedan',
+    from: 'Pangkajene (Ibukota Kab. Sidrap)',
+    distance: '± 50 km',
+    duration: '± 1,5 - 2 jam',
+    roadCondition: 'Jalan poros Pitu Riase beraspal & cor desa',
+    vehicleAdvice: 'Sepeda motor, Mobil MPV/SUV',
   },
   {
     from: 'Kota Parepare',
-    distance: '65 km',
-    duration: '± 1 jam 20 menit',
-    roadCondition: 'Jalur Poros Sidrap - Pitu Riase',
+    distance: '± 75 km',
+    duration: '± 2 jam',
+    roadCondition: 'Jalan Poros Trans-Sulawesi & Pitu Riase',
     vehicleAdvice: 'Semua jenis kendaraan darat',
   },
   {
     from: 'Kota Makassar',
-    distance: '215 km',
-    duration: '± 4.5 jam',
-    roadCondition: 'Jalan Trans-Sulawesi mulus',
+    distance: '± 200 km',
+    duration: '± 4 jam (ke Sidrap) + 1.5 jam (ke Desa)',
+    roadCondition: 'Jalan Utama Trans-Sulawesi & Poros Perbukitan',
     vehicleAdvice: 'Mobil pribadi / Rombongan bus mikro',
   },
 ];
@@ -283,8 +298,8 @@ export const TRAVEL_ROUTES: TravelRoute[] = [
 export const INITIAL_NEWS: NewsArticle[] = [
   {
     id: '1',
-    title: 'Pokdarwis Desa Buntu Buangin Siapkan Festival Akustik & Camping Ceria Bukit Punjabu Sidrap 2026',
-    slug: 'pokdarwis-desa-buntu-buangin-siapkan-festival-akustik-camping-ceria-bukit-punjabu-sidrap-2026',
+    title: 'Desa Wisata Buntu Buangin Siapkan Agenda Camping Ceria & Pesta Panen Kopi Punjabu Sidrap 2026',
+    slug: 'desa-wisata-buntu-buangin-siapkan-agenda-camping-ceria-pesta-panen-kopi-punjabu-sidrap-2026',
     category: 'Wisata & Event',
     author: 'Ahmad Ridwan',
     authorRole: 'Ketua Pokdarwis Punjabu Sidrap',
@@ -293,26 +308,25 @@ export const INITIAL_NEWS: NewsArticle[] = [
     views: 1840,
     featured: true,
     status: 'Published',
-    summary: 'Pokdarwis Desa Buntu Buangin Kecamatan Pitu Riase Kabupaten Sidrap siap menggelar agenda musik akustik senja dan camping ceria berlatarkan pemandangan samudera awan.',
+    summary: 'Pokdarwis Desa Buntu Buangin Kecamatan Pitu Riase Kabupaten Sidrap siap mengundang wisatawan berkemah menikmati samudera awan 527 mdpl dan mencicipi camilan khas Gula Tappo.',
     content: `
-Objek Wisata **Bukit Punjabu** yang terletak di **Desa Buntu Buangin, Kecamatan Pitu Riase, Kabupaten Sidenreng Rappang (Sidrap), Sulawesi Selatan** kembali bersiap menyambut wisatawan. Pemerintah Desa Buntu Buangin bersama Kelompok Sadar Wisata (Pokdarwis) Punjabu mengumumkan penyelenggaraan kegiatan **Festival Akustik Senja & Camping Ceria 2026**.
+Taman Wisata **Bukit Punjabu** (Puncak Jambu-Jambu) yang terletak di **Desa Buntu Buangin, Kecamatan Pitu Riase, Kabupaten Sidenreng Rappang (Sidrap), Sulawesi Selatan** kembali menyambut wisatawan dengan ragam agenda menarik. Pemerintah Desa Buntu Buangin bersama Kelompok Sadar Wisata (Pokdarwis) Punjabu mengumumkan agenda **Camping Ceria & Pesta Panen Kopi Punjabu 2026**.
 
-Acara tahunan yang menjadi kebanggaan warga Pitu Riase Sidrap ini dirancang untuk memperkenalkan potensi ekowisata alam perbukitan Sidrap kepada masyarakat luas. Berada pada ketinggian sekitar 850 mdpl, Bukit Punjabu menawarkan panorama matahari terbit (*sunrise*) lengkap dengan kabut awan putih menyerupai lautan di pagi hari.
+Sebagai objek wisata yang pernah meraih prestasi **300 Besar Anugerah Desa Wisata Indonesia (ADWI) 2021** Kemenparekraf serta **Juara 2 Nasional Lomba Promosi Desa Wisata Nusantara (LPDWN) 2022** Kemendes PDTT, Desa Buntu Buangin terus memperkuat daya tarik ekowisata perbukitannya.
 
-### Rangkaian Kegiatan Festival di Bukit Punjabu Sidrap
+### Daya Tarik Puncak Jambu-Jambu 527 mdpl
 
-Ketua Pokdarwis Bukit Punjabu Desa Buntu Buangin, Bapak Ahmad Ridwan, menjelaskan bahwa festival tahun ini menekankan pada apresiasi seni lokal dan pelestarian lingkungan alam Pitu Riase:
+Berada pada ketinggian **527 mdpl**, Bukit Punjabu menawarkan keunikan berupa:
+1. **Lautan Awan 360 Derajat**: Pemandangan matahari terbit berlatarkan kabut putih tebal yang menyelimuti perbukitan Pitu Riase.
+2. **Lanskap Kebun Cengkih & Pegunungan**: Hamparan kebun cengkih warga Dusun Jambu-jambu yang asri serta pemandangan jauh ke arah Pegunungan Latimojong dan Teluk Bone.
+3. **Spot Siluet Hati (*Love Shape*)**: Spot foto ikonik panggung panorama bukit berbentuk hati.
+4. **Jalur Off-Road 3 km**: Trek petualangan sepanjang 2,8 – 3 km bagi penggemar motor trail dan kendaraan jeep 4x4.
 
-1. **Panggung Akustik Senja**: Penampilan musik akustik dari pemuda kreatif Kabupaten Sidrap mengiringi momen *sunset* Pitu Riase.
-2. **Cicip Kopi Punjabu Gratis**: Pembagian cangkir Kopi Robusta & Arabika khas racikan petani Desa Buntu Buangin Sidrap secara gratis untuk seluruh peserta camping.
-3. **Camping Malam di Negeri di Atas Awan**: Berkemah bersama di area camping ground yang telah ditata rapi dan dilengkapi pencahayaan serta fasilitas sanitasi bersih.
-4. **Senam Sehat & Sunrise Samudera Awan**: Menyambut terbitnya matahari pagi bersama pemandangan hamparan awan spektakuler.
+### Rangkaian Kegiatan & Kuliner Khas
 
-> "Bukit Punjabu di Desa Buntu Buangin Kecamatan Pitu Riase kini menjadi salah satu destinasi ekowisata andalan Kabupaten Sidrap. Kami mengundang seluruh masyarakat Sidrap dan sekitarnya untuk merasakan pengalaman berkemah yang aman, sejuk, dan berkesan," ujar Ahmad Ridwan.
+Pengunjung yang hadir tidak hanya disuguhkan keindahan alam, namun juga diajak menikmati kuliner khas ikonik Buntu Buangin seperti **Gula Tappo** (olahan kelapa sangrai dan gula merah aren murni) serta seduhan **Kopi Punjabu** petik merah gratis di area perkemahan.
 
-### Pembatasan Sampah & Ekowisata
-
-Panitia pelaksana mewajibkan setiap pengunjung dan peserta camping untuk menjaga kebersihan lokasi wisata dengan membawa pulang sampah masing-masing (*Leave No Trace*). Langkah ini berkomitmen menjaga keasrian kawasan lereng bukit Pitu Riase Sidrap tetap bersih dan lestari.
+> "Kami mengundang seluruh masyarakat Sidrap dan sekitarnya untuk berkemah dan merasakan keramahan warga Desa Buntu Buangin," ujar Ahmad Ridwan, Ketua Pokdarwis Punjabu.
     `,
     coverImage: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?q=80&w=1200&auto=format&fit=crop',
     gallery: [
@@ -320,12 +334,12 @@ Panitia pelaksana mewajibkan setiap pengunjung dan peserta camping untuk menjaga
       'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?q=80&w=1200&auto=format&fit=crop',
       'https://images.unsplash.com/photo-1447933601403-0c6688de566e?q=80&w=1200&auto=format&fit=crop'
     ],
-    tags: ['Bukit Punjabu', 'Sidrap', 'Desa Buntu Buangin', 'Pitu Riase', 'Camping', 'Ekowisata'],
+    tags: ['Bukit Punjabu', 'Puncak Jambu-Jambu', 'Desa Buntu Buangin', 'Sidrap', 'Gula Tappo', 'ADWI 2021'],
   },
   {
     id: '2',
-    title: 'Pemkab Sidrap & Pemdes Buntu Buangin Resmikan Penataan Gardu Pandang Skywalk Bukit Punjabu',
-    slug: 'pemkab-sidrap-pemdes-buntu-buangin-resmikan-penataan-gardu-pandang-skywalk-bukit-punjabu',
+    title: 'Pemdes Buntu Buangin & Pokdarwis Tingkatkan Fasilitas Spot Swafoto & Jalur Off-Road Bukit Punjabu',
+    slug: 'pemdes-buntu-buangin-pokdarwis-tingkatkan-fasilitas-spot-swafoto-jalur-offroad-bukit-punjabu',
     category: 'Pembangunan',
     author: 'Siti Rahmawati',
     authorRole: 'Humas Desa Buntu Buangin',
@@ -334,52 +348,50 @@ Panitia pelaksana mewajibkan setiap pengunjung dan peserta camping untuk menjaga
     views: 1210,
     featured: false,
     status: 'Published',
-    summary: 'Fasilitas gardu pandang kayu panoramic di Bukit Punjabu Desa Buntu Buangin Pitu Riase Sidrap resmi dipercantik untuk kenyamanan dan keamanan pengunjung.',
+    summary: 'Penataan area spot swafoto siluet hati dan pembenahan akses jalur off-road 3 km menuju puncak Bukit Punjabu selesai dilaksanakan.',
     content: `
-Pemerintah Desa Buntu Buangin Kecamatan Pitu Riase meresmikan selesainya tahap penataan dan peningkatan keamanan fasilitas **Gardu Pandang Skywalk Bukit Punjabu Sidrap**. Peresmian dihadiri oleh perwakilan Pemerintah Kabupaten Sidenreng Rappang (Sidrap), perangkat desa, serta tokoh masyarakat Pitu Riase.
+Pemerintah Desa Buntu Buangin Kecamatan Pitu Riase meresmikan penataan lanjutan pada fasilitas **Taman Wisata Bukit Punjabu Sidrap**. Langkah ini diambil untuk memastikan keamanan dan kenyamanan pengunjung yang terus meningkat pasca diraihnya prestasi nasional desa wisata.
 
-Fasilitas gardu pandang kayu ini berada di pinggir tebing utama Bukit Punjabu, memungkinkan wisatawan melihat lanskap panorama pegunungan Pitu Riase dan hamparan lembah hijau Kabupaten Sidrap secara leluasa.
+### Pembenahan & Fasilitas Terkini
 
-### Peningkatan Keamanan & Fasilitas
+Penataan mencakup:
+- **Perbaikan Spot Swafoto Siluet Hati**: Penguatan konstruksi panggung kayu panoramic dan pagar pengaman di puncak bukit 527 mdpl.
+- **Perataan Akses Off-Road 2,8 – 3 km**: Memudahkan perlintasan kendaraan pengangkut perlengkapan camp maupun pengendara motor trail.
+- **Papan Informasi Geografis & Sejarah**: Mengedukasi wisatawan mengenai asal-usul Puncak Jambu-jambu serta potensi komoditas cengkih dan aren lokal.
 
-Penataan yang dilakukan meliputi:
-- **Penguatan Struktur Kayu Jati & Pagar Baja**: Memastikan standar keselamatan pengunjung terjaga secara optimal.
-- **Pencahayaan Lampu Hias Malam**: Memberikan kenyamanan estetis bagi pengunjung yang berkemah saat malam hari.
-- **Papan Informasi Geografis Sidrap**: Menampilkan informasi ketinggian lokasi (850 mdpl) dan gambaran wilayah Kecamatan Pitu Riase Kabupaten Sidrap.
-
-Kepala Desa Buntu Buangin mengungkapkan bahwa pengembangan fasilitas wisata desa ini menggunakan alokasi dana pemberdayaan masyarakat untuk memperkuat posisi Bukit Punjabu sebagai kebanggaan pariwisata Kabupaten Sidrap.
+Kepala Desa Buntu Buangin menyampaikan bahwa keberlanjutan pengembangan wisata ini menjadi komitmen desa untuk mendorong perekonomian masyarakat secara mandiri.
     `,
     coverImage: 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?q=80&w=1200&auto=format&fit=crop',
     gallery: [
       'https://images.unsplash.com/photo-1500382017468-9049fed747ef?q=80&w=1200&auto=format&fit=crop',
       'https://images.unsplash.com/photo-1506744038136-46273834b3fb?q=80&w=1200&auto=format&fit=crop'
     ],
-    tags: ['Sidrap', 'Pitu Riase', 'Skywalk Punjabu', 'Pemdes Buntu Buangin', 'Ekowisata'],
+    tags: ['Bukit Punjabu', 'Pitu Riase', 'Buntu Buangin', 'Sidrap', 'Off-Road', 'Pembangunan Desa'],
   },
   {
     id: '3',
-    title: 'Pengembangan Potensi Kopi Punjabu Khas Desa Buntu Buangin Pitu Riase Sidrap',
-    slug: 'pengembangan-potensi-kopi-punjabu-khas-desa-buntu-buangin-pitu-riase-sidrap',
+    title: 'Gula Tappo & Kopi Punjabu: Kombinasi Oleh-Oleh Khas Kebanggaan Warga Buntu Buangin Sidrap',
+    slug: 'gula-tappo-kopi-punjabu-kombinasi-oleh-oleh-khas-kebanggaan-warga-buntu-buangin-sidrap',
     category: 'Ekonomi & UMKM',
     author: 'Pak Sutrisno',
-    authorRole: 'Ketua Kelompok Tani Kopi Buntu Buangin',
+    authorRole: 'Ketua Kelompok Tani Buntu Buangin',
     date: '15 Juli 2026',
     readTime: '3 menit baca',
     views: 950,
     featured: false,
     status: 'Published',
-    summary: 'Komoditas kopi lokal khas lereng Bukit Punjabu Desa Buntu Buangin Sidrap terus didorong menjadi oleh-oleh unggulan wisatawan.',
+    summary: 'Camilan tradisional Gula Tappo dan olahan biji kopi perkebunan Punjabu diminati para wisatawan sebagai oleh-oleh favorit dari Sidrap.',
     content: `
-Selain keindahan fenomena lautan awan, lereng kawasan **Bukit Punjabu di Desa Buntu Buangin Kecamatan Pitu Riase Kabupaten Sidrap** juga memiliki potensi komoditas kopi perkebunan yang khas. Udara sejuk pegunungan Pitu Riase membuat tanaman kopi Robusta dan Arabika tumbuh subur dengan kualitas cita rasa otentik.
+Selain keindahan fenomena lautan awan di ketinggian 527 mdpl, lereng kawasan **Bukit Punjabu di Desa Buntu Buangin Kecamatan Pitu Riase Kabupaten Sidrap** menyimpan kekayaan olahan kuliner tradisional yang khas.
 
-Kelompok Tani Kopi Desa Buntu Buangin kini aktif memproduksi kemasan **Kopi Punjabu Sidrap** yang diproses secara tradisional dan petik merah super. Kopi ini menjadi pilihan utama buah tangan para wisatawan yang berkunjung ke kawasan wisata Bukit Punjabu.
+Salah satu yang paling diminati adalah **Gula Tappo**, makanan ringan tradisional khas Buntu Buangin yang diolah dari racikan kelapa parut sangrai dan gula merah aren murni. Teksturnya yang gurih-renyah bersatu dengan manisnya gula aren membuat camilan ini menjadi teman sempurna saat menikmati cangkir hangat **Kopi Punjabu**.
 
-Pemerintah Desa Buntu Buangin bersama Pokdarwis terus mendukung promosi kopi lokal ini di area kedai dan warung wisata agar berdampak positif pada kesejahteraan ekonomi petani tempatan di Kabupaten Sidrap.
+Kelompok UMKM Desa Buntu Buangin kini aktif memproduksi kemasan hygienis untuk Gula Tappo dan Kopi Punjabu petik merah agar siap dibawa sebagai buah tangan wisatawan.
     `,
     coverImage: 'https://images.unsplash.com/photo-1447933601403-0c6688de566e?q=80&w=1200&auto=format&fit=crop',
     gallery: [
       'https://images.unsplash.com/photo-1510312305653-8ed496efae75?q=80&w=1200&auto=format&fit=crop'
     ],
-    tags: ['Kopi Punjabu', 'Sidrap', 'Desa Buntu Buangin', 'UMKM Sidrap', 'Pitu Riase'],
+    tags: ['Gula Tappo', 'Kopi Punjabu', 'UMKM Buntu Buangin', 'Sidrap', 'Kuliner Khas'],
   }
 ];
