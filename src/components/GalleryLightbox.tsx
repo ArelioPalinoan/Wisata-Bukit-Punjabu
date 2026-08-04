@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback, useSyncExternalStore } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useSyncExternalStore } from 'react';
 import { createPortal } from 'react-dom';
 import Image from 'next/image';
 import { ScrollReveal } from '@/components/ScrollReveal';
@@ -80,11 +80,9 @@ const GALLERY_DATA: GalleryItem[] = [
 
 export const GallerySection: React.FC = () => {
   const { galleryItems } = useApp();
-  const [activeCategory, setActiveCategory] = useState<string>('Semua');
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
+  const sliderRef = useRef<HTMLDivElement>(null);
   const mounted = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
-
-  const categories = ['Semua', 'Samudera Awan', 'Camping', 'Gardu Pandang', 'Petualangan', 'Agrowisata'];
 
   const sourceData: GalleryItem[] = galleryItems && galleryItems.length > 0
     ? galleryItems.map((g) => ({
@@ -96,25 +94,21 @@ export const GallerySection: React.FC = () => {
       }))
     : GALLERY_DATA;
 
-  const filteredItems = activeCategory === 'Semua'
-    ? sourceData
-    : sourceData.filter((item) => item.category === activeCategory);
-
   const handleNext = useCallback(() => {
-    if (lightboxIndex === null || filteredItems.length === 0) return;
-    setLightboxIndex((prev) => (prev !== null ? (prev + 1) % filteredItems.length : 0));
-  }, [lightboxIndex, filteredItems.length]);
+    if (lightboxIndex === null || sourceData.length === 0) return;
+    setLightboxIndex((prev) => (prev !== null ? (prev + 1) % sourceData.length : 0));
+  }, [lightboxIndex, sourceData.length]);
 
   const handlePrev = useCallback(() => {
-    if (lightboxIndex === null || filteredItems.length === 0) return;
-    setLightboxIndex((prev) => (prev !== null ? (prev - 1 + filteredItems.length) % filteredItems.length : 0));
-  }, [lightboxIndex, filteredItems.length]);
+    if (lightboxIndex === null || sourceData.length === 0) return;
+    setLightboxIndex((prev) => (prev !== null ? (prev - 1 + sourceData.length) % sourceData.length : 0));
+  }, [lightboxIndex, sourceData.length]);
 
-  const handleCategoryChange = (cat: string) => {
-    setActiveCategory(cat);
-    setLightboxIndex(null);
+  const scrollSlider = (direction: 'left' | 'right') => {
+    if (!sliderRef.current) return;
+    const scrollAmount = direction === 'left' ? -350 : 350;
+    sliderRef.current.scrollBy({ left: scrollAmount, behavior: 'smooth' });
   };
-
 
   useEffect(() => {
     if (lightboxIndex === null) return;
@@ -134,81 +128,110 @@ export const GallerySection: React.FC = () => {
   }, [lightboxIndex, handleNext, handlePrev]);
 
   return (
-    <section id="galeri" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10 scroll-mt-24">
+    <section id="galeri" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8 scroll-mt-24">
       
       {/* Section Header */}
-      <ScrollReveal className="text-center space-y-3">
-        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-xs font-bold">
-          <Sparkles className="w-4 h-4" />
-          <span>Galeri Keindahan Sidrap</span>
+      <ScrollReveal className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+        <div className="space-y-3 max-w-2xl">
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-xs font-bold">
+            <Sparkles className="w-4 h-4" />
+            <span>Galeri Keindahan Sidrap</span>
+          </div>
+          <h2 className="text-3xl sm:text-5xl font-extrabold text-zinc-900 dark:text-white tracking-tight">
+            Dokumentasi Bukit Punjabu Sidrap
+          </h2>
+          <p className="text-zinc-600 dark:text-zinc-400 text-sm sm:text-base">
+            Potret panorama pesona alam 527 mdpl Desa Buntu Buangin, Kecamatan Pitu Riase, Kabupaten Sidrap.
+          </p>
         </div>
-        <h2 className="text-3xl sm:text-5xl font-extrabold text-zinc-900 dark:text-white tracking-tight">
-          Dokumentasi Bukit Punjabu Sidrap
-        </h2>
-        <p className="text-zinc-600 dark:text-zinc-400 text-sm sm:text-base max-w-2xl mx-auto">
-          Potret panorama pesona alam 527 mdpl Desa Buntu Buangin, Kecamatan Pitu Riase, Kabupaten Sidrap.
-        </p>
 
-        {/* Category Filter Pills */}
-        <div className="flex flex-wrap items-center justify-center gap-2 pt-4">
-          {categories.map((cat) => (
-            <button
-              key={cat}
-              onClick={() => handleCategoryChange(cat)}
-
-              className={`px-4 py-2 rounded-xl text-xs font-bold transition cursor-pointer ${
-                activeCategory === cat
-                  ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/30'
-                  : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700'
-              }`}
-            >
-              {cat}
-            </button>
-          ))}
+        {/* Slider Arrow Navigation Controls in Header */}
+        <div className="flex items-center gap-2 shrink-0">
+          <button
+            onClick={() => scrollSlider('left')}
+            className="p-3 rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-emerald-600 hover:text-white hover:border-emerald-600 active:scale-95 transition-all shadow-xs cursor-pointer"
+            title="Geser Kiri"
+            aria-label="Geser Kiri"
+          >
+            <ChevronLeft className="w-5 h-5" />
+          </button>
+          <button
+            onClick={() => scrollSlider('right')}
+            className="p-3 rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-emerald-600 hover:text-white hover:border-emerald-600 active:scale-95 transition-all shadow-xs cursor-pointer"
+            title="Geser Kanan"
+            aria-label="Geser Kanan"
+          >
+            <ChevronRight className="w-5 h-5" />
+          </button>
         </div>
       </ScrollReveal>
 
-      {/* Grid Images */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredItems.map((img, idx) => (
-          <ScrollReveal
-            key={img.id}
-            delay={idx * 0.08}
-            className="group relative h-72 rounded-3xl overflow-hidden cursor-pointer shadow-md hover:shadow-2xl hover-lift transition-all duration-300 border border-zinc-200/80 dark:border-zinc-800"
-          >
-            <div onClick={() => setLightboxIndex(idx)} className="relative w-full h-full">
+      {/* ── SMOOTH SLIDER (Horizontal Snap Reel) ── */}
+      <div className="relative group/slider">
+        {/* Floating Side Arrow Left (On hover on large screens) */}
+        <button
+          onClick={() => scrollSlider('left')}
+          className="absolute left-3 top-1/2 -translate-y-1/2 z-20 p-3 rounded-full bg-zinc-950/80 hover:bg-emerald-600 text-white border border-white/20 shadow-2xl transition-all duration-300 opacity-0 group-hover/slider:opacity-100 cursor-pointer hidden md:flex items-center justify-center hover:scale-110 active:scale-95"
+          title="Geser Kiri"
+          aria-label="Geser Kiri"
+        >
+          <ChevronLeft className="w-5 h-5" />
+        </button>
+
+        {/* Scroll Container */}
+        <div
+          ref={sliderRef}
+          className="flex gap-5 overflow-x-auto scroll-smooth snap-x snap-mandatory py-3 px-1 scrollbar-none"
+          style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+        >
+          {sourceData.map((img, idx) => (
+            <div
+              key={img.id}
+              onClick={() => setLightboxIndex(idx)}
+              className="group relative w-72 sm:w-88 shrink-0 h-56 sm:h-64 rounded-3xl overflow-hidden cursor-pointer shadow-md hover:shadow-2xl hover-lift border border-zinc-200/80 dark:border-zinc-800/80 snap-start transition-all duration-300"
+            >
               <Image
                 src={img.url}
                 alt={img.title}
                 fill
-                sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                className="object-cover group-hover:scale-110 transition-transform duration-700 ease-out brightness-90 group-hover:brightness-100"
+                sizes="(max-width: 640px) 280px, 350px"
+                className="object-cover group-hover:scale-110 transition-transform duration-700 ease-out brightness-95 group-hover:brightness-100"
               />
-
-              {/* Badge Category */}
-              <div className="absolute top-4 left-4 z-10 bg-zinc-950/80 backdrop-blur-md text-emerald-400 text-xs font-bold px-3 py-1 rounded-full border border-emerald-500/30">
+              
+              {/* Category Badge */}
+              <div className="absolute top-3.5 left-3.5 z-10 bg-zinc-950/80 backdrop-blur-md text-emerald-400 text-[11px] font-bold px-3 py-1 rounded-full border border-emerald-500/30 shadow-xs">
                 {img.category}
               </div>
 
-              {/* Hover overlay with zoom icon */}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-between p-6 text-white z-10">
+              {/* Hover Caption & Zoom Icon Overlay */}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-between p-5 text-white z-10">
                 <div className="flex justify-end">
                   <div className="p-2.5 rounded-full bg-white/20 backdrop-blur-md text-white">
                     <Maximize2 className="w-4 h-4" />
                   </div>
                 </div>
                 <div>
-                  <h3 className="font-bold text-base translate-y-2 group-hover:translate-y-0 transition-transform duration-300">{img.title}</h3>
-                  <p className="text-xs text-zinc-300 mt-1 line-clamp-2">{img.desc}</p>
+                  <h3 className="font-bold text-base leading-snug line-clamp-1 group-hover:text-emerald-300 transition-colors">{img.title}</h3>
+                  <p className="text-xs text-zinc-300 mt-1 line-clamp-2 leading-relaxed">{img.desc}</p>
                 </div>
               </div>
             </div>
-          </ScrollReveal>
-        ))}
+          ))}
+        </div>
+
+        {/* Floating Side Arrow Right (On hover on large screens) */}
+        <button
+          onClick={() => scrollSlider('right')}
+          className="absolute right-3 top-1/2 -translate-y-1/2 z-20 p-3 rounded-full bg-zinc-950/80 hover:bg-emerald-600 text-white border border-white/20 shadow-2xl transition-all duration-300 opacity-0 group-hover/slider:opacity-100 cursor-pointer hidden md:flex items-center justify-center hover:scale-110 active:scale-95"
+          title="Geser Kanan"
+          aria-label="Geser Kanan"
+        >
+          <ChevronRight className="w-5 h-5" />
+        </button>
       </div>
 
       {/* Fullscreen Interactive Lightbox Modal (Portal to document.body) */}
-      {mounted && lightboxIndex !== null && filteredItems[lightboxIndex] && createPortal(
+      {mounted && lightboxIndex !== null && sourceData[lightboxIndex] && createPortal(
         <div
           onClick={() => setLightboxIndex(null)}
           className="fixed inset-0 z-[99999] bg-black/95 backdrop-blur-md flex flex-col justify-between items-center p-4 sm:p-6 overflow-y-auto animate-fade-in select-none cursor-pointer"
@@ -227,10 +250,10 @@ export const GallerySection: React.FC = () => {
           <div onClick={(e) => e.stopPropagation()} className="w-full max-w-5xl flex items-center justify-between text-white z-20 pt-2 pb-3 cursor-default">
             <div className="flex items-center gap-3 bg-zinc-900/90 px-4 py-2 rounded-full border border-zinc-800 text-xs font-semibold shadow-lg">
               <span className="px-2.5 py-0.5 rounded-full bg-emerald-600 text-white text-[11px] font-bold">
-                {filteredItems[lightboxIndex].category}
+                {sourceData[lightboxIndex].category}
               </span>
               <span className="text-zinc-300">
-                Foto {lightboxIndex + 1} dari {filteredItems.length}
+                Foto {lightboxIndex + 1} dari {sourceData.length}
               </span>
             </div>
           </div>
@@ -239,8 +262,8 @@ export const GallerySection: React.FC = () => {
           <div onClick={(e) => e.stopPropagation()} className="relative w-full max-w-5xl flex-1 flex items-center justify-center my-auto py-2 cursor-default">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src={filteredItems[lightboxIndex].url}
-              alt={filteredItems[lightboxIndex].title}
+              src={sourceData[lightboxIndex].url}
+              alt={sourceData[lightboxIndex].title}
               className="max-h-[75vh] sm:max-h-[80vh] max-w-full w-auto h-auto object-contain rounded-2xl shadow-2xl border border-zinc-800/80 transition-all duration-300"
             />
 
@@ -249,6 +272,7 @@ export const GallerySection: React.FC = () => {
               onClick={handlePrev}
               className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 p-3 sm:p-4 rounded-full bg-black/70 hover:bg-emerald-600 text-white border border-white/20 transition cursor-pointer shadow-2xl z-20 hover:scale-110 active:scale-95"
               title="Sebelumnya (Panah Kiri)"
+              aria-label="Sebelumnya"
             >
               <ChevronLeft className="w-6 h-6" />
             </button>
@@ -256,6 +280,7 @@ export const GallerySection: React.FC = () => {
               onClick={handleNext}
               className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 p-3 sm:p-4 rounded-full bg-black/70 hover:bg-emerald-600 text-white border border-white/20 transition cursor-pointer shadow-2xl z-20 hover:scale-110 active:scale-95"
               title="Selanjutnya (Panah Kanan)"
+              aria-label="Selanjutnya"
             >
               <ChevronRight className="w-6 h-6" />
             </button>
@@ -263,8 +288,8 @@ export const GallerySection: React.FC = () => {
 
           {/* Bottom Caption */}
           <div onClick={(e) => e.stopPropagation()} className="text-center text-white space-y-1 max-w-2xl mx-auto z-20 cursor-default py-2">
-            <h3 className="text-base sm:text-lg font-bold">{filteredItems[lightboxIndex].title}</h3>
-            <p className="text-xs text-zinc-400">{filteredItems[lightboxIndex].desc}</p>
+            <h3 className="text-base sm:text-lg font-bold">{sourceData[lightboxIndex].title}</h3>
+            <p className="text-xs text-zinc-400">{sourceData[lightboxIndex].desc}</p>
             <p className="text-[11px] text-zinc-500 pt-1">
               Tekan <kbd className="px-1.5 py-0.5 bg-zinc-800 rounded text-zinc-300 font-mono">Esc</kbd> atau klik area luar untuk menutup
             </p>
