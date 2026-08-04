@@ -4,7 +4,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useApp } from '@/context/AppContext';
-import { FAQS, TRAVEL_ROUTES } from '@/data/initialData';
+import { FAQS, TRAVEL_ROUTES, VISITOR_GUIDELINES } from '@/data/initialData';
 import { NewsCard } from '@/components/NewsCard';
 import { ScrollReveal } from '@/components/ScrollReveal';
 import { WeatherWidget } from '@/components/WeatherWidget';
@@ -22,7 +22,6 @@ import {
   Users,
   ShieldCheck,
   Zap,
-  ShoppingBag,
   Navigation,
   ChevronDown,
   Star,
@@ -32,14 +31,17 @@ import {
   ExternalLink,
   HelpCircle,
   Search,
+  BookOpen,
+  ShieldAlert,
+  Sunrise,
+  Backpack,
+  HeartPulse,
 } from 'lucide-react';
 
 
 export default function Home() {
-  const { newsList, tourismSpots, umkmProducts, reviews } = useApp();
+  const { newsList, tourismSpots, reviews } = useApp();
   const [openFaqId, setOpenFaqId] = useState<string | null>('f1');
-  const [umkmCategory, setUmkmCategory] = useState<string>('Semua');
-  const [umkmSearch, setUmkmSearch] = useState<string>('');
   const heroRef = useRef<HTMLDivElement>(null);
   const [heroParallax, setHeroParallax] = useState(0);
 
@@ -242,133 +244,77 @@ export default function Home() {
       </section>
 
       {/* ══════════════════════════════════════════════
-          2. PRODUK UMKM LOKAL (id="umkm")
+          2. PANDUAN & ATURAN BERKUNJUNG (id="panduan")
       ══════════════════════════════════════════════ */}
-      <section id="umkm" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10 scroll-mt-24">
+      <section id="panduan" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12 scroll-mt-24">
         <ScrollReveal className="text-center space-y-4 max-w-3xl mx-auto">
           <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-xs font-bold">
-            <ShoppingBag className="w-4 h-4" />
-            <span>Ekonomi &amp; Produk Desa Buntu Buangin</span>
+            <BookOpen className="w-4 h-4" />
+            <span>Panduan &amp; Safety Guide Wisatawan</span>
           </div>
           <h2 className="text-3xl sm:text-5xl font-extrabold text-zinc-900 dark:text-white tracking-tight">
-            Katalog Oleh-Oleh Khas Sidrap
+            Panduan &amp; Etika Berkunjung
           </h2>
           <p className="text-zinc-600 dark:text-zinc-400 text-base">
-            Dukung perekonomian warga lokal Desa Buntu Buangin dengan membeli camilan tradisional Gula Tappo, Gula Merah Aren Murni, dan Kopi Punjabu petik merah hasil karya masyarakat Dusun Jambu-jambu.
+            Persiapkan kunjungan Anda ke Bukit Punjabu (527 mdpl) agar perjalanan tetap aman, nyaman, dan ramah lingkungan.
           </p>
-
-          {/* Interactive Search Bar & Filters */}
-          <div className="pt-4 flex flex-col sm:flex-row items-center justify-center gap-3">
-            <div className="relative w-full sm:w-80">
-              <Search className="w-4 h-4 text-zinc-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-              <input
-                type="text"
-                placeholder="Cari Gula Tappo, Kopi..."
-                value={umkmSearch}
-                onChange={(e) => setUmkmSearch(e.target.value)}
-                className="w-full pl-10 pr-4 py-2.5 rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-xs sm:text-sm text-zinc-900 dark:text-white placeholder:text-zinc-400 focus:border-emerald-500 transition shadow-xs"
-              />
-              {umkmSearch && (
-                <button
-                  onClick={() => setUmkmSearch('')}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-200 text-xs font-bold"
-                >
-                  ✕
-                </button>
-              )}
-            </div>
-
-            <div className="flex flex-wrap items-center justify-center gap-1.5">
-              {['Semua', 'Gula Tappo', 'Kopi', 'Camilan'].map((cat) => (
-                <button
-                  key={cat}
-                  onClick={() => setUmkmCategory(cat)}
-                  className={`px-3.5 py-2 rounded-xl text-xs font-bold transition cursor-pointer ${
-                    umkmCategory === cat
-                      ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/30'
-                      : 'bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800'
-                  }`}
-                >
-                  {cat}
-                </button>
-              ))}
-            </div>
-          </div>
         </ScrollReveal>
 
-        {/* Product Cards */}
-        {(() => {
-          const filteredUmkm = umkmProducts.filter((prod) => {
-            const matchesCat = umkmCategory === 'Semua' || prod.category.toLowerCase().includes(umkmCategory.toLowerCase()) || prod.name.toLowerCase().includes(umkmCategory.toLowerCase());
-            const matchesSearch = !umkmSearch || prod.name.toLowerCase().includes(umkmSearch.toLowerCase()) || prod.description.toLowerCase().includes(umkmSearch.toLowerCase());
-            return matchesCat && matchesSearch;
-          });
+        {/* Guidelines Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          {VISITOR_GUIDELINES.map((guide, i) => {
+            const IconComp =
+              guide.iconName === 'Backpack'
+                ? Backpack
+                : guide.iconName === 'ShieldAlert'
+                ? ShieldAlert
+                : guide.iconName === 'Sunrise'
+                ? Sunrise
+                : HeartPulse;
 
-          if (filteredUmkm.length === 0) {
             return (
-              <div className="text-center py-12 text-zinc-500 dark:text-zinc-400 text-sm">
-                Produk tidak ditemukan. Coba kata kunci lain atau pilih kategori &quot;Semua&quot;.
-              </div>
-            );
-          }
+              <ScrollReveal
+                key={guide.id}
+                delay={i * 0.08}
+                className="rounded-3xl bg-gradient-to-br from-emerald-50/60 via-white to-teal-50/40 dark:from-zinc-900 dark:via-zinc-900 dark:to-zinc-950 border border-zinc-200 dark:border-zinc-800/80 p-6 sm:p-8 shadow-md hover:shadow-xl hover:border-emerald-500/40 transition-all duration-300 flex flex-col justify-between"
+              >
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div className="p-3 rounded-2xl bg-emerald-600/10 text-emerald-600 dark:text-emerald-400">
+                      <IconComp className="w-6 h-6" />
+                    </div>
+                    {guide.badge && (
+                      <span className={`text-[11px] font-bold text-white px-3 py-1 rounded-full ${guide.badgeColor || 'bg-emerald-600'}`}>
+                        {guide.badge}
+                      </span>
+                    )}
+                  </div>
 
-          return (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              {filteredUmkm.map((prod, i) => (
-                <ScrollReveal
-                  key={prod.id}
-                  delay={i * 0.1}
-                  className="rounded-3xl bg-gradient-to-br from-emerald-50/70 via-white to-zinc-50 dark:from-zinc-900 dark:via-zinc-900 dark:to-zinc-950 border border-zinc-200 dark:border-zinc-800 shadow-md hover:shadow-xl hover-lift hover:border-emerald-500/40 transition-all duration-300 overflow-hidden flex flex-col justify-between"
-                >
                   <div>
-                    <div className="relative h-48 overflow-hidden">
-                      <Image
-                        src={prod.image}
-                        alt={prod.name}
-                        fill
-                        sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
-                        className="object-cover group-hover:scale-105 transition-transform duration-500"
-                      />
-                      {prod.badge && (
-                        <span className="absolute top-3 left-3 bg-emerald-600 text-white text-[11px] font-bold px-2.5 py-1 rounded-full shadow">
-                          {prod.badge}
-                        </span>
-                      )}
-                    </div>
-                    <div className="p-5 space-y-2">
-                      <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-400">
-                        {prod.category}
-                      </span>
-                      <h3 className="text-base font-bold text-zinc-900 dark:text-white leading-snug">
-                        {prod.name}
-                      </h3>
-                      <p className="text-xs text-zinc-600 dark:text-zinc-400 font-medium leading-relaxed line-clamp-3">
-                        {prod.description}
-                      </p>
-                    </div>
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
+                      {guide.category}
+                    </span>
+                    <h3 className="text-xl font-bold text-zinc-900 dark:text-white mt-1">
+                      {guide.title}
+                    </h3>
+                    <p className="text-zinc-600 dark:text-zinc-400 text-sm mt-2 leading-relaxed">
+                      {guide.description}
+                    </p>
                   </div>
 
-                  <div className="p-5 pt-0 space-y-3">
-                    <div className="flex items-baseline justify-between border-t border-zinc-200/80 dark:border-zinc-800/80 pt-3">
-                      <span className="text-xs text-zinc-600 dark:text-zinc-400 font-medium">Harga:</span>
-                      <span className="text-lg font-extrabold text-emerald-700 dark:text-emerald-400">
-                        Rp {prod.price.toLocaleString('id-ID')}
-                      </span>
-                    </div>
-                    <button
-                      onClick={() => handleOrderUmkm(prod.name, prod.price, prod.seller)}
-                      style={noFocusStyle}
-                      className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white font-bold text-xs rounded-xl shadow transition flex items-center justify-center gap-1.5 cursor-pointer"
-                    >
-                      <PhoneCall className="w-3.5 h-3.5" />
-                      Pesan via WA UMKM
-                    </button>
-                  </div>
-                </ScrollReveal>
-              ))}
-            </div>
-          );
-        })()}
+                  <ul className="space-y-2.5 pt-2">
+                    {guide.items.map((item, idx) => (
+                      <li key={idx} className="flex items-start gap-2.5 text-xs sm:text-sm text-zinc-700 dark:text-zinc-300 font-medium">
+                        <span className="mt-0.5 shrink-0 text-emerald-600 dark:text-emerald-400 font-bold">•</span>
+                        <span>{item}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </ScrollReveal>
+            );
+          })}
+        </div>
       </section>
 
 

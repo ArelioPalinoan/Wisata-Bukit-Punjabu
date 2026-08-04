@@ -91,8 +91,8 @@ export const Footer: React.FC = () => {
                 </Link>
               </li>
               <li>
-                <Link href="/berita?cat=Ekonomi+%26+UMKM" className="hover:text-emerald-400 transition">
-                  Ekonomi & UMKM Lokal
+                <Link href="/#panduan" className="hover:text-emerald-400 transition">
+                  Panduan & Aturan Berkunjung
                 </Link>
               </li>
             </ul>

@@ -16,7 +16,7 @@ type NavLink = {
 const navLinks: NavLink[] = [
   { name: 'Beranda', href: '/', sectionId: 'top' },
   { name: 'Wisata', href: '/#wisata', sectionId: 'wisata' },
-  { name: 'UMKM', href: '/#umkm', sectionId: 'umkm' },
+  { name: 'Panduan', href: '/#panduan', sectionId: 'panduan' },
   { name: 'Berita', href: '/#berita', sectionId: 'berita' },
   { name: 'Informasi', href: '/#informasi', sectionId: 'informasi' },
   { name: 'Galeri', href: '/#galeri', sectionId: 'galeri' },
@@ -42,7 +42,7 @@ export const Navbar: React.FC = () => {
   useEffect(() => {
     if (pathname !== '/') return;
 
-    const sectionIds = ['wisata', 'umkm', 'berita', 'informasi', 'rute', 'galeri', 'faq'];
+    const sectionIds = ['wisata', 'panduan', 'berita', 'informasi', 'rute', 'galeri', 'faq'];
 
     const update = () => {
       const threshold = window.scrollY + 180;

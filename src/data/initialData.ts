@@ -55,6 +55,17 @@ export interface FAQItem {
   category: 'Fasilitas & Layanan' | 'Akses & Tiket' | 'Camping & Sunrise' | 'Aturan & Keamanan';
 }
 
+export interface GuidelineItem {
+  id: string;
+  title: string;
+  category: 'Perlengkapan' | 'Etika & Aturan' | 'Tips Weather' | 'Keamanan';
+  iconName: string;
+  description: string;
+  items: string[];
+  badge?: string;
+  badgeColor?: string;
+}
+
 export interface VisitorReview {
   id: string;
   name: string;
@@ -515,5 +526,71 @@ Kelompok UMKM Desa Buntu Buangin kini aktif memproduksi kemasan hygienis untuk G
       'https://images.unsplash.com/photo-1510312305653-8ed496efae75?q=80&w=1200&auto=format&fit=crop'
     ],
     tags: ['Gula Tappo', 'Kopi Punjabu', 'UMKM Buntu Buangin', 'Sidrap', 'Kuliner Khas'],
+  }
+];
+
+export const VISITOR_GUIDELINES: GuidelineItem[] = [
+  {
+    id: 'g1',
+    title: 'Perlengkapan Wajib Camping & Trekking',
+    category: 'Perlengkapan',
+    iconName: 'Backpack',
+    description: 'Suhu Bukit Punjabu (527 mdpl) bisa mencapai 18°C–22°C di malam hari. Siapkan perlengkapan standar berikut demi kenyamanan:',
+    items: [
+      'Jaket tebal / Windbreaker & pakaian pengganti hangat',
+      'Senter / Headlamp dengan baterai cadangan',
+      'Sepatu trekking atau sandal gunung anti-slip',
+      'Tenda berlapis double-layer & matras empuk/sleeping bag',
+      'Jas hujan / Ponco pelindung hujan mendadak',
+      'Obat-obatan pribadi & kotak P3K standar'
+    ],
+    badge: 'Sangat Penting',
+    badgeColor: 'bg-emerald-600'
+  },
+  {
+    id: 'g2',
+    title: 'Etika & Norma Pengunjung (Do\'s & Don\'ts)',
+    category: 'Etika & Aturan',
+    iconName: 'ShieldAlert',
+    description: 'Bantu menjaga keasrian Bukit Punjabu dan menghormati norma adat Desa Buntu Buangin:',
+    items: [
+      '✅ Wajib membawa kembali seluruh sampah pribadi (Zero-Waste Eco Tourism)',
+      '✅ Menjaga sopan santun dan kerapian di area wisata',
+      '❌ Dilarang membuang sampah sembarangan atau meninggalkan botol plastik',
+      '❌ Dilarang membuat api unggun di atas rumput tanpa alas/tungku api',
+      '❌ Dilarang memutar musik keras di atas pukul 22.00 WITA (Jam Tenang)'
+    ],
+    badge: 'Aturan Desa',
+    badgeColor: 'bg-amber-600'
+  },
+  {
+    id: 'g3',
+    title: 'Waktu Terbaik Berburu Samudera Awan',
+    category: 'Tips Weather',
+    iconName: 'Sunrise',
+    description: 'Dapatkan pengalaman visual terbaik saat berkunjung ke Bukit Punjabu dengan memperhatikan waktu kedatangan:',
+    items: [
+      '🌅 Peak Sunrise: 05.30 - 06.30 WITA (Momen gumpalan samudera awan tebal)',
+      '🌆 Golden Sunset: 17.30 - 18.30 WITA (Langit senja jingga berlatar perbukitan)',
+      '🌤️ Musim Terbaik: Mei hingga Oktober (Cuaca cerah & minim kabut hujan)',
+      '☕ Menikmati kopi hangat di gazebo puncak saat udara pagi terasa sejuk'
+    ],
+    badge: 'Tips Emas',
+    badgeColor: 'bg-teal-600'
+  },
+  {
+    id: 'g4',
+    title: 'Keamanan, Kendaraan & Medis Darurat',
+    category: 'Keamanan',
+    iconName: 'HeartPulse',
+    description: 'Petunjuk keselamatan berkendara dan informasi kontak darurat pengelola kawasan wisata:',
+    items: [
+      'Gunakan gigi rendah saat mengendarai motor/mobil pada jalur menanjak 2.8 km',
+      'Parkirkan kendaraan di area parkir resmi berpenjaga Pokdarwis',
+      'Pos Pengelola & P3K tersedia di area gerbang retribusi',
+      'Kontak Darurat Pokdarwis Punjabu: 0822-9111-7360 (24 Jam SIAP)'
+    ],
+    badge: 'Panduan Keamanan',
+    badgeColor: 'bg-rose-600'
   }
 ];

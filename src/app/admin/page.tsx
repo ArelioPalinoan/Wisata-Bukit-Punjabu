@@ -514,18 +514,6 @@ export default function AdminDashboardPage() {
           </button>
 
           <button
-            onClick={() => setActiveTab('umkm')}
-            className={`flex items-center space-x-2 px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-bold transition cursor-pointer shrink-0 ${
-              activeTab === 'umkm'
-                ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-950'
-                : 'bg-zinc-900 text-zinc-400 hover:text-white hover:bg-zinc-800'
-            }`}
-          >
-            <ShoppingBag className="w-4 h-4" />
-            <span>Produk UMKM ({umkmProducts.length})</span>
-          </button>
-
-          <button
             onClick={() => setActiveTab('bookings')}
             className={`flex items-center space-x-2 px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-bold transition cursor-pointer shrink-0 ${
               activeTab === 'bookings'
