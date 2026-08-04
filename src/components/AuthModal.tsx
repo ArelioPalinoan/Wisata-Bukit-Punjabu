@@ -2,30 +2,90 @@
 
 import React, { useState } from 'react';
 import { useApp } from '@/context/AppContext';
-import { X, Mail, Lock, User as UserIcon, ShieldAlert } from 'lucide-react';
+import { X, Mail, Lock, User as UserIcon, ShieldAlert, Loader2, AlertCircle, CheckCircle2 } from 'lucide-react';
 
 export const AuthModal: React.FC = () => {
-  const { isAuthModalOpen, closeAuthModal, login, loginWithGoogle } = useApp();
+  const { isAuthModalOpen, closeAuthModal, login, signUp, loginWithGoogle } = useApp();
   const [isSignUp, setIsSignUp] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
   if (!isAuthModalOpen) return null;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email) return;
-    const isAdmin = email.toLowerCase().includes('admin');
-    await login(email, isAdmin ? 'admin' : 'visitor', name);
+    setErrorMsg(null);
+    setSuccessMsg(null);
+
+    if (!email) {
+      setErrorMsg('Alamat email wajib diisi.');
+      return;
+    }
+    if (!password) {
+      setErrorMsg('Kata sandi wajib diisi.');
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      if (isSignUp) {
+        const res = await signUp(email, password, name);
+        if (!res.success) {
+          setErrorMsg(res.error || 'Gagal mendaftar akun.');
+        } else if (res.message) {
+          setSuccessMsg(res.message);
+        }
+      } else {
+        const isAdmin = email.toLowerCase().includes('admin');
+        const res = await login(email, password, isAdmin ? 'admin' : 'visitor', name);
+        if (!res.success) {
+          setErrorMsg(res.error || 'Gagal masuk. Periksa kembali email & kata sandi.');
+        }
+      }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err || '');
+      setErrorMsg(msg || 'Terjadi kesalahan saat autentikasi.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleGoogleLogin = async () => {
-    await loginWithGoogle();
+    setErrorMsg(null);
+    setSuccessMsg(null);
+    setIsLoading(true);
+    try {
+      const res = await loginWithGoogle();
+      if (res && !res.success) {
+        setErrorMsg(res.error || 'Gagal masuk dengan akun Google.');
+      }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err || '');
+      setErrorMsg(msg || 'Terjadi kesalahan saat koneksi Google OAuth.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleQuickAdminLogin = async () => {
-    await login('admin.punjabu@gmail.com', 'admin', 'Admin Pengelola Punjabu');
+    setErrorMsg(null);
+    setSuccessMsg(null);
+    setIsLoading(true);
+    try {
+      await login('admin.punjabu@gmail.com', 'admin', 'Admin Pengelola Punjabu');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const toggleMode = () => {
+    setIsSignUp(!isSignUp);
+    setErrorMsg(null);
+    setSuccessMsg(null);
   };
 
   return (
@@ -34,7 +94,8 @@ export const AuthModal: React.FC = () => {
         {/* Close Button */}
         <button
           onClick={closeAuthModal}
-          className="absolute top-5 right-5 p-2 text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800 transition"
+          disabled={isLoading}
+          className="absolute top-5 right-5 p-2 text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800 transition disabled:opacity-50"
         >
           <X className="w-5 h-5" />
         </button>
@@ -54,6 +115,21 @@ export const AuthModal: React.FC = () => {
           </p>
         </div>
 
+        {/* Alert Notifications */}
+        {errorMsg && (
+          <div className="mb-4 p-3.5 bg-red-500/10 border border-red-500/30 rounded-xl flex items-start gap-2.5 text-xs text-red-600 dark:text-red-400 animate-fade-in">
+            <AlertCircle className="w-4 h-4 text-red-500 shrink-0 mt-0.5" />
+            <span className="leading-relaxed font-medium">{errorMsg}</span>
+          </div>
+        )}
+
+        {successMsg && (
+          <div className="mb-4 p-3.5 bg-emerald-500/10 border border-emerald-500/30 rounded-xl flex items-start gap-2.5 text-xs text-emerald-700 dark:text-emerald-300 animate-fade-in">
+            <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
+            <span className="leading-relaxed font-medium">{successMsg}</span>
+          </div>
+        )}
+
         {/* Auth Form */}
         <form onSubmit={handleSubmit} className="space-y-4">
           {isSignUp && (
@@ -66,10 +142,11 @@ export const AuthModal: React.FC = () => {
                 <input
                   type="text"
                   required
+                  disabled={isLoading}
                   placeholder="Nama Anda"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2.5 bg-zinc-50 dark:bg-zinc-800/80 border border-zinc-200 dark:border-zinc-700 rounded-xl text-zinc-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm transition"
+                  className="w-full pl-10 pr-4 py-2.5 bg-zinc-50 dark:bg-zinc-800/80 border border-zinc-200 dark:border-zinc-700 rounded-xl text-zinc-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm transition disabled:opacity-60"
                 />
               </div>
             </div>
@@ -84,10 +161,11 @@ export const AuthModal: React.FC = () => {
               <input
                 type="email"
                 required
+                disabled={isLoading}
                 placeholder="nama@email.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full pl-10 pr-4 py-2.5 bg-zinc-50 dark:bg-zinc-800/80 border border-zinc-200 dark:border-zinc-700 rounded-xl text-zinc-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm transition"
+                className="w-full pl-10 pr-4 py-2.5 bg-zinc-50 dark:bg-zinc-800/80 border border-zinc-200 dark:border-zinc-700 rounded-xl text-zinc-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm transition disabled:opacity-60"
               />
             </div>
           </div>
@@ -101,19 +179,30 @@ export const AuthModal: React.FC = () => {
               <input
                 type="password"
                 required
+                disabled={isLoading}
                 placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full pl-10 pr-4 py-2.5 bg-zinc-50 dark:bg-zinc-800/80 border border-zinc-200 dark:border-zinc-700 rounded-xl text-zinc-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm transition"
+                className="w-full pl-10 pr-4 py-2.5 bg-zinc-50 dark:bg-zinc-800/80 border border-zinc-200 dark:border-zinc-700 rounded-xl text-zinc-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm transition disabled:opacity-60"
               />
             </div>
           </div>
 
           <button
             type="submit"
-            className="w-full py-3 px-4 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold rounded-xl shadow-lg shadow-emerald-600/30 transition duration-200 text-sm"
+            disabled={isLoading}
+            className="w-full py-3 px-4 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold rounded-xl shadow-lg shadow-emerald-600/30 transition duration-200 text-sm flex items-center justify-center gap-2 disabled:opacity-60"
           >
-            {isSignUp ? 'Daftar Akun' : 'Masuk Sekarang'}
+            {isLoading ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                <span>Memproses...</span>
+              </>
+            ) : isSignUp ? (
+              'Daftar Akun'
+            ) : (
+              'Masuk Sekarang'
+            )}
           </button>
         </form>
 
@@ -130,9 +219,10 @@ export const AuthModal: React.FC = () => {
         <button
           onClick={handleGoogleLogin}
           type="button"
-          className="w-full py-2.5 px-4 bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700/80 text-zinc-800 dark:text-zinc-200 font-medium rounded-xl border border-zinc-200 dark:border-zinc-700 flex items-center justify-center gap-2 text-sm transition"
+          disabled={isLoading}
+          className="w-full py-2.5 px-4 bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700/80 text-zinc-800 dark:text-zinc-200 font-medium rounded-xl border border-zinc-200 dark:border-zinc-700 flex items-center justify-center gap-2 text-sm transition disabled:opacity-60"
         >
-          <svg className="w-4 h-4" viewBox="0 0 24 24">
+          <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24">
             <path
               fill="#4285F4"
               d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17z"
@@ -158,9 +248,10 @@ export const AuthModal: React.FC = () => {
           <button
             onClick={handleQuickAdminLogin}
             type="button"
-            className="w-full py-2 px-3 bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400 font-semibold rounded-lg text-xs flex items-center justify-center gap-1.5 transition"
+            disabled={isLoading}
+            className="w-full py-2 px-3 bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400 font-semibold rounded-lg text-xs flex items-center justify-center gap-1.5 transition disabled:opacity-60"
           >
-            <ShieldAlert className="w-3.5 h-3.5" />
+            <ShieldAlert className="w-3.5 h-3.5 shrink-0" />
             Mode Demo: Masuk Langsung Sebagai Admin
           </button>
         </div>
@@ -169,8 +260,10 @@ export const AuthModal: React.FC = () => {
         <div className="mt-5 text-center text-xs text-zinc-500 dark:text-zinc-400">
           {isSignUp ? 'Sudah memiliki akun?' : 'Belum punya akun?'}{' '}
           <button
-            onClick={() => setIsSignUp(!isSignUp)}
-            className="font-bold text-emerald-600 dark:text-emerald-400 hover:underline ml-1"
+            type="button"
+            onClick={toggleMode}
+            disabled={isLoading}
+            className="font-bold text-emerald-600 dark:text-emerald-400 hover:underline ml-1 disabled:opacity-50"
           >
             {isSignUp ? 'Masuk di sini' : 'Daftar sekarang'}
           </button>

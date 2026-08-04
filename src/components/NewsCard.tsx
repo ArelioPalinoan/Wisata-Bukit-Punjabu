@@ -4,7 +4,7 @@ import React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { NewsArticle } from '@/data/initialData';
-import { Calendar, Eye, Clock, ArrowRight, Tag } from 'lucide-react';
+import { Calendar, Eye, Clock, ArrowRight, Tag, Image as ImageIcon, Video } from 'lucide-react';
 
 interface NewsCardProps {
   article: NewsArticle;
@@ -27,9 +27,23 @@ export const NewsCard: React.FC<NewsCardProps> = ({ article, featured = false })
               sizes="(max-width: 1024px) 100vw, 58vw"
               className="object-cover group-hover:scale-105 transition duration-700 brightness-95 dark:brightness-90 group-hover:brightness-100"
             />
-            <div className="absolute top-4 left-4 z-10 bg-emerald-600 text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-lg flex items-center gap-1.5">
-              <Tag className="w-3.5 h-3.5" />
-              {article.category}
+            <div className="absolute top-4 left-4 z-10 flex items-center gap-2">
+              <span className="bg-emerald-600 text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-lg flex items-center gap-1.5">
+                <Tag className="w-3.5 h-3.5" />
+                {article.category}
+              </span>
+              {article.gallery && article.gallery.length > 0 && (
+                <span className="bg-zinc-900/80 backdrop-blur-md text-emerald-400 text-xs font-bold px-2.5 py-1 rounded-full border border-emerald-500/30 flex items-center gap-1">
+                  <ImageIcon className="w-3.5 h-3.5" />
+                  {article.gallery.length} Foto
+                </span>
+              )}
+              {article.videoUrl && (
+                <span className="bg-red-600/90 text-white text-xs font-bold px-2.5 py-1 rounded-full flex items-center gap-1 shadow">
+                  <Video className="w-3.5 h-3.5" />
+                  Video
+                </span>
+              )}
             </div>
           </div>
           <div className="lg:col-span-5 p-6 sm:p-8 flex flex-col justify-between">
@@ -70,7 +84,7 @@ export const NewsCard: React.FC<NewsCardProps> = ({ article, featured = false })
               </div>
 
               <Link
-                href={`/berita/${article.id}`}
+                href={`/berita/${article.slug || article.id}`}
                 className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl transition shadow-md shadow-emerald-600/20"
               >
                 Baca Detail
@@ -95,8 +109,24 @@ export const NewsCard: React.FC<NewsCardProps> = ({ article, featured = false })
           sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
           className="object-cover group-hover:scale-105 transition duration-500"
         />
-        <div className="absolute top-3 left-3 z-10 bg-zinc-900/80 backdrop-blur-md text-emerald-400 text-xs font-bold px-3 py-1 rounded-full border border-emerald-500/30">
-          {article.category}
+        <div className="absolute top-3 left-3 z-10 flex items-center gap-1.5">
+          <span className="bg-zinc-900/80 backdrop-blur-md text-emerald-400 text-xs font-bold px-3 py-1 rounded-full border border-emerald-500/30">
+            {article.category}
+          </span>
+        </div>
+        <div className="absolute top-3 right-3 z-10 flex items-center gap-1">
+          {article.gallery && article.gallery.length > 0 && (
+            <span className="bg-black/70 backdrop-blur-xs text-emerald-400 text-[10px] font-bold px-2 py-0.5 rounded-md flex items-center gap-1 border border-emerald-500/30">
+              <ImageIcon className="w-3 h-3" />
+              {article.gallery.length}
+            </span>
+          )}
+          {article.videoUrl && (
+            <span className="bg-red-600/90 text-white text-[10px] font-bold px-2 py-0.5 rounded-md flex items-center gap-1 shadow">
+              <Video className="w-3 h-3" />
+              Video
+            </span>
+          )}
         </div>
         <div className="absolute bottom-3 right-3 z-10 bg-black/60 backdrop-blur-sm text-white text-[11px] px-2.5 py-1 rounded-md flex items-center gap-1">
           <Eye className="w-3 h-3 text-emerald-400" />
@@ -133,7 +163,7 @@ export const NewsCard: React.FC<NewsCardProps> = ({ article, featured = false })
             Oleh: <span className="font-bold text-zinc-900 dark:text-zinc-200">{article.author}</span>
           </div>
           <Link
-            href={`/berita/${article.id}`}
+            href={`/berita/${article.slug || article.id}`}
             className="text-xs font-bold text-emerald-700 dark:text-emerald-400 group-hover:translate-x-1 transition flex items-center gap-1"
           >
             Selengkapnya <ArrowRight className="w-3.5 h-3.5" />

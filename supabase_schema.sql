@@ -234,6 +234,23 @@ CREATE POLICY "Admin Full Access Settings" ON village_settings FOR ALL USING (tr
 INSERT INTO news (title, slug, category, author, author_role, date, read_time, views, featured, status, summary, content, cover_image, gallery, tags)
 VALUES 
 (
+  'Tim KKN Tematik Gelombang 116 Unhas Jalankan Program Kerja Promosi Desa Melalui Pengambilan Foto & Video Drone di Bukit Punjabu',
+  'tim-kkn-tematik-gelombang-116-unhas-jalankan-program-kerja-promosi-desa-foto-video-drone-bukit-punjabu',
+  'Kegiatan Desa',
+  'Tim KKN Tematik Gel. 116 Unhas',
+  'Mahasiswa KKN Unhas Desa Buntu Buangin',
+  '2 Agustus 2026',
+  '3 menit baca',
+  420,
+  TRUE,
+  'Published',
+  'Mahasiswa KKN Tematik Gelombang 116 Universitas Hasanuddin melaksanakan program kerja kelompok Promosi Desa dengan mengabadikan pesona keindahan alam Bukit Punjabu melalui udara menggunakan drone pada Minggu, 2 Agustus 2026.',
+  'Mahasiswa KKN Tematik Gelombang 116 Universitas Hasanuddin (Unhas) yang bertugas di Desa Buntu Buangin, Kecamatan Pitu Riase, Kabupaten Sidenreng Rappang (Sidrap) sukses melaksanakan salah satu program kerja kelompok utamanya, yaitu Promosi Desa Wisata.\n\nKegiatan ini dilaksanakan pada Minggu pagi, 2 Agustus 2026, bertempat di kawasan objek wisata unggulan Bukit Punjabu (Puncak Jambu-Jambu).\n\nDalam pelaksanaannya, tim mahasiswa KKN Unhas memanfaatkan teknologi drone udara untuk mengabadikan keindahan lanskap alam perbukitan dari ketinggian 527 mdpl. Pengambilan foto dan video dilakukan secara intensif dengan memotret hamparan perbukitan hijau, kebun cengkih warga, hingga panorama cakrawala Pitu Riase.\n\nSetelah seluruh footage video drone dan foto dokumentasi lanskap perbukitan dirasa cukup dan memadai, seluruh anggota tim KKN Tematik Gelombang 116 Unhas menggelar sesi foto dokumentasi bersama di puncak Bukit Punjabu sebelum akhirnya kembali turun menuju posko KKN.\n\nHasil pengambilan foto dan video udara ini akan diolah menjadi materi media promosi digital desa untuk memperkuat branding Desa Wisata Buntu Buangin di tingkat kabupaten hingga nasional.',
+  '/images/topview.jpg',
+  ARRAY['/images/topview.jpg', '/images/farview.png', '/images/kebunview.png', '/images/heroimage.jpg'],
+  ARRAY['KKN Unhas 116', 'Bukit Punjabu', 'Promosi Desa', 'Buntu Buangin', 'Sidrap', 'Dokumentasi Drone']
+),
+(
   'Pesona Lautan Awan Puncak Punjabu 850 mdpl Pitu Riase Sidrap',
   'pesona-lautan-awan-puncak-punjabu-850-mdpl-pitu-riase-sidrap',
   'Wisata & Event',
@@ -242,7 +259,7 @@ VALUES
   '28 Juli 2026',
   '4 min baca',
   1240,
-  TRUE,
+  FALSE,
   'Published',
   'Nikmati fenomena menakjubkan samudera awan putih tebal yang menyelimuti kawasan pegunungan Desa Buntu Buangin pada pagi hari.',
   'Puncak Bukit Punjabu yang terletak di ketinggian 850 meter di atas permukaan laut (mdpl) di Desa Buntu Buangin, Kecamatan Pitu Riase, Kabupaten Sidenreng Rappang (Sidrap) terus menjadi daya tarik utama wisatawan lokal maupun luar daerah.\n\nPada jam 05.30 hingga 07.30 WITA, pengunjung disuguhkan hamparan lautan awan putih bergulung yang menyelimuti perbukitan hijau di bawahnya. Suasana sejuk pegunungan dipadu dengan aroma Kopi Aren Punjabu menjadikan momen pagi hari di lokasi ini terasa sangat menenangkan.\n\nKetua Pokdarwis Desa Buntu Buangin menyampaikan bahwa penataan fasilitas pendukung seperti toilet bersih, penerangan area camping, serta ketersediaan air bersih kini telah siap melayani wisatawan yang berkunjung di akhir pekan.',
@@ -305,20 +322,20 @@ VALUES
   4.8
 ),
 (
-  'Kedai Kopi & Saung Perkebunan Punjabu',
-  'Kuliner & Perkebunan',
-  'Nikmati Kopi Punjabu (Robusta & Arabika) dan camilan tradisional Gula Tappo langsung di area saung santai tepi lereng bukit.',
-  'https://images.unsplash.com/photo-1447933601403-0c6688de566e?q=80&w=1200&auto=format&fit=crop',
-  'Khas Buntu Buangin',
+  'Agrowisata & Edukasi Gula Tappo Aren',
+  'Wisata Edukasi & Agrowisata',
+  'Pengalaman edukasi budaya & agrowisata melihat langsung proses pembuatan Gula Tappo khas Buntu Buangin serta penyadapan nira aren murni di Dusun Jambu-jambu.',
+  '/images/kebunview.png',
+  'Wisata Edukasi',
   4.8
 ),
 (
-  'Panorama Pegunungan Latimojong & Teluk Bone',
-  'Lanskap Alam',
-  'Dari ketinggian 527 mdpl, nikmati pemandangan cakrawala luas memandang deretan Pegunungan Latimojong hingga kilau Teluk Bone.',
-  'https://images.unsplash.com/photo-1500382017468-9049fed747ef?q=80&w=1200&auto=format&fit=crop',
-  'Lanskap 360°',
-  4.7
+  'Gardu Pandang & Gazebo Rest Area Punjabu',
+  'Fasilitas & Rekreasi',
+  'Anjungan kayu & gazebo santai di lereng bukit untuk berteduh, beristirahat, dan menikmati pemandangan alam perbukitan yang sejuk bersama keluarga.',
+  '/images/gazeboview.png',
+  'Gardu Pandang',
+  4.8
 );
 
 -- SEED DATA PRODUK UMKM (umkm_products)
@@ -459,34 +476,52 @@ VALUES
 INSERT INTO gallery_images (title, category, image_url, description)
 VALUES
 (
-  'Lautan Awan Pagi Hari 527 mdpl',
+  'Puncak Utama & Lautan Awan 527 mdpl',
   'Samudera Awan',
-  'https://images.unsplash.com/photo-1506744038136-46273834b3fb?q=80&w=1200&auto=format&fit=crop',
-  'Pemandangan kabut putih bergulung di puncak bukit saat terbit matahari'
+  '/images/heroimage.jpg',
+  'Pesona fajar menyingsing di atas hamparan samudera awan putih perbukitan Pitu Riase.'
 ),
 (
-  'Camping Ground Perkebunan Cengkih',
+  'Panorama Udara Bentang Alam Punjabu',
+  'Gardu Pandang',
+  '/images/topview.jpg',
+  'Pemandangan dari udara menyajikan lanskap perbukitan hijau Dusun Jambu-jambu Desa Buntu Buangin.'
+),
+(
+  'Suasana Camping Ground & Kebun Cengkih',
   'Camping',
-  'https://images.unsplash.com/photo-1510312305653-8ed496efae75?q=80&w=1200&auto=format&fit=crop',
-  'Area tenda perkemahan yang sejuk di tengah lanskap cengkih'
+  '/images/sideview.jpg',
+  'Pengalaman berkemah sejuk ramah keluarga di tengah hamparan perkebunan cengkih warga.'
 ),
 (
-  'Spot Photo Siluet Hati',
-  'Spot Foto',
-  'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?q=80&w=1200&auto=format&fit=crop',
-  'Panggung kayu panoramik ikonik berlatar perbukitan Pitu Riase'
+  'Gazebo & Saung Pandang Panoramik',
+  'Gardu Pandang',
+  '/images/gazeboview.png',
+  'Fasilitas saung gazebo tempat bersantai bagi pengunjung menikmati pemandangan alam Sidrap.'
 ),
 (
-  'Trek Off-Road Perbukitan Punjabu',
+  'Panorama Latimojong & Teluk Bone',
+  'Samudera Awan',
+  '/images/boneview.png',
+  'Cakrawala luas memandang deretan Pegunungan Latimojong hingga kilau pesona laut Teluk Bone.'
+),
+(
+  'Jalur Petualangan Off-Road 3 km',
   'Petualangan',
-  'https://images.unsplash.com/photo-1448375240586-882707db888b?q=80&w=1200&auto=format&fit=crop',
-  'Jalur menantang 3 km favorit komunitas motor trail dan jeep'
+  '/images/trailview.png',
+  'Trek menantang melintasi perbukitan favorit pecinta motor trail, jeep 4x4, dan penjelajah alam.'
 ),
 (
-  'Gula Tappo & Seduhan Kopi Punjabu',
-  'Kuliner & Perkebunan',
-  'https://images.unsplash.com/photo-1447933601403-0c6688de566e?q=80&w=1200&auto=format&fit=crop',
-  'Camilan khas dan kopi petik merah olahan warga lokal'
+  'Agrowisata Kebun Cengkih & Aren',
+  'Agrowisata',
+  '/images/kebunview.png',
+  'Lanskap perkebunan cengkih dan nira aren organik yang asri di Dusun Jambu-jambu Desa Buntu Buangin.'
+),
+(
+  'Lanskap Cakrawala Jauh Perbukitan',
+  'Gardu Pandang',
+  '/images/farview.png',
+  'Pemandangan spektakuler sudut pandang jauh membentang sepanjang pegunungan Pitu Riase Sidrap.'
 );
 
 

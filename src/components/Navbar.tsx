@@ -201,7 +201,21 @@ export const Navbar: React.FC = () => {
                 </Link>
               )}
               <div className={`flex items-center gap-2 pl-2 border-l ${isSolidHeader ? 'border-zinc-200 dark:border-zinc-800' : 'border-white/20'}`}>
-                <span className={`text-xs font-semibold ${isSolidHeader ? 'text-zinc-800 dark:text-zinc-200' : 'text-white'}`}>
+                {user.avatar ? (
+                  <img
+                    src={user.avatar}
+                    alt={user.name}
+                    className="w-7 h-7 rounded-full object-cover border border-emerald-500/40 shadow-xs shrink-0"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}&background=059669&color=fff`;
+                    }}
+                  />
+                ) : (
+                  <div className="w-7 h-7 rounded-full bg-emerald-600 text-white font-bold text-xs flex items-center justify-center shadow-xs shrink-0">
+                    {user.name.charAt(0).toUpperCase()}
+                  </div>
+                )}
+                <span className={`text-xs font-semibold max-w-[130px] sm:max-w-[160px] truncate ${isSolidHeader ? 'text-zinc-800 dark:text-zinc-200' : 'text-white'}`}>
                   {user.name}
                 </span>
                 <button
@@ -294,13 +308,50 @@ export const Navbar: React.FC = () => {
           <div className="pt-3 border-t border-zinc-200 dark:border-zinc-800 space-y-2">
 
             {mounted && user ? (
-              <div className="flex items-center justify-between px-4 py-2">
-                <span className="text-xs font-semibold text-zinc-800 dark:text-zinc-200">
-                  {user.name} ({user.role})
-                </span>
-                <button onClick={logout} className="text-xs text-red-500 font-bold">
-                  Keluar
-                </button>
+              <div className="flex items-center justify-between p-3 bg-zinc-100 dark:bg-zinc-900 rounded-2xl border border-zinc-200/80 dark:border-zinc-800/80">
+                <div className="flex items-center gap-3">
+                  {user.avatar ? (
+                    <img
+                      src={user.avatar}
+                      alt={user.name}
+                      className="w-9 h-9 rounded-full object-cover border border-emerald-500/50 shadow-xs shrink-0"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}&background=059669&color=fff`;
+                      }}
+                    />
+                  ) : (
+                    <div className="w-9 h-9 rounded-full bg-emerald-600 text-white font-bold text-xs flex items-center justify-center shadow-xs shrink-0">
+                      {user.name.charAt(0).toUpperCase()}
+                    </div>
+                  )}
+                  <div className="flex flex-col overflow-hidden">
+                    <span className="text-xs font-bold text-zinc-900 dark:text-zinc-100 truncate">
+                      {user.name}
+                    </span>
+                    <span className="text-[10px] text-zinc-500 dark:text-zinc-400 capitalize truncate">
+                      {user.role === 'admin' ? 'Administrator' : 'Pengunjung'} {user.email ? `• ${user.email}` : ''}
+                    </span>
+                  </div>
+                </div>
+                <div className="flex items-center gap-1.5 shrink-0">
+                  {user.role === 'admin' && (
+                    <Link
+                      href="/admin"
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="p-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-semibold transition"
+                      title="Dashboard Admin"
+                    >
+                      <LayoutDashboard className="w-4 h-4" />
+                    </Link>
+                  )}
+                  <button
+                    onClick={logout}
+                    className="p-2 text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-xl text-xs font-bold transition"
+                    title="Keluar"
+                  >
+                    <LogOut className="w-4 h-4" />
+                  </button>
+                </div>
               </div>
             ) : (
               <button

@@ -4,39 +4,31 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useApp } from '@/context/AppContext';
-import { NewsArticle, TourismSpot, UMKMProduct, BookingRecord, VisitorReview } from '@/data/initialData';
+import { NewsArticle, TourismSpot, UMKMProduct, BookingRecord } from '@/data/initialData';
 import { showToast } from '@/components/Toast';
 import {
-  LayoutDashboard,
   Newspaper,
   Plus,
   Edit,
   Trash2,
   Eye,
   Search,
-  TrendingUp,
   Users,
   ShieldCheck,
   X,
-  FileText,
   Compass,
   ShoppingBag,
   Ticket,
   CheckCircle2,
-  Clock,
   XCircle,
-  MapPin,
   Star,
   MessageSquare,
-  Sparkles,
   Phone,
   Grid,
   List,
-  ExternalLink,
   RefreshCw,
   DollarSign,
   ArrowUpRight,
-  Database,
 } from 'lucide-react';
 
 export default function AdminDashboardPage() {
@@ -66,7 +58,6 @@ export default function AdminDashboardPage() {
   const [activeTab, setActiveTab] = useState<'news' | 'wisata' | 'umkm' | 'bookings' | 'reviews'>('news');
   const [viewMode, setViewMode] = useState<'grid' | 'table'>('table');
   const [searchQuery, setSearchQuery] = useState('');
-  const [filterCategory, setFilterCategory] = useState('Semua');
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   // ----------------------------------------------------
@@ -201,21 +192,33 @@ export default function AdminDashboardPage() {
 
   const handleSaveNews = async (e: React.FormEvent) => {
     e.preventDefault();
-    const gallery = newsFormData.galleryInput ? newsFormData.galleryInput.split(',').map((s) => s.trim()).filter(Boolean) : [];
-    const tags = newsFormData.tagsInput ? newsFormData.tagsInput.split(',').map((s) => s.trim()).filter(Boolean) : [];
+    const gallery = newsFormData.galleryInput
+      ? newsFormData.galleryInput.split(/[\n,]+/).map((s) => s.trim()).filter(Boolean)
+      : [];
+    const tags = newsFormData.tagsInput
+      ? newsFormData.tagsInput.split(/[\n,]+/).map((s) => s.trim()).filter(Boolean)
+      : [];
+
+    let formattedVideoUrl = newsFormData.videoUrl.trim();
+    if (formattedVideoUrl) {
+      const ytMatch = formattedVideoUrl.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/shorts\/)([a-zA-Z0-9_-]+)/);
+      if (ytMatch && ytMatch[1]) {
+        formattedVideoUrl = `https://www.youtube.com/embed/${ytMatch[1]}`;
+      }
+    }
 
     if (editingNews) {
       await updateNews(editingNews.id, {
         title: newsFormData.title,
         category: newsFormData.category,
-        author: newsFormData.author,
-        authorRole: newsFormData.authorRole,
-        readTime: newsFormData.readTime,
+        author: newsFormData.author || 'Tim Media Desa',
+        authorRole: newsFormData.authorRole || 'Pengelola CMS Desa',
+        readTime: newsFormData.readTime || '3 min baca',
         summary: newsFormData.summary,
         content: newsFormData.content,
         coverImage: newsFormData.coverImage,
         gallery,
-        videoUrl: newsFormData.videoUrl || undefined,
+        videoUrl: formattedVideoUrl || undefined,
         status: newsFormData.status,
         featured: newsFormData.featured,
         tags,
@@ -226,14 +229,14 @@ export default function AdminDashboardPage() {
         title: newsFormData.title,
         slug: '',
         category: newsFormData.category,
-        author: newsFormData.author,
-        authorRole: newsFormData.authorRole,
-        readTime: newsFormData.readTime,
+        author: newsFormData.author || 'Tim Media Desa',
+        authorRole: newsFormData.authorRole || 'Pengelola CMS Desa',
+        readTime: newsFormData.readTime || '3 min baca',
         summary: newsFormData.summary,
         content: newsFormData.content,
         coverImage: newsFormData.coverImage,
         gallery,
-        videoUrl: newsFormData.videoUrl || undefined,
+        videoUrl: formattedVideoUrl || undefined,
         status: newsFormData.status,
         featured: newsFormData.featured,
         tags,
@@ -348,8 +351,18 @@ export default function AdminDashboardPage() {
                 <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
                 <span>{supabaseActive ? 'Supabase Live Connection' : 'Local Dynamic Sync'}</span>
               </span>
-              <span className="px-3 py-1 bg-zinc-800 text-zinc-300 text-xs font-semibold rounded-full border border-zinc-700">
-                Pengelola: {user.name}
+              <span className="px-3 py-1 bg-zinc-800 text-zinc-300 text-xs font-semibold rounded-full border border-zinc-700 flex items-center gap-2">
+                {user.avatar ? (
+                  <img
+                    src={user.avatar}
+                    alt={user.name}
+                    className="w-5 h-5 rounded-full object-cover border border-emerald-500/40"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}&background=059669&color=fff`;
+                    }}
+                  />
+                ) : null}
+                <span>Pengelola: {user.name}</span>
               </span>
             </div>
 
@@ -1011,26 +1024,35 @@ export default function AdminDashboardPage() {
       {/* MODAL BERITA */}
       {isNewsModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-xl animate-fade-in">
-          <div className="bg-zinc-900 border border-zinc-800 rounded-3xl max-w-2xl w-full p-6 space-y-4 max-h-[90vh] overflow-y-auto shadow-2xl">
+          <div className="bg-zinc-900 border border-zinc-800 rounded-3xl max-w-3xl w-full p-6 space-y-5 max-h-[90vh] overflow-y-auto shadow-2xl">
             <div className="flex justify-between items-center pb-3 border-b border-zinc-800">
-              <h3 className="font-bold text-white text-lg">{editingNews ? 'Edit Artikel Berita' : 'Tambah Berita Baru'}</h3>
-              <button onClick={() => setIsNewsModalOpen(false)} className="text-zinc-400 hover:text-white"><X className="w-5 h-5" /></button>
-            </div>
-            <form onSubmit={handleSaveNews} className="space-y-4 text-xs">
               <div>
-                <label className="block text-zinc-400 mb-1 font-semibold">Judul Berita *</label>
+                <h3 className="font-bold text-white text-lg">{editingNews ? 'Edit Artikel Berita' : 'Tambah Berita Baru'}</h3>
+                <p className="text-[11px] text-zinc-400">Isi data artikel, foto utama, foto galeri liputan, serta embed video liputan.</p>
+              </div>
+              <button onClick={() => setIsNewsModalOpen(false)} className="text-zinc-400 hover:text-white p-1 rounded-lg bg-zinc-800">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveNews} className="space-y-4 text-xs">
+              {/* Judul Berita */}
+              <div>
+                <label className="block text-zinc-300 mb-1 font-semibold">Judul Berita Utama *</label>
                 <input
                   type="text"
                   required
+                  placeholder="Contoh: Pesona Lautan Awan Puncak Punjabu 850 mdpl"
                   value={newsFormData.title}
                   onChange={(e) => setNewsFormData({ ...newsFormData, title: e.target.value })}
-                  className="w-full p-3 bg-zinc-800/80 border border-zinc-700 rounded-xl text-white focus:outline-none focus:border-emerald-500 text-sm"
+                  className="w-full p-3 bg-zinc-800/80 border border-zinc-700 rounded-xl text-white focus:outline-none focus:border-emerald-500 text-sm font-semibold"
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              {/* Grid Metadata 1: Kategori, Status, Featured */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div>
-                  <label className="block text-zinc-400 mb-1 font-semibold">Kategori</label>
+                  <label className="block text-zinc-400 mb-1 font-semibold">Kategori Berita</label>
                   <select
                     value={newsFormData.category}
                     onChange={(e) => setNewsFormData({ ...newsFormData, category: e.target.value as NewsArticle['category'] })}
@@ -1050,53 +1072,201 @@ export default function AdminDashboardPage() {
                     onChange={(e) => setNewsFormData({ ...newsFormData, status: e.target.value as NewsArticle['status'] })}
                     className="w-full p-3 bg-zinc-800/80 border border-zinc-700 rounded-xl text-white focus:outline-none"
                   >
-                    <option value="Published">Published</option>
-                    <option value="Draft">Draft</option>
+                    <option value="Published">Published (Tayang)</option>
+                    <option value="Draft">Draft (Konsep)</option>
                   </select>
+                </div>
+                <div className="flex items-center pt-5">
+                  <label className="inline-flex items-center gap-2 cursor-pointer text-zinc-300 font-semibold select-none">
+                    <input
+                      type="checkbox"
+                      checked={newsFormData.featured}
+                      onChange={(e) => setNewsFormData({ ...newsFormData, featured: e.target.checked })}
+                      className="w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500 bg-zinc-800 border-zinc-700"
+                    />
+                    <span>Tampilkan sbg Featured (Hero)</span>
+                  </label>
                 </div>
               </div>
 
+              {/* Grid Metadata 2: Author, Role, Read Time */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div>
+                  <label className="block text-zinc-400 mb-1 font-semibold">Nama Penulis / Redaksi</label>
+                  <input
+                    type="text"
+                    placeholder="Tim Redaksi Desa"
+                    value={newsFormData.author}
+                    onChange={(e) => setNewsFormData({ ...newsFormData, author: e.target.value })}
+                    className="w-full p-3 bg-zinc-800/80 border border-zinc-700 rounded-xl text-white focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-zinc-400 mb-1 font-semibold">Jabatan Penulis</label>
+                  <input
+                    type="text"
+                    placeholder="Pengelola Pokdarwis"
+                    value={newsFormData.authorRole}
+                    onChange={(e) => setNewsFormData({ ...newsFormData, authorRole: e.target.value })}
+                    className="w-full p-3 bg-zinc-800/80 border border-zinc-700 rounded-xl text-white focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-zinc-400 mb-1 font-semibold">Estimasi Waktu Baca</label>
+                  <input
+                    type="text"
+                    placeholder="3 min baca"
+                    value={newsFormData.readTime}
+                    onChange={(e) => setNewsFormData({ ...newsFormData, readTime: e.target.value })}
+                    className="w-full p-3 bg-zinc-800/80 border border-zinc-700 rounded-xl text-white focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              {/* Summary */}
               <div>
-                <label className="block text-zinc-400 mb-1 font-semibold">Ringkasan Singkat Artikel *</label>
+                <label className="block text-zinc-400 mb-1 font-semibold">Ringkasan Singkat (Snippet Header) *</label>
                 <textarea
                   required
                   rows={2}
+                  placeholder="Ringkasan 1-2 kalimat untuk kartu berita dan Google SEO snippet..."
                   value={newsFormData.summary}
                   onChange={(e) => setNewsFormData({ ...newsFormData, summary: e.target.value })}
                   className="w-full p-3 bg-zinc-800/80 border border-zinc-700 rounded-xl text-white focus:outline-none"
                 />
               </div>
 
+              {/* Content */}
               <div>
-                <label className="block text-zinc-400 mb-1 font-semibold">Isi Artikel Berita *</label>
+                <label className="block text-zinc-400 mb-1 font-semibold">Isi Lengkap Artikel Berita *</label>
                 <textarea
                   required
-                  rows={6}
+                  rows={7}
+                  placeholder="Tuliskan isi berita lengkap di sini..."
                   value={newsFormData.content}
                   onChange={(e) => setNewsFormData({ ...newsFormData, content: e.target.value })}
-                  className="w-full p-3 bg-zinc-800/80 border border-zinc-700 rounded-xl text-white focus:outline-none font-sans"
+                  className="w-full p-3 bg-zinc-800/80 border border-zinc-700 rounded-xl text-white focus:outline-none font-sans leading-relaxed text-sm"
                 />
               </div>
 
+              {/* Cover Image URL */}
               <div>
-                <label className="block text-zinc-400 mb-1 font-semibold">URL Sampul Gambar</label>
+                <label className="block text-zinc-400 mb-1 font-semibold">URL Foto Sampul Utama (Cover Image)</label>
                 <input
                   type="text"
+                  placeholder="https://images.unsplash.com/..."
                   value={newsFormData.coverImage}
                   onChange={(e) => setNewsFormData({ ...newsFormData, coverImage: e.target.value })}
-                  className="w-full p-3 bg-zinc-800/80 border border-zinc-700 rounded-xl text-white focus:outline-none"
+                  className="w-full p-3 bg-zinc-800/80 border border-zinc-700 rounded-xl text-white focus:outline-none font-mono"
                 />
                 {newsFormData.coverImage && (
-                  <div className="mt-2 relative h-32 w-full rounded-xl overflow-hidden border border-zinc-700">
-                    <Image src={newsFormData.coverImage} alt="Pratinjau" fill className="object-cover" />
-                    <span className="absolute bottom-2 left-2 bg-black/70 text-white text-[10px] px-2 py-0.5 rounded font-mono">Live Preview Sampul</span>
+                  <div className="mt-2 relative h-36 w-full rounded-2xl overflow-hidden border border-zinc-700">
+                    <Image src={newsFormData.coverImage} alt="Pratinjau Sampul" fill className="object-cover" />
+                    <span className="absolute bottom-2 left-2 bg-black/80 backdrop-blur-xs text-emerald-400 text-[10px] px-2.5 py-1 rounded-lg font-mono border border-emerald-500/30">
+                      Live Preview Sampul Utama
+                    </span>
                   </div>
                 )}
               </div>
 
-              <div className="flex justify-end space-x-3 pt-3 border-t border-zinc-800">
-                <button type="button" onClick={() => setIsNewsModalOpen(false)} className="px-4 py-2 bg-zinc-800 text-zinc-300 rounded-xl">Batal</button>
-                <button type="submit" className="px-6 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl shadow-lg">Simpan Berita</button>
+              {/* Additional Photos / Gallery Section */}
+              <div className="p-4 rounded-2xl bg-zinc-950/60 border border-zinc-800 space-y-3">
+                <div className="flex items-center justify-between">
+                  <label className="block text-emerald-400 font-bold flex items-center gap-1.5">
+                    📷 Galeri Foto Liputan Tambahan
+                  </label>
+                  <span className="text-[10px] text-zinc-500">Pisahkan tiap URL dengan koma atau baris baru</span>
+                </div>
+                <textarea
+                  rows={3}
+                  placeholder="Paste URL foto liputan tambahan di sini...&#10;Contoh:&#10;https://images.unsplash.com/photo-1&#10;https://images.unsplash.com/photo-2"
+                  value={newsFormData.galleryInput}
+                  onChange={(e) => setNewsFormData({ ...newsFormData, galleryInput: e.target.value })}
+                  className="w-full p-3 bg-zinc-900 border border-zinc-800 rounded-xl text-white focus:outline-none font-mono text-xs"
+                />
+                {/* Live Preview Gallery Thumbnails */}
+                {newsFormData.galleryInput.trim() && (
+                  <div className="space-y-1.5 pt-1">
+                    <span className="text-[10px] font-semibold text-zinc-400 block">Pratinjau Foto Galeri:</span>
+                    <div className="grid grid-cols-4 gap-2">
+                      {newsFormData.galleryInput
+                        .split(/[\n,]+/)
+                        .map((url) => url.trim())
+                        .filter((url) => url.startsWith('http'))
+                        .map((url, idx) => (
+                          <div key={idx} className="relative h-20 rounded-xl overflow-hidden border border-zinc-700 bg-zinc-900">
+                            <Image src={url} alt={`Preview ${idx + 1}`} fill className="object-cover" />
+                          </div>
+                        ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Video Documentation URL */}
+              <div className="p-4 rounded-2xl bg-zinc-950/60 border border-zinc-800 space-y-3">
+                <div className="flex items-center justify-between">
+                  <label className="block text-rose-400 font-bold flex items-center gap-1.5">
+                    🎥 Link Video Dokumentasi Liputan (YouTube / MP4)
+                  </label>
+                  <span className="text-[10px] text-zinc-500">Link YouTube biasa otomatis di-convert ke embed</span>
+                </div>
+                <input
+                  type="text"
+                  placeholder="https://www.youtube.com/watch?v=... atau https://youtu.be/..."
+                  value={newsFormData.videoUrl}
+                  onChange={(e) => setNewsFormData({ ...newsFormData, videoUrl: e.target.value })}
+                  className="w-full p-3 bg-zinc-900 border border-zinc-800 rounded-xl text-white focus:outline-none font-mono text-xs"
+                />
+                {/* Live Preview Video Embed */}
+                {newsFormData.videoUrl.trim() && (
+                  <div className="space-y-1.5 pt-1">
+                    <span className="text-[10px] font-semibold text-zinc-400 block">Pratinjau Player Video:</span>
+                    <div className="relative aspect-video rounded-xl overflow-hidden bg-black border border-zinc-800">
+                      <iframe
+                        src={
+                          newsFormData.videoUrl.includes('youtube.com/watch?v=')
+                            ? newsFormData.videoUrl.replace('watch?v=', 'embed/')
+                            : newsFormData.videoUrl.includes('youtu.be/')
+                            ? newsFormData.videoUrl.replace('youtu.be/', 'youtube.com/embed/')
+                            : newsFormData.videoUrl
+                        }
+                        title="Preview Video Embed"
+                        className="w-full h-full border-0"
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Tags Input */}
+              <div>
+                <label className="block text-zinc-400 mb-1 font-semibold">Tags / Topik Berita</label>
+                <input
+                  type="text"
+                  placeholder="Wisata, Sidrap, Punjabu, Lautan Awan"
+                  value={newsFormData.tagsInput}
+                  onChange={(e) => setNewsFormData({ ...newsFormData, tagsInput: e.target.value })}
+                  className="w-full p-3 bg-zinc-800/80 border border-zinc-700 rounded-xl text-white focus:outline-none"
+                />
+                <span className="text-[10px] text-zinc-500 block mt-1">Pisahkan kata kunci dengan koma</span>
+              </div>
+
+              {/* Modal Buttons */}
+              <div className="flex items-center justify-end space-x-3 pt-4 border-t border-zinc-800">
+                <button
+                  type="button"
+                  onClick={() => setIsNewsModalOpen(false)}
+                  className="px-5 py-2.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-bold rounded-xl transition"
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs rounded-xl shadow-lg shadow-emerald-950 transition active:scale-95"
+                >
+                  Simpan Berita &amp; Media
+                </button>
               </div>
             </form>
           </div>

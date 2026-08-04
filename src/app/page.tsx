@@ -10,8 +10,6 @@ import { ScrollReveal } from '@/components/ScrollReveal';
 import { WeatherWidget } from '@/components/WeatherWidget';
 import { GallerySection } from '@/components/GalleryLightbox';
 
-import { showToast } from '@/components/Toast';
-
 import {
   Compass,
   MapPin,
@@ -38,7 +36,7 @@ import {
 
 
 export default function Home() {
-  const { newsList, tourismSpots, umkmProducts, reviews, openBookingModal } = useApp();
+  const { newsList, tourismSpots, umkmProducts, reviews } = useApp();
   const [openFaqId, setOpenFaqId] = useState<string | null>('f1');
   const [umkmCategory, setUmkmCategory] = useState<string>('Semua');
   const [umkmSearch, setUmkmSearch] = useState<string>('');
@@ -78,7 +76,7 @@ export default function Home() {
         {/* Parallax Background & Ambient Light Orbs */}
         <div className="absolute inset-0 z-0 overflow-hidden">
           <Image
-            src="https://images.unsplash.com/photo-1506744038136-46273834b3fb?q=80&w=1920&auto=format&fit=crop"
+            src="/images/heroimage.jpg"
             alt="Bukit Punjabu Sidrap Landscape"
             fill
             priority
@@ -472,7 +470,7 @@ export default function Home() {
 
           <div className="grid grid-cols-2 gap-4 text-xs font-semibold">
             {[
-              { icon: <Coffee className="w-5 h-5 text-amber-600 dark:text-amber-400" />, label: 'Kedai Kopi Punjabu Sidrap' },
+              { icon: <Coffee className="w-5 h-5 text-amber-600 dark:text-amber-400" />, label: 'Warung Kuliner Khas Lokal' },
               { icon: <Tent className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />, label: 'Sewa Tenda & Alat Camping' },
               { icon: <Users className="w-5 h-5 text-teal-600 dark:text-teal-400" />, label: 'Fasilitas MCK & Sumber Air' },
               { icon: <Zap className="w-5 h-5 text-amber-500 dark:text-yellow-400" />, label: 'Spot Charger & Gazebo Santai' },

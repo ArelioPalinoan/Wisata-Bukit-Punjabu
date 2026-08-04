@@ -6,11 +6,18 @@ import { showToast } from '@/components/Toast';
 import { X, Calendar, Ticket, Tent, Compass, User, Phone, Mail, FileText, CheckCircle2, MessageSquare } from 'lucide-react';
 
 export const BookingModal: React.FC = () => {
-  const { isBookingModalOpen, closeBookingModal, createBooking } = useApp();
+  const { isBookingModalOpen, closeBookingModal, createBooking, user } = useApp();
 
   const [userName, setUserName] = useState('');
   const [userPhone, setUserPhone] = useState('');
   const [userEmail, setUserEmail] = useState('');
+
+  React.useEffect(() => {
+    if (user) {
+      if (user.name) setUserName(user.name);
+      if (user.email) setUserEmail(user.email);
+    }
+  }, [user]);
   const [bookingDate, setBookingDate] = useState(() => {
     const tomorrow = new Date();
     tomorrow.setDate(tomorrow.getDate() + 1);

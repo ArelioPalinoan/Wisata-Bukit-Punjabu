@@ -11,7 +11,6 @@ import {
   VisitorReview,
   VISITOR_REVIEWS,
   VillageStats,
-  INITIAL_STATS,
   BookingRecord,
   FAQItem,
   FAQS,
@@ -73,8 +72,9 @@ interface AppContextType {
   theme: 'dark' | 'light';
   toggleTheme: () => void;
   user: User | null;
-  login: (email: string, role?: 'admin' | 'visitor', name?: string) => Promise<void>;
-  loginWithGoogle: () => Promise<void>;
+  login: (email: string, passwordOrRole?: string | 'admin' | 'visitor', roleOrName?: 'admin' | 'visitor' | string, name?: string) => Promise<{ success: boolean; error?: string }>;
+  signUp: (email: string, password: string, name: string) => Promise<{ success: boolean; error?: string; message?: string }>;
+  loginWithGoogle: () => Promise<{ success: boolean; error?: string }>;
   logout: () => Promise<void>;
   isAuthModalOpen: boolean;
   openAuthModal: () => void;
@@ -153,7 +153,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [totalWebVisits, setTotalWebVisits] = useState<number>(0);
   const [monthlyWebVisits, setMonthlyWebVisits] = useState<number>(0);
 
-  const [stats, setStats] = useState<VillageStats>({ ...INITIAL_STATS, totalNews: INITIAL_NEWS.length });
+  const stats: VillageStats = React.useMemo(() => {
+    const realVisitorsCount = bookings.reduce((sum, b) => sum + (b.ticketQty || 1), 0);
+    return {
+      totalVisitors: realVisitorsCount,
+      totalWebVisits: totalWebVisits,
+      monthlyWebVisits: monthlyWebVisits,
+      totalNews: newsList.length,
+      activeAttractions: tourismSpots.length,
+      totalInquiries: bookings.length,
+    };
+  }, [bookings, totalWebVisits, monthlyWebVisits, newsList.length, tourismSpots.length]);
   const [mounted, setMounted] = useState(false);
   const [supabaseActive, setSupabaseActive] = useState(false);
 
@@ -190,7 +200,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         }
 
         // Fetch Tourism Spots
-        const { data: spotsData } = await supabase.from('tourism_spots').select('*').order('created_at', { ascending: false });
+        const { data: spotsData } = await supabase.from('tourism_spots').select('*').order('created_at', { ascending: true });
         if (spotsData && spotsData.length > 0) {
           setTourismSpots(
             spotsData.map((s: { id: string; title: string; category: string; description: string; image: string; badge: string; rating?: number }) => ({
@@ -206,7 +216,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         }
 
         // Fetch UMKM Products
-        const { data: umkmData } = await supabase.from('umkm_products').select('*').order('created_at', { ascending: false });
+        const { data: umkmData } = await supabase.from('umkm_products').select('*').order('created_at', { ascending: true });
         if (umkmData && umkmData.length > 0) {
           setUmkmProducts(
             umkmData.map((u: { id: string; name: string; price: number; price_unit: string; category: string; seller: string; description: string; image: string; badge?: string }) => ({
@@ -290,7 +300,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         }
 
         // Fetch Gallery Images
-        const { data: galleryData } = await supabase.from('gallery_images').select('*').order('created_at', { ascending: false });
+        const { data: galleryData } = await supabase.from('gallery_images').select('*').order('created_at', { ascending: true });
         if (galleryData && galleryData.length > 0) {
           setGalleryItems(
             galleryData.map((g: { id: string; title: string; category: string; image_url: string; description?: string }) => ({
@@ -341,18 +351,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   }, [mapDbNews]);
 
-  // Update Stats based on 100% real database state counts
-  useEffect(() => {
-    const realVisitorsCount = bookings.reduce((sum, b) => sum + (b.ticketQty || 1), 0);
-    setStats({
-      totalVisitors: realVisitorsCount,
-      totalWebVisits: totalWebVisits,
-      monthlyWebVisits: monthlyWebVisits,
-      totalNews: newsList.length,
-      activeAttractions: tourismSpots.length,
-      totalInquiries: bookings.length,
-    });
-  }, [newsList.length, tourismSpots.length, bookings, totalWebVisits, monthlyWebVisits]);
+
 
   useEffect(() => {
     queueMicrotask(() => {
@@ -375,19 +374,65 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     });
 
     if (isSupabaseConfigured() && supabase) {
-      const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      // Hydrate session from Supabase on mount
+      supabase.auth.getSession().then(({ data: { session } }) => {
         if (session?.user) {
           const email = session.user.email || '';
-          const name = session.user.user_metadata?.name || session.user.user_metadata?.full_name || email.split('@')[0];
+          const name =
+            session.user.user_metadata?.full_name ||
+            session.user.user_metadata?.name ||
+            session.user.user_metadata?.preferred_username ||
+            email.split('@')[0];
           const isAdmin = email.toLowerCase().includes('admin') || session.user.user_metadata?.role === 'admin';
+          const avatar =
+            session.user.user_metadata?.avatar_url ||
+            session.user.user_metadata?.picture ||
+            session.user.user_metadata?.avatar ||
+            `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=059669&color=fff`;
+
           const loggedUser: User = {
             name,
             email,
             role: isAdmin ? 'admin' : 'visitor',
-            avatar: session.user.user_metadata?.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=059669&color=fff`,
+            avatar,
           };
           setUser(loggedUser);
-          localStorage.setItem('punjabu_user', JSON.stringify(loggedUser));
+          if (typeof window !== 'undefined') {
+            localStorage.setItem('punjabu_user', JSON.stringify(loggedUser));
+          }
+        }
+      });
+
+      const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+        if (session?.user) {
+          const email = session.user.email || '';
+          const name =
+            session.user.user_metadata?.full_name ||
+            session.user.user_metadata?.name ||
+            session.user.user_metadata?.preferred_username ||
+            email.split('@')[0];
+          const isAdmin = email.toLowerCase().includes('admin') || session.user.user_metadata?.role === 'admin';
+          const avatar =
+            session.user.user_metadata?.avatar_url ||
+            session.user.user_metadata?.picture ||
+            session.user.user_metadata?.avatar ||
+            `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=059669&color=fff`;
+
+          const loggedUser: User = {
+            name,
+            email,
+            role: isAdmin ? 'admin' : 'visitor',
+            avatar,
+          };
+          setUser(loggedUser);
+          if (typeof window !== 'undefined') {
+            localStorage.setItem('punjabu_user', JSON.stringify(loggedUser));
+          }
+        } else if (event === 'SIGNED_OUT') {
+          setUser(null);
+          if (typeof window !== 'undefined') {
+            localStorage.removeItem('punjabu_user');
+          }
         }
       });
 
@@ -409,26 +454,118 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   };
 
-  const login = async (email: string, role: 'admin' | 'visitor' = 'visitor', name?: string) => {
+  const login = async (
+    email: string,
+    passwordOrRole?: string | 'admin' | 'visitor',
+    roleOrName?: 'admin' | 'visitor' | string,
+    name?: string
+  ): Promise<{ success: boolean; error?: string }> => {
+    let password = '';
+    let role: 'admin' | 'visitor' = 'visitor';
+    let userName = name;
+
+    if (passwordOrRole === 'admin' || passwordOrRole === 'visitor') {
+      role = passwordOrRole;
+      userName = typeof roleOrName === 'string' ? roleOrName : name;
+    } else {
+      password = passwordOrRole || '';
+      if (roleOrName === 'admin' || roleOrName === 'visitor') {
+        role = roleOrName;
+      }
+    }
+
     const isEmailAdmin = email.toLowerCase().includes('admin') || role === 'admin';
     const finalRole: 'admin' | 'visitor' = isEmailAdmin ? 'admin' : 'visitor';
-    const userName = name || (isEmailAdmin ? 'Admin Pengelola Punjabu' : email.split('@')[0]);
+    const finalUserName = userName || (isEmailAdmin ? 'Admin Pengelola Punjabu' : email.split('@')[0]);
 
     if (isSupabaseConfigured() && supabase) {
-      try {
-        await supabase.auth.signInWithPassword({
-          email: email,
-          password: 'AdminPunjabu2026!',
-        });
-      } catch (err) {
-        console.warn('Supabase Auth attempt notice:', err);
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password: password || 'AdminPunjabu2026!',
+      });
+
+      if (error) {
+        console.warn('Supabase Auth attempt error:', error.message);
+        if (password) {
+          let errorMsg = 'Email atau kata sandi salah.';
+          if (error.message.includes('Invalid login credentials')) {
+            errorMsg = 'Email atau kata sandi yang Anda masukkan salah.';
+          } else if (error.message.includes('Email not confirmed')) {
+            errorMsg = 'Email Anda belum dikonfirmasi. Silakan periksa inbox/spam email Anda.';
+          } else {
+            errorMsg = error.message;
+          }
+          return { success: false, error: errorMsg };
+        }
+      }
+    }
+
+    const newUser: User = {
+      name: finalUserName,
+      email,
+      role: finalRole,
+      avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(finalUserName)}&background=059669&color=fff`,
+    };
+    setUser(newUser);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('punjabu_user', JSON.stringify(newUser));
+    }
+    setIsAuthModalOpen(false);
+    return { success: true };
+  };
+
+  const signUp = async (
+    email: string,
+    password: string,
+    name: string
+  ): Promise<{ success: boolean; error?: string; message?: string }> => {
+    if (!email || !password) {
+      return { success: false, error: 'Email dan kata sandi wajib diisi.' };
+    }
+    if (password.length < 6) {
+      return { success: false, error: 'Kata sandi minimal 6 karakter.' };
+    }
+
+    const isEmailAdmin = email.toLowerCase().includes('admin');
+    const role: 'admin' | 'visitor' = isEmailAdmin ? 'admin' : 'visitor';
+    const userName = name.trim() || email.split('@')[0];
+
+    if (isSupabaseConfigured() && supabase) {
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            full_name: userName,
+            name: userName,
+            role,
+          },
+        },
+      });
+
+      if (error) {
+        console.warn('Supabase SignUp error:', error.message);
+        let errorMsg = error.message;
+        if (error.message.includes('User already registered')) {
+          errorMsg = 'Email ini sudah terdaftar. Silakan masuk menggunakan email Anda.';
+        } else if (error.message.includes('Password should be at least')) {
+          errorMsg = 'Kata sandi minimal 6 karakter.';
+        }
+        return { success: false, error: errorMsg };
+      }
+
+      if (data?.user && !data.session) {
+        return {
+          success: true,
+          message: 'Registrasi berhasil! Silakan periksa email Anda untuk konfirmasi akun.',
+        };
       }
     }
 
     const newUser: User = {
       name: userName,
       email,
-      role: finalRole,
+      role,
       avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(userName)}&background=059669&color=fff`,
     };
     setUser(newUser);
@@ -436,26 +573,50 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       localStorage.setItem('punjabu_user', JSON.stringify(newUser));
     }
     setIsAuthModalOpen(false);
+    return { success: true };
   };
 
-  const loginWithGoogle = async () => {
+  const loginWithGoogle = async (): Promise<{ success: boolean; error?: string }> => {
     if (isSupabaseConfigured() && supabase) {
       try {
         const { error } = await supabase.auth.signInWithOAuth({
           provider: 'google',
           options: {
-            redirectTo: typeof window !== 'undefined' ? window.location.origin : undefined,
+            redirectTo: typeof window !== 'undefined' ? `${window.location.origin}/auth/callback` : undefined,
           },
         });
-        if (!error) {
-          setIsAuthModalOpen(false);
-          return;
+        if (error) {
+          console.warn('Google OAuth error:', error.message);
+          let errorMsg = error.message;
+          if (error.message.includes('provider is not enabled') || error.message.includes('Unsupported provider')) {
+            errorMsg = 'Provider Google Auth belum diaktifkan di Supabase Dashboard (Authentication -> Providers -> Google).';
+          }
+          return { success: false, error: errorMsg };
         }
-      } catch (err) {
+        return { success: true };
+      } catch (err: unknown) {
         console.warn('Google OAuth notice:', err);
+        const rawMsg = err instanceof Error ? err.message : String(err || '');
+        let errorMsg = rawMsg || 'Gagal menghubungkan ke Google OAuth';
+        if (errorMsg.includes('provider is not enabled') || errorMsg.includes('Unsupported provider')) {
+          errorMsg = 'Provider Google Auth belum diaktifkan di Supabase Dashboard (Authentication -> Providers -> Google).';
+        }
+        return { success: false, error: errorMsg };
       }
     }
-    await login('user.google@gmail.com', 'visitor', 'Pengunjung Google');
+
+    const demoUser: User = {
+      name: 'Pengunjung Google',
+      email: 'user.google@gmail.com',
+      role: 'visitor',
+      avatar: 'https://ui-avatars.com/api/?name=Pengunjung+Google&background=059669&color=fff',
+    };
+    setUser(demoUser);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('punjabu_user', JSON.stringify(demoUser));
+    }
+    setIsAuthModalOpen(false);
+    return { success: true };
   };
 
   const logout = async () => {
@@ -524,7 +685,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     const newArticle: NewsArticle = {
       ...newsItem,
-      id: Date.now().toString(),
+      id: `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
       slug: slug,
       views: 0,
       date: formattedDate,
@@ -671,7 +832,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
 
     return {
-      id: Date.now().toString(),
+      id: `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
       author: authorName,
       text: commentText,
       date: formattedDate,
@@ -709,7 +870,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         console.warn('Supabase addTourismSpot error:', err);
       }
     }
-    const newSpot: TourismSpot = { ...spot, id: Date.now().toString() };
+    const newSpot: TourismSpot = { ...spot, id: `${Date.now()}-${Math.random().toString(36).substring(2, 9)}` };
     setTourismSpots((prev) => [newSpot, ...prev]);
   };
 
@@ -770,7 +931,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         console.warn('Supabase addUmkmProduct error:', err);
       }
     }
-    const newProduct: UMKMProduct = { ...product, id: Date.now().toString() };
+    const newProduct: UMKMProduct = { ...product, id: `${Date.now()}-${Math.random().toString(36).substring(2, 9)}` };
     setUmkmProducts((prev) => [newProduct, ...prev]);
   };
 
@@ -840,7 +1001,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         console.warn('Supabase addReview error:', err);
       }
     }
-    const newRev: VisitorReview = { ...reviewData, id: Date.now().toString(), date: formattedDate };
+    const newRev: VisitorReview = { ...reviewData, id: `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`, date: formattedDate };
     setReviews((prev) => [newRev, ...prev]);
   };
 
@@ -885,7 +1046,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     const created: BookingRecord = {
       ...bookingData,
-      id: Date.now().toString(),
+      id: `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
       status: 'Pending',
       createdAt: new Date().toISOString(),
     };
@@ -922,7 +1083,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         console.warn('Supabase addFaq error:', err);
       }
     }
-    setFaqs((prev) => [...prev, { ...faq, id: Date.now().toString() }]);
+    setFaqs((prev) => [...prev, { ...faq, id: `${Date.now()}-${Math.random().toString(36).substring(2, 9)}` }]);
   };
 
   const deleteFaq = async (id: string) => {
@@ -961,7 +1122,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         console.warn('Supabase addGalleryItem error:', err);
       }
     }
-    setGalleryItems((prev) => [{ ...item, id: Date.now().toString() }, ...prev]);
+    setGalleryItems((prev) => [{ ...item, id: `${Date.now()}-${Math.random().toString(36).substring(2, 9)}` }, ...prev]);
   };
 
   const deleteGalleryItem = async (id: string) => {
@@ -982,6 +1143,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         toggleTheme,
         user,
         login,
+        signUp,
         loginWithGoogle,
         logout,
         isAuthModalOpen,

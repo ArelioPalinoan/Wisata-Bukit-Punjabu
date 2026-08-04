@@ -14,7 +14,7 @@ let toastListeners: ((toast: ToastMessage) => void)[] = [];
 
 export const showToast = (title: string, message?: string, type: 'success' | 'info' | 'error' = 'success') => {
   const toast: ToastMessage = {
-    id: Date.now().toString(),
+    id: `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
     type,
     title,
     message,

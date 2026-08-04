@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import Image from 'next/image';
 import { ScrollReveal } from '@/components/ScrollReveal';
+import { useApp } from '@/context/AppContext';
 import { Sparkles, ChevronLeft, ChevronRight, X, Maximize2 } from 'lucide-react';
 
 export interface GalleryItem {
@@ -10,63 +11,88 @@ export interface GalleryItem {
   url: string;
   title: string;
   desc: string;
-  category: 'Samudera Awan' | 'Camping' | 'Gardu Pandang' | 'Kuliner';
+  category: string;
 }
 
 const GALLERY_DATA: GalleryItem[] = [
   {
     id: 'g1',
-    url: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?q=80&w=1200&auto=format&fit=crop',
-    title: 'Sunrise Samudera Awan Sidrap',
-    desc: 'Pesona fajar menyingsing di atas hamparan awan putih perbukitan Pitu Riase 527 mdpl.',
+    url: '/images/heroimage.jpg',
+    title: 'Puncak Utama & Lautan Awan 527 mdpl',
+    desc: 'Pesona fajar menyingsing di atas hamparan samudera awan putih perbukitan Pitu Riase.',
     category: 'Samudera Awan',
   },
   {
     id: 'g2',
-    url: 'https://images.unsplash.com/photo-1510312305653-8ed496efae75?q=80&w=1200&auto=format&fit=crop',
-    title: 'Suasana Camping Buntu Buangin',
-    desc: 'Pengalaman berkemah sejuk ramah keluarga di lokasi Camping Ground Punjabu.',
-    category: 'Camping',
-  },
-  {
-    id: 'g3',
-    url: 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?q=80&w=1200&auto=format&fit=crop',
-    title: 'Gardu Pandang Skywalk 360°',
-    desc: 'Sudut swafoto favorit wisatawan dengan panorama pegunungan Sidrap.',
+    url: '/images/topview.jpg',
+    title: 'Panorama Udara Bentang Alam Punjabu',
+    desc: 'Pemandangan dari udara menyajikan lanskap perbukitan hijau Dusun Jambu-jambu Desa Buntu Buangin.',
     category: 'Gardu Pandang',
   },
   {
+    id: 'g3',
+    url: '/images/sideview.jpg',
+    title: 'Suasana Camping Ground & Kebun Cengkih',
+    desc: 'Pengalaman berkemah sejuk ramah keluarga di tengah hamparan perkebunan cengkih warga.',
+    category: 'Camping',
+  },
+  {
     id: 'g4',
-    url: 'https://images.unsplash.com/photo-1447933601403-0c6688de566e?q=80&w=1200&auto=format&fit=crop',
-    title: 'Kopi Khas Punjabu Sidrap',
-    desc: 'Cita rasa Kopi Robusta & Arabika hasil petik merah warga Desa Buntu Buangin.',
-    category: 'Kuliner',
+    url: '/images/gazeboview.png',
+    title: 'Gazebo & Saung Pandang Panoramik',
+    desc: 'Fasilitas saung gazebo tempat bersantai bagi pengunjung menikmati pemandangan alam Sidrap.',
+    category: 'Gardu Pandang',
   },
   {
     id: 'g5',
-    url: 'https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?q=80&w=1200&auto=format&fit=crop',
-    title: 'Kabut Tebal Pagi Hari',
-    desc: 'Pemandangan lautan kabut putih yang menyelimuti perkebunan cengkih warga.',
+    url: '/images/boneview.png',
+    title: 'Panorama Latimojong & Teluk Bone',
+    desc: 'Cakrawala luas memandang deretan Pegunungan Latimojong hingga kilau pesona laut Teluk Bone.',
     category: 'Samudera Awan',
   },
   {
     id: 'g6',
-    url: 'https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?q=80&w=1200&auto=format&fit=crop',
-    title: 'Api Unggun Campers Punjabu',
-    desc: 'Kehangatan malam di camping ground dengan pemandangan kelap-kelip lampu Sidrap.',
-    category: 'Camping',
+    url: '/images/trailview.png',
+    title: 'Jalur Petualangan Off-Road 3 km',
+    desc: 'Trek menantang melintasi perbukitan favorit pecinta motor trail, jeep 4x4, dan penjelajah alam.',
+    category: 'Petualangan',
+  },
+  {
+    id: 'g7',
+    url: '/images/kebunview.png',
+    title: 'Agrowisata Kebun Cengkih & Aren',
+    desc: 'Lanskap perkebunan cengkih dan nira aren organik yang asri di Dusun Jambu-jambu Desa Buntu Buangin.',
+    category: 'Agrowisata',
+  },
+  {
+    id: 'g8',
+    url: '/images/farview.png',
+    title: 'Lanskap Cakrawala Jauh Perbukitan',
+    desc: 'Pemandangan spektakuler sudut pandang jauh membentang sepanjang pegunungan Pitu Riase Sidrap.',
+    category: 'Gardu Pandang',
   },
 ];
 
 export const GallerySection: React.FC = () => {
+  const { galleryItems } = useApp();
   const [activeCategory, setActiveCategory] = useState<string>('Semua');
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
 
-  const categories = ['Semua', 'Samudera Awan', 'Camping', 'Gardu Pandang', 'Kuliner'];
+  const categories = ['Semua', 'Samudera Awan', 'Camping', 'Gardu Pandang', 'Petualangan', 'Agrowisata'];
+
+  const sourceData: GalleryItem[] = galleryItems && galleryItems.length > 0
+    ? galleryItems.map((g) => ({
+        id: g.id,
+        url: g.imageUrl || (g as unknown as { url?: string }).url || '/images/heroimage.jpg',
+        title: g.title,
+        desc: g.description || (g as unknown as { desc?: string }).desc || '',
+        category: g.category,
+      }))
+    : GALLERY_DATA;
 
   const filteredItems = activeCategory === 'Semua'
-    ? GALLERY_DATA
-    : GALLERY_DATA.filter((item) => item.category === activeCategory);
+    ? sourceData
+    : sourceData.filter((item) => item.category === activeCategory);
 
   const handleNext = useCallback(() => {
     if (lightboxIndex === null || filteredItems.length === 0) return;
