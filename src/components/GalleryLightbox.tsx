@@ -1,11 +1,15 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useSyncExternalStore } from 'react';
 import { createPortal } from 'react-dom';
 import Image from 'next/image';
 import { ScrollReveal } from '@/components/ScrollReveal';
 import { useApp } from '@/context/AppContext';
 import { Sparkles, ChevronLeft, ChevronRight, X, Maximize2 } from 'lucide-react';
+
+const subscribe = () => () => {};
+const getSnapshot = () => true;
+const getServerSnapshot = () => false;
 
 export interface GalleryItem {
   id: string;
@@ -78,11 +82,7 @@ export const GallerySection: React.FC = () => {
   const { galleryItems } = useApp();
   const [activeCategory, setActiveCategory] = useState<string>('Semua');
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  const mounted = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
 
   const categories = ['Semua', 'Samudera Awan', 'Camping', 'Gardu Pandang', 'Petualangan', 'Agrowisata'];
 
@@ -237,6 +237,7 @@ export const GallerySection: React.FC = () => {
 
           {/* Main Image Container */}
           <div onClick={(e) => e.stopPropagation()} className="relative w-full max-w-5xl flex-1 flex items-center justify-center my-auto py-2 cursor-default">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={filteredItems[lightboxIndex].url}
               alt={filteredItems[lightboxIndex].title}

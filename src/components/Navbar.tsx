@@ -202,6 +202,7 @@ export const Navbar: React.FC = () => {
               )}
               <div className={`flex items-center gap-2 pl-2 border-l ${isSolidHeader ? 'border-zinc-200 dark:border-zinc-800' : 'border-white/20'}`}>
                 {user.avatar ? (
+                  /* eslint-disable-next-line @next/next/no-img-element */
                   <img
                     src={user.avatar}
                     alt={user.name}
@@ -311,6 +312,7 @@ export const Navbar: React.FC = () => {
               <div className="flex items-center justify-between p-3 bg-zinc-100 dark:bg-zinc-900 rounded-2xl border border-zinc-200/80 dark:border-zinc-800/80">
                 <div className="flex items-center gap-3">
                   {user.avatar ? (
+                    /* eslint-disable-next-line @next/next/no-img-element */
                     <img
                       src={user.avatar}
                       alt={user.name}

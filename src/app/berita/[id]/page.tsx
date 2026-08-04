@@ -1,9 +1,14 @@
 'use client';
 
-import React, { useState, useEffect, use } from 'react';
+import React, { useState, use, useSyncExternalStore } from 'react';
 import { createPortal } from 'react-dom';
 import Link from 'next/link';
 import Image from 'next/image';
+
+const subscribe = () => () => {};
+const getSnapshot = () => true;
+const getServerSnapshot = () => false;
+
 import { useApp } from '@/context/AppContext';
 import { NewsCard } from '@/components/NewsCard';
 import {
@@ -35,11 +40,7 @@ export default function DetailBeritaPage({ params }: { params: Promise<{ id: str
   const [comments, setComments] = useState<Array<{ id: string; author: string; text: string; date: string }>>([]);
   const [copiedLink, setCopiedLink] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
-  const [mounted, setMounted] = useState(false);
-
-  React.useEffect(() => {
-    setMounted(true);
-  }, []);
+  const mounted = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
 
   const articleIndex = newsList.findIndex((n) => n.id === resolvedParams.id || n.slug === resolvedParams.id);
   const article = articleIndex !== -1 ? newsList[articleIndex] : undefined;
@@ -411,6 +412,7 @@ export default function DetailBeritaPage({ params }: { params: Promise<{ id: str
             {user ? (
               <div className="flex items-center gap-2.5 p-2.5 bg-emerald-500/10 border border-emerald-500/20 rounded-xl">
                 {user.avatar ? (
+                  /* eslint-disable-next-line @next/next/no-img-element */
                   <img
                     src={user.avatar}
                     alt={user.name}
@@ -510,6 +512,7 @@ export default function DetailBeritaPage({ params }: { params: Promise<{ id: str
             onClick={(e) => e.stopPropagation()}
             className="relative w-full max-w-5xl flex-1 flex items-center justify-center my-auto py-2 cursor-default"
           >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={lightboxIndex === -1 ? article.coverImage : article.gallery[lightboxIndex]}
               alt="Lightbox Preview"

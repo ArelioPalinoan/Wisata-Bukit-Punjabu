@@ -1,24 +1,32 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useSyncExternalStore } from 'react';
 import { createPortal } from 'react-dom';
 import { useApp } from '@/context/AppContext';
 import { showToast } from '@/components/Toast';
 import { X, Calendar, Ticket, Tent, Compass, User, Phone, Mail, FileText, CheckCircle2, MessageSquare } from 'lucide-react';
 
+const subscribe = () => () => {};
+const getSnapshot = () => true;
+const getServerSnapshot = () => false;
+
 export const BookingModal: React.FC = () => {
   const { isBookingModalOpen, closeBookingModal, createBooking, user } = useApp();
+  const mounted = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
 
-  const [userName, setUserName] = useState('');
+  const [userName, setUserName] = useState(user?.name || '');
   const [userPhone, setUserPhone] = useState('');
-  const [userEmail, setUserEmail] = useState('');
+  const [userEmail, setUserEmail] = useState(user?.email || '');
 
-  React.useEffect(() => {
-    if (user) {
-      if (user.name) setUserName(user.name);
-      if (user.email) setUserEmail(user.email);
+  useEffect(() => {
+    if (isBookingModalOpen && user) {
+      queueMicrotask(() => {
+        if (user.name) setUserName((prev) => prev || user.name);
+        if (user.email) setUserEmail((prev) => prev || user.email);
+      });
     }
-  }, [user]);
+  }, [isBookingModalOpen, user]);
+
   const [bookingDate, setBookingDate] = useState(() => {
     const tomorrow = new Date();
     tomorrow.setDate(tomorrow.getDate() + 1);
@@ -30,8 +38,6 @@ export const BookingModal: React.FC = () => {
   const [notes, setNotes] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [confirmedBooking, setConfirmedBooking] = useState<{ id: string; total: number } | null>(null);
-
-  if (!isBookingModalOpen) return null;
 
   const TICKET_PRICE = 10000;
   const TENT_PRICE = 50000;
@@ -88,7 +94,7 @@ export const BookingModal: React.FC = () => {
     window.open(`https://wa.me/6282291117360?text=${message}`, '_blank');
   };
 
-  const handleResetAndClose = () => {
+  const handleResetAndClose = useCallback(() => {
     setConfirmedBooking(null);
     setUserName('');
     setUserPhone('');
@@ -98,9 +104,9 @@ export const BookingModal: React.FC = () => {
     setTentQty(0);
     setGuideIncluded(false);
     closeBookingModal();
-  };
+  }, [closeBookingModal]);
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (!isBookingModalOpen) return;
     const originalOverflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
@@ -114,12 +120,7 @@ export const BookingModal: React.FC = () => {
       document.body.style.overflow = originalOverflow;
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [isBookingModalOpen]);
-
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  }, [isBookingModalOpen, handleResetAndClose]);
 
   if (!isBookingModalOpen || !mounted) return null;
 

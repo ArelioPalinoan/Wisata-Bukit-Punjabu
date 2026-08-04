@@ -1,9 +1,13 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useSyncExternalStore } from 'react';
 import { createPortal } from 'react-dom';
 import Link from 'next/link';
 import Image from 'next/image';
+
+const subscribe = () => () => {};
+const getSnapshot = () => true;
+const getServerSnapshot = () => false;
 import { useApp } from '@/context/AppContext';
 import { NewsArticle, TourismSpot, UMKMProduct, BookingRecord } from '@/data/initialData';
 import { showToast } from '@/components/Toast';
@@ -114,11 +118,7 @@ export default function AdminDashboardPage() {
 
   // Lock body scroll and ESC key handler when any admin modal is open
   const isAnyAdminModalOpen = isNewsModalOpen || isSpotModalOpen || isUmkmModalOpen;
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  const mounted = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
   React.useEffect(() => {
     if (!isAnyAdminModalOpen) return;
     const originalOverflow = document.body.style.overflow;
@@ -381,6 +381,7 @@ export default function AdminDashboardPage() {
               </span>
               <span className="px-3 py-1 bg-zinc-800 text-zinc-300 text-xs font-semibold rounded-full border border-zinc-700 flex items-center gap-2">
                 {user.avatar ? (
+                  /* eslint-disable-next-line @next/next/no-img-element */
                   <img
                     src={user.avatar}
                     alt={user.name}
