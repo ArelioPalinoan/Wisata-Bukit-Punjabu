@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useApp } from '@/context/AppContext';
@@ -113,6 +114,11 @@ export default function AdminDashboardPage() {
 
   // Lock body scroll and ESC key handler when any admin modal is open
   const isAnyAdminModalOpen = isNewsModalOpen || isSpotModalOpen || isUmkmModalOpen;
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
   React.useEffect(() => {
     if (!isAnyAdminModalOpen) return;
     const originalOverflow = document.body.style.overflow;
@@ -1044,10 +1050,10 @@ export default function AdminDashboardPage() {
       ══════════════════════════════════════════════ */}
 
       {/* MODAL BERITA */}
-      {isNewsModalOpen && (
+      {mounted && isNewsModalOpen && createPortal(
         <div
           onClick={() => setIsNewsModalOpen(false)}
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-xl animate-fade-in cursor-pointer"
+          className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-black/80 backdrop-blur-xl animate-fade-in cursor-pointer"
         >
           <div
             onClick={(e) => e.stopPropagation()}
@@ -1298,14 +1304,15 @@ export default function AdminDashboardPage() {
               </div>
             </form>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* MODAL WISATA */}
-      {isSpotModalOpen && (
+      {mounted && isSpotModalOpen && createPortal(
         <div
           onClick={() => setIsSpotModalOpen(false)}
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-xl animate-fade-in cursor-pointer"
+          className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-black/80 backdrop-blur-xl animate-fade-in cursor-pointer"
         >
           <div
             onClick={(e) => e.stopPropagation()}
@@ -1380,14 +1387,15 @@ export default function AdminDashboardPage() {
               </div>
             </form>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* MODAL UMKM */}
-      {isUmkmModalOpen && (
+      {mounted && isUmkmModalOpen && createPortal(
         <div
           onClick={() => setIsUmkmModalOpen(false)}
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-xl animate-fade-in cursor-pointer"
+          className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-black/80 backdrop-blur-xl animate-fade-in cursor-pointer"
         >
           <div
             onClick={(e) => e.stopPropagation()}
@@ -1473,7 +1481,8 @@ export default function AdminDashboardPage() {
               </div>
             </form>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

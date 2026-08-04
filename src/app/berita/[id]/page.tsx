@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState, use } from 'react';
+import React, { useState, useEffect, use } from 'react';
+import { createPortal } from 'react-dom';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useApp } from '@/context/AppContext';
@@ -34,6 +35,11 @@ export default function DetailBeritaPage({ params }: { params: Promise<{ id: str
   const [comments, setComments] = useState<Array<{ id: string; author: string; text: string; date: string }>>([]);
   const [copiedLink, setCopiedLink] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
+  const [mounted, setMounted] = useState(false);
+
+  React.useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const articleIndex = newsList.findIndex((n) => n.id === resolvedParams.id || n.slug === resolvedParams.id);
   const article = articleIndex !== -1 ? newsList[articleIndex] : undefined;
@@ -468,47 +474,46 @@ export default function DetailBeritaPage({ params }: { params: Promise<{ id: str
         </div>
       </article>
 
-      {/* Lightbox Image View Modal with Prev/Next Navigation */}
-      {lightboxIndex !== null && (
+      {/* Lightbox Image View Modal with Prev/Next Navigation (Portal to document.body) */}
+      {mounted && lightboxIndex !== null && createPortal(
         <div
           onClick={() => setLightboxIndex(null)}
-          className="fixed inset-0 z-50 bg-black/95 backdrop-blur-md flex flex-col items-center justify-between p-4 sm:p-6 animate-scale-in select-none cursor-pointer"
+          className="fixed inset-0 z-[99999] bg-black/95 backdrop-blur-md flex flex-col items-center justify-between p-4 sm:p-6 overflow-y-auto animate-fade-in select-none cursor-pointer"
         >
-          {/* Top Bar with Close button & Counter */}
+          {/* Floating Top-Right Close Button */}
+          <button
+            onClick={() => setLightboxIndex(null)}
+            className="fixed top-4 right-4 sm:top-6 sm:right-6 z-[110] p-3 rounded-full bg-zinc-800/90 hover:bg-emerald-600 text-white shadow-2xl transition-all border border-white/20 flex items-center justify-center cursor-pointer hover:scale-105 active:scale-95"
+            title="Tutup Preview (Esc)"
+            aria-label="Tutup Preview"
+          >
+            <X className="w-6 h-6" />
+          </button>
+
+          {/* Top Bar with Category/Counter */}
           <div
             onClick={(e) => e.stopPropagation()}
-            className="w-full max-w-5xl flex items-center justify-between text-white z-20 pb-2 cursor-default"
+            className="w-full max-w-5xl flex items-center justify-between text-white z-20 pt-2 pb-3 cursor-default"
           >
-            <div className="flex items-center gap-2 bg-zinc-900/90 px-3.5 py-1.5 rounded-full border border-zinc-800 text-xs font-semibold">
-              <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
+            <div className="flex items-center gap-2 bg-zinc-900/90 px-4 py-2 rounded-full border border-zinc-800 text-xs sm:text-sm font-semibold shadow-lg">
+              <Sparkles className="w-4 h-4 text-emerald-400" />
               <span>
                 {lightboxIndex === -1
                   ? 'Foto Sampul Utama'
                   : `Foto Galeri ${lightboxIndex + 1} dari ${article.gallery?.length || 0}`}
               </span>
             </div>
-
-            <button
-              onClick={() => setLightboxIndex(null)}
-              className="px-3.5 py-2 rounded-2xl bg-white/10 hover:bg-white/20 text-white transition cursor-pointer flex items-center gap-1.5 text-xs font-bold border border-white/10 shadow-lg"
-              title="Tutup (Esc)"
-            >
-              <span>Tutup</span>
-              <X className="w-5 h-5" />
-            </button>
           </div>
 
           {/* Center Image Container */}
           <div
             onClick={(e) => e.stopPropagation()}
-            className="relative w-full max-w-5xl flex-1 flex items-center justify-center min-h-0 my-2 cursor-default"
+            className="relative w-full max-w-5xl flex-1 flex items-center justify-center my-auto py-2 cursor-default"
           >
-            <Image
+            <img
               src={lightboxIndex === -1 ? article.coverImage : article.gallery[lightboxIndex]}
               alt="Lightbox Preview"
-              fill
-              unoptimized
-              className="rounded-2xl object-contain"
+              className="max-h-[75vh] sm:max-h-[80vh] max-w-full w-auto h-auto object-contain rounded-2xl shadow-2xl border border-zinc-800/80 transition-all duration-300"
             />
 
             {/* Gallery Navigation Controls */}
@@ -518,7 +523,7 @@ export default function DetailBeritaPage({ params }: { params: Promise<{ id: str
                   onClick={() =>
                     setLightboxIndex((prev) => (prev !== null && prev > 0 ? prev - 1 : article.gallery.length - 1))
                   }
-                  className="absolute left-2 sm:left-4 text-white bg-black/70 hover:bg-emerald-600 border border-white/20 p-3 sm:p-4 rounded-full z-20 shadow-xl transition cursor-pointer"
+                  className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 text-white bg-black/70 hover:bg-emerald-600 border border-white/20 p-3 sm:p-4 rounded-full z-20 shadow-2xl transition cursor-pointer hover:scale-110 active:scale-95"
                   title="Sebelumnya (Panah Kiri)"
                 >
                   <ChevronLeft className="w-6 h-6" />
@@ -527,7 +532,7 @@ export default function DetailBeritaPage({ params }: { params: Promise<{ id: str
                   onClick={() =>
                     setLightboxIndex((prev) => (prev !== null && prev < article.gallery.length - 1 ? prev + 1 : 0))
                   }
-                  className="absolute right-2 sm:right-4 text-white bg-black/70 hover:bg-emerald-600 border border-white/20 p-3 sm:p-4 rounded-full z-20 shadow-xl transition cursor-pointer"
+                  className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 text-white bg-black/70 hover:bg-emerald-600 border border-white/20 p-3 sm:p-4 rounded-full z-20 shadow-2xl transition cursor-pointer hover:scale-110 active:scale-95"
                   title="Selanjutnya (Panah Kanan)"
                 >
                   <ChevronRight className="w-6 h-6" />
@@ -539,11 +544,12 @@ export default function DetailBeritaPage({ params }: { params: Promise<{ id: str
           {/* Bottom Hint */}
           <div
             onClick={(e) => e.stopPropagation()}
-            className="text-center text-xs text-zinc-400 py-1 cursor-default"
+            className="text-center text-xs text-zinc-400 py-2 cursor-default z-20"
           >
-            Tekan <kbd className="px-1.5 py-0.5 bg-zinc-800 rounded text-zinc-300 font-mono">Esc</kbd> atau klik area latar untuk menutup
+            Tekan <kbd className="px-1.5 py-0.5 bg-zinc-800 rounded text-zinc-300 font-mono">Esc</kbd> atau klik area luar untuk menutup
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* Related News Section */}

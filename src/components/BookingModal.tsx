@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useApp } from '@/context/AppContext';
 import { showToast } from '@/components/Toast';
 import { X, Calendar, Ticket, Tent, Compass, User, Phone, Mail, FileText, CheckCircle2, MessageSquare } from 'lucide-react';
@@ -115,10 +116,17 @@ export const BookingModal: React.FC = () => {
     };
   }, [isBookingModalOpen]);
 
-  return (
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!isBookingModalOpen || !mounted) return null;
+
+  return createPortal(
     <div
       onClick={handleResetAndClose}
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-md animate-fade-in overflow-y-auto cursor-pointer"
+      className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-black/70 backdrop-blur-md animate-fade-in overflow-y-auto cursor-pointer"
     >
       <div
         onClick={(e) => e.stopPropagation()}
@@ -379,6 +387,7 @@ export const BookingModal: React.FC = () => {
           </form>
         )}
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };

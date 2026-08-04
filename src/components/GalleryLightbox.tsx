@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import Image from 'next/image';
 import { ScrollReveal } from '@/components/ScrollReveal';
 import { useApp } from '@/context/AppContext';
@@ -77,6 +78,11 @@ export const GallerySection: React.FC = () => {
   const { galleryItems } = useApp();
   const [activeCategory, setActiveCategory] = useState<string>('Semua');
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const categories = ['Semua', 'Samudera Awan', 'Camping', 'Gardu Pandang', 'Petualangan', 'Agrowisata'];
 
@@ -201,53 +207,53 @@ export const GallerySection: React.FC = () => {
         ))}
       </div>
 
-      {/* Fullscreen Interactive Lightbox Modal */}
-      {lightboxIndex !== null && filteredItems[lightboxIndex] && (
+      {/* Fullscreen Interactive Lightbox Modal (Portal to document.body) */}
+      {mounted && lightboxIndex !== null && filteredItems[lightboxIndex] && createPortal(
         <div
           onClick={() => setLightboxIndex(null)}
-          className="fixed inset-0 z-50 bg-black/95 flex flex-col justify-between p-4 sm:p-8 animate-scale-in select-none cursor-pointer"
+          className="fixed inset-0 z-[99999] bg-black/95 backdrop-blur-md flex flex-col justify-between items-center p-4 sm:p-6 overflow-y-auto animate-fade-in select-none cursor-pointer"
         >
-          
+          {/* Floating Top-Right Close Button */}
+          <button
+            onClick={() => setLightboxIndex(null)}
+            className="fixed top-4 right-4 sm:top-6 sm:right-6 z-[110] p-3 rounded-full bg-zinc-800/90 hover:bg-emerald-600 text-white shadow-2xl transition-all border border-white/20 flex items-center justify-center cursor-pointer hover:scale-105 active:scale-95"
+            title="Tutup Preview (Esc)"
+            aria-label="Tutup Preview"
+          >
+            <X className="w-6 h-6" />
+          </button>
+
           {/* Top Bar */}
-          <div onClick={(e) => e.stopPropagation()} className="flex items-center justify-between text-white z-10 cursor-default">
-            <div className="flex items-center gap-3">
-              <span className="px-3 py-1 rounded-full bg-emerald-600 text-xs font-bold">
+          <div onClick={(e) => e.stopPropagation()} className="w-full max-w-5xl flex items-center justify-between text-white z-20 pt-2 pb-3 cursor-default">
+            <div className="flex items-center gap-3 bg-zinc-900/90 px-4 py-2 rounded-full border border-zinc-800 text-xs font-semibold shadow-lg">
+              <span className="px-2.5 py-0.5 rounded-full bg-emerald-600 text-white text-[11px] font-bold">
                 {filteredItems[lightboxIndex].category}
               </span>
-              <span className="text-xs text-zinc-400 font-semibold">
+              <span className="text-zinc-300">
                 Foto {lightboxIndex + 1} dari {filteredItems.length}
               </span>
             </div>
-            <button
-              onClick={() => setLightboxIndex(null)}
-              className="px-3.5 py-2 rounded-2xl bg-white/10 hover:bg-white/20 text-white transition cursor-pointer flex items-center gap-1.5 text-xs font-bold border border-white/10 shadow-lg"
-              title="Tutup (Esc)"
-            >
-              <span>Tutup</span>
-              <X className="w-5 h-5" />
-            </button>
           </div>
 
           {/* Main Image Container */}
-          <div onClick={(e) => e.stopPropagation()} className="relative flex-1 my-4 flex items-center justify-center cursor-default min-h-0">
-            <Image
+          <div onClick={(e) => e.stopPropagation()} className="relative w-full max-w-5xl flex-1 flex items-center justify-center my-auto py-2 cursor-default">
+            <img
               src={filteredItems[lightboxIndex].url}
               alt={filteredItems[lightboxIndex].title}
-              fill
-              className="object-contain max-h-[75vh]"
+              className="max-h-[75vh] sm:max-h-[80vh] max-w-full w-auto h-auto object-contain rounded-2xl shadow-2xl border border-zinc-800/80 transition-all duration-300"
             />
 
             {/* Prev / Next buttons */}
             <button
               onClick={handlePrev}
-              className="absolute left-2 sm:left-6 p-3 sm:p-4 rounded-full bg-black/60 hover:bg-emerald-600 text-white border border-white/20 transition cursor-pointer shadow-lg"
+              className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 p-3 sm:p-4 rounded-full bg-black/70 hover:bg-emerald-600 text-white border border-white/20 transition cursor-pointer shadow-2xl z-20 hover:scale-110 active:scale-95"
               title="Sebelumnya (Panah Kiri)"
             >
               <ChevronLeft className="w-6 h-6" />
             </button>
             <button
               onClick={handleNext}
-              className="absolute right-2 sm:right-6 p-3 sm:p-4 rounded-full bg-black/60 hover:bg-emerald-600 text-white border border-white/20 transition cursor-pointer shadow-lg"
+              className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 p-3 sm:p-4 rounded-full bg-black/70 hover:bg-emerald-600 text-white border border-white/20 transition cursor-pointer shadow-2xl z-20 hover:scale-110 active:scale-95"
               title="Selanjutnya (Panah Kanan)"
             >
               <ChevronRight className="w-6 h-6" />
@@ -255,12 +261,16 @@ export const GallerySection: React.FC = () => {
           </div>
 
           {/* Bottom Caption */}
-          <div onClick={(e) => e.stopPropagation()} className="text-center text-white space-y-1 max-w-2xl mx-auto z-10 cursor-default">
-            <h3 className="text-lg font-bold">{filteredItems[lightboxIndex].title}</h3>
+          <div onClick={(e) => e.stopPropagation()} className="text-center text-white space-y-1 max-w-2xl mx-auto z-20 cursor-default py-2">
+            <h3 className="text-base sm:text-lg font-bold">{filteredItems[lightboxIndex].title}</h3>
             <p className="text-xs text-zinc-400">{filteredItems[lightboxIndex].desc}</p>
+            <p className="text-[11px] text-zinc-500 pt-1">
+              Tekan <kbd className="px-1.5 py-0.5 bg-zinc-800 rounded text-zinc-300 font-mono">Esc</kbd> atau klik area luar untuk menutup
+            </p>
           </div>
 
-        </div>
+        </div>,
+        document.body
       )}
 
     </section>

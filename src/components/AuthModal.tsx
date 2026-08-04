@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useApp } from '@/context/AppContext';
 import { X, Mail, Lock, User as UserIcon, ShieldAlert, Loader2, AlertCircle, CheckCircle2 } from 'lucide-react';
 
@@ -13,8 +14,11 @@ export const AuthModal: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
+  const [mounted, setMounted] = useState(false);
 
-  if (!isAuthModalOpen) return null;
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -104,10 +108,12 @@ export const AuthModal: React.FC = () => {
     };
   }, [isAuthModalOpen, closeAuthModal]);
 
-  return (
+  if (!isAuthModalOpen || !mounted) return null;
+
+  return createPortal(
     <div
       onClick={closeAuthModal}
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-fade-in cursor-pointer"
+      className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-fade-in cursor-pointer"
     >
       <div
         onClick={(e) => e.stopPropagation()}
@@ -291,6 +297,7 @@ export const AuthModal: React.FC = () => {
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
