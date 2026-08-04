@@ -111,14 +111,20 @@ export const GallerySection: React.FC = () => {
 
 
   useEffect(() => {
+    if (lightboxIndex === null) return;
+    const originalOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (lightboxIndex === null) return;
       if (e.key === 'ArrowRight') handleNext();
       if (e.key === 'ArrowLeft') handlePrev();
       if (e.key === 'Escape') setLightboxIndex(null);
     };
     window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    return () => {
+      document.body.style.overflow = originalOverflow;
+      window.removeEventListener('keydown', handleKeyDown);
+    };
   }, [lightboxIndex, handleNext, handlePrev]);
 
   return (
@@ -197,10 +203,13 @@ export const GallerySection: React.FC = () => {
 
       {/* Fullscreen Interactive Lightbox Modal */}
       {lightboxIndex !== null && filteredItems[lightboxIndex] && (
-        <div className="fixed inset-0 z-50 bg-black/95 flex flex-col justify-between p-4 sm:p-8 animate-scale-in">
+        <div
+          onClick={() => setLightboxIndex(null)}
+          className="fixed inset-0 z-50 bg-black/95 flex flex-col justify-between p-4 sm:p-8 animate-scale-in select-none cursor-pointer"
+        >
           
           {/* Top Bar */}
-          <div className="flex items-center justify-between text-white z-10">
+          <div onClick={(e) => e.stopPropagation()} className="flex items-center justify-between text-white z-10 cursor-default">
             <div className="flex items-center gap-3">
               <span className="px-3 py-1 rounded-full bg-emerald-600 text-xs font-bold">
                 {filteredItems[lightboxIndex].category}
@@ -211,14 +220,16 @@ export const GallerySection: React.FC = () => {
             </div>
             <button
               onClick={() => setLightboxIndex(null)}
-              className="p-3.5 rounded-2xl bg-white/10 hover:bg-white/20 text-white transition cursor-pointer"
+              className="px-3.5 py-2 rounded-2xl bg-white/10 hover:bg-white/20 text-white transition cursor-pointer flex items-center gap-1.5 text-xs font-bold border border-white/10 shadow-lg"
+              title="Tutup (Esc)"
             >
-              <X className="w-6 h-6" />
+              <span>Tutup</span>
+              <X className="w-5 h-5" />
             </button>
           </div>
 
           {/* Main Image Container */}
-          <div className="relative flex-1 my-4 flex items-center justify-center">
+          <div onClick={(e) => e.stopPropagation()} className="relative flex-1 my-4 flex items-center justify-center cursor-default min-h-0">
             <Image
               src={filteredItems[lightboxIndex].url}
               alt={filteredItems[lightboxIndex].title}
@@ -229,14 +240,14 @@ export const GallerySection: React.FC = () => {
             {/* Prev / Next buttons */}
             <button
               onClick={handlePrev}
-              className="absolute left-2 sm:left-6 p-3 sm:p-4 rounded-full bg-black/60 hover:bg-emerald-600 text-white border border-white/20 transition cursor-pointer"
+              className="absolute left-2 sm:left-6 p-3 sm:p-4 rounded-full bg-black/60 hover:bg-emerald-600 text-white border border-white/20 transition cursor-pointer shadow-lg"
               title="Sebelumnya (Panah Kiri)"
             >
               <ChevronLeft className="w-6 h-6" />
             </button>
             <button
               onClick={handleNext}
-              className="absolute right-2 sm:right-6 p-3 sm:p-4 rounded-full bg-black/60 hover:bg-emerald-600 text-white border border-white/20 transition cursor-pointer"
+              className="absolute right-2 sm:right-6 p-3 sm:p-4 rounded-full bg-black/60 hover:bg-emerald-600 text-white border border-white/20 transition cursor-pointer shadow-lg"
               title="Selanjutnya (Panah Kanan)"
             >
               <ChevronRight className="w-6 h-6" />
@@ -244,7 +255,7 @@ export const GallerySection: React.FC = () => {
           </div>
 
           {/* Bottom Caption */}
-          <div className="text-center text-white space-y-1 max-w-2xl mx-auto z-10">
+          <div onClick={(e) => e.stopPropagation()} className="text-center text-white space-y-1 max-w-2xl mx-auto z-10 cursor-default">
             <h3 className="text-lg font-bold">{filteredItems[lightboxIndex].title}</h3>
             <p className="text-xs text-zinc-400">{filteredItems[lightboxIndex].desc}</p>
           </div>

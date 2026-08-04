@@ -111,6 +111,28 @@ export default function AdminDashboardPage() {
     badge: 'Khas Ikonik',
   });
 
+  // Lock body scroll and ESC key handler when any admin modal is open
+  const isAnyAdminModalOpen = isNewsModalOpen || isSpotModalOpen || isUmkmModalOpen;
+  React.useEffect(() => {
+    if (!isAnyAdminModalOpen) return;
+    const originalOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setIsNewsModalOpen(false);
+        setIsSpotModalOpen(false);
+        setIsUmkmModalOpen(false);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.body.style.overflow = originalOverflow;
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isAnyAdminModalOpen]);
+
   const handleRefreshData = async () => {
     setIsRefreshing(true);
     await refreshAllData();
@@ -1023,8 +1045,14 @@ export default function AdminDashboardPage() {
 
       {/* MODAL BERITA */}
       {isNewsModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-xl animate-fade-in">
-          <div className="bg-zinc-900 border border-zinc-800 rounded-3xl max-w-3xl w-full p-6 space-y-5 max-h-[90vh] overflow-y-auto shadow-2xl">
+        <div
+          onClick={() => setIsNewsModalOpen(false)}
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-xl animate-fade-in cursor-pointer"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="bg-zinc-900 border border-zinc-800 rounded-3xl max-w-3xl w-full p-6 space-y-5 max-h-[90vh] overflow-y-auto shadow-2xl cursor-default"
+          >
             <div className="flex justify-between items-center pb-3 border-b border-zinc-800">
               <div>
                 <h3 className="font-bold text-white text-lg">{editingNews ? 'Edit Artikel Berita' : 'Tambah Berita Baru'}</h3>
@@ -1275,8 +1303,14 @@ export default function AdminDashboardPage() {
 
       {/* MODAL WISATA */}
       {isSpotModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-xl animate-fade-in">
-          <div className="bg-zinc-900 border border-zinc-800 rounded-3xl max-w-md w-full p-6 space-y-4 shadow-2xl">
+        <div
+          onClick={() => setIsSpotModalOpen(false)}
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-xl animate-fade-in cursor-pointer"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="bg-zinc-900 border border-zinc-800 rounded-3xl max-w-md w-full p-6 space-y-4 shadow-2xl cursor-default"
+          >
             <div className="flex justify-between items-center pb-3 border-b border-zinc-800">
               <h3 className="font-bold text-white text-lg">{editingSpot ? 'Edit Spot Wisata' : 'Tambah Spot Wisata'}</h3>
               <button onClick={() => setIsSpotModalOpen(false)} className="text-zinc-400 hover:text-white"><X className="w-5 h-5" /></button>
@@ -1351,8 +1385,14 @@ export default function AdminDashboardPage() {
 
       {/* MODAL UMKM */}
       {isUmkmModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-xl animate-fade-in">
-          <div className="bg-zinc-900 border border-zinc-800 rounded-3xl max-w-md w-full p-6 space-y-4 shadow-2xl">
+        <div
+          onClick={() => setIsUmkmModalOpen(false)}
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-xl animate-fade-in cursor-pointer"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="bg-zinc-900 border border-zinc-800 rounded-3xl max-w-md w-full p-6 space-y-4 shadow-2xl cursor-default"
+          >
             <div className="flex justify-between items-center pb-3 border-b border-zinc-800">
               <h3 className="font-bold text-white text-lg">{editingUmkm ? 'Edit Produk UMKM' : 'Tambah Produk UMKM'}</h3>
               <button onClick={() => setIsUmkmModalOpen(false)} className="text-zinc-400 hover:text-white"><X className="w-5 h-5" /></button>
