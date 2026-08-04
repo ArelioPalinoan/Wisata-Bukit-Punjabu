@@ -9,7 +9,7 @@ const subscribe = () => () => {};
 const getSnapshot = () => true;
 const getServerSnapshot = () => false;
 import { useApp } from '@/context/AppContext';
-import { NewsArticle, TourismSpot, UMKMProduct, BookingRecord } from '@/data/initialData';
+import { NewsArticle, TourismSpot } from '@/data/initialData';
 import { showToast } from '@/components/Toast';
 import {
   Newspaper,
@@ -22,18 +22,15 @@ import {
   ShieldCheck,
   X,
   Compass,
-  ShoppingBag,
-  Ticket,
-  CheckCircle2,
-  XCircle,
   Star,
   MessageSquare,
-  Phone,
   Grid,
   List,
   RefreshCw,
-  DollarSign,
   ArrowUpRight,
+  Image as ImageIcon,
+  HelpCircle,
+  Filter,
 } from 'lucide-react';
 
 export default function AdminDashboardPage() {
@@ -48,22 +45,28 @@ export default function AdminDashboardPage() {
     addTourismSpot,
     updateTourismSpot,
     deleteTourismSpot,
-    umkmProducts,
-    addUmkmProduct,
-    updateUmkmProduct,
-    deleteUmkmProduct,
     reviews,
-    bookings,
-    updateBookingStatus,
+    deleteReview,
+    galleryItems,
+    addGalleryItem,
+    deleteGalleryItem,
+    faqs,
+    addFaq,
+    deleteFaq,
     stats,
     supabaseActive,
     refreshAllData,
   } = useApp();
 
-  const [activeTab, setActiveTab] = useState<'news' | 'wisata' | 'umkm' | 'bookings' | 'reviews'>('news');
+  const [activeTab, setActiveTab] = useState<'news' | 'wisata' | 'reviews' | 'gallery' | 'faqs'>('news');
   const [viewMode, setViewMode] = useState<'grid' | 'table'>('table');
   const [searchQuery, setSearchQuery] = useState('');
   const [isRefreshing, setIsRefreshing] = useState(false);
+
+  // ----------------------------------------------------
+  // FILTER STATES
+  // ----------------------------------------------------
+  const [reviewRatingFilter, setReviewRatingFilter] = useState<number | 'All'>('All');
 
   // ----------------------------------------------------
   // NEWS MODAL & FORM STATE
@@ -101,23 +104,28 @@ export default function AdminDashboardPage() {
   });
 
   // ----------------------------------------------------
-  // UMKM MODAL & FORM STATE
+  // GALLERY MODAL & FORM STATE
   // ----------------------------------------------------
-  const [isUmkmModalOpen, setIsUmkmModalOpen] = useState(false);
-  const [editingUmkm, setEditingUmkm] = useState<UMKMProduct | null>(null);
-  const [umkmFormData, setUmkmFormData] = useState({
-    name: '',
-    price: 20000,
-    priceUnit: 'kemasan 250g',
-    category: 'Camilan Tradisional',
-    seller: 'UMKM Desa Buntu Buangin',
+  const [isGalleryModalOpen, setIsGalleryModalOpen] = useState(false);
+  const [galleryFormData, setGalleryFormData] = useState({
+    title: '',
+    category: 'Pemandangan Alam',
+    imageUrl: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?q=80&w=1200&auto=format&fit=crop',
     description: '',
-    image: 'https://images.unsplash.com/photo-1608686207856-001b95cf60ca?q=80&w=800&auto=format&fit=crop',
-    badge: 'Khas Ikonik',
+  });
+
+  // ----------------------------------------------------
+  // FAQ MODAL & FORM STATE
+  // ----------------------------------------------------
+  const [isFaqModalOpen, setIsFaqModalOpen] = useState(false);
+  const [faqFormData, setFaqFormData] = useState({
+    question: '',
+    answer: '',
+    category: 'Fasilitas & Layanan' as 'Fasilitas & Layanan' | 'Akses & Tiket' | 'Camping & Sunrise' | 'Aturan & Keamanan',
   });
 
   // Lock body scroll and ESC key handler when any admin modal is open
-  const isAnyAdminModalOpen = isNewsModalOpen || isSpotModalOpen || isUmkmModalOpen;
+  const isAnyAdminModalOpen = isNewsModalOpen || isSpotModalOpen || isGalleryModalOpen || isFaqModalOpen;
   const mounted = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
   React.useEffect(() => {
     if (!isAnyAdminModalOpen) return;
@@ -128,7 +136,8 @@ export default function AdminDashboardPage() {
       if (e.key === 'Escape') {
         setIsNewsModalOpen(false);
         setIsSpotModalOpen(false);
-        setIsUmkmModalOpen(false);
+        setIsGalleryModalOpen(false);
+        setIsFaqModalOpen(false);
       }
     };
 
@@ -157,7 +166,7 @@ export default function AdminDashboardPage() {
           <div>
             <h2 className="text-2xl font-black text-white tracking-tight">Portal CMS Admin Punjabu</h2>
             <p className="text-zinc-400 text-xs sm:text-sm mt-2 leading-relaxed">
-              Silakan masuk dengan akun Administrator untuk mengelola konten portal wisata, produk UMKM, dan reservasi tiket.
+              Silakan masuk dengan akun Administrator untuk mengelola konten portal wisata, ulasan pengunjung, galeri foto, dan berita desa.
             </p>
           </div>
           <button
@@ -172,8 +181,7 @@ export default function AdminDashboardPage() {
   }
 
   // Calculate quick analytics
-  const totalRevenue = bookings.reduce((acc, b) => (b.status === 'Confirmed' ? acc + b.totalPrice : acc), 0);
-  const pendingBookings = bookings.filter((b) => b.status === 'Pending').length;
+  const totalNewsViews = newsList.reduce((acc, n) => acc + (n.views || 0), 0);
   const avgRating = reviews.length > 0 ? (reviews.reduce((acc, r) => acc + r.rating, 0) / reviews.length).toFixed(1) : '5.0';
 
   // ==========================================
@@ -315,52 +323,39 @@ export default function AdminDashboardPage() {
   };
 
   // ==========================================
-  // HANDLERS UMKM
+  // HANDLERS GALLERY & FAQ
   // ==========================================
-  const handleOpenUmkmModal = (prod?: UMKMProduct) => {
-    if (prod) {
-      setEditingUmkm(prod);
-      setUmkmFormData({
-        name: prod.name,
-        price: prod.price,
-        priceUnit: prod.priceUnit,
-        category: prod.category,
-        seller: prod.seller,
-        description: prod.description,
-        image: prod.image,
-        badge: prod.badge || '',
-      });
-    } else {
-      setEditingUmkm(null);
-      setUmkmFormData({
-        name: '',
-        price: 20000,
-        priceUnit: 'kemasan 250g',
-        category: 'Camilan Tradisional',
-        seller: 'UMKM Desa Buntu Buangin',
-        description: '',
-        image: 'https://images.unsplash.com/photo-1608686207856-001b95cf60ca?q=80&w=800&auto=format&fit=crop',
-        badge: 'Khas Ikonik',
-      });
-    }
-    setIsUmkmModalOpen(true);
-  };
-
-  const handleSaveUmkm = async (e: React.FormEvent) => {
+  const handleSaveGallery = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (editingUmkm) {
-      await updateUmkmProduct(editingUmkm.id, umkmFormData);
-      showToast('Produk Diperbarui', 'Data produk UMKM tersimpan di Supabase.', 'success');
-    } else {
-      await addUmkmProduct(umkmFormData);
-      showToast('Produk Ditambahkan', 'Produk UMKM baru berhasil dipublikasikan.', 'success');
+    if (!galleryFormData.title || !galleryFormData.imageUrl) {
+      showToast('Gagal', 'Judul dan URL foto wajib diisi.', 'info');
+      return;
     }
-    setIsUmkmModalOpen(false);
+    await addGalleryItem(galleryFormData);
+    showToast('Foto Ditambahkan', 'Foto galeri wisata tersimpan.', 'success');
+    setIsGalleryModalOpen(false);
+    setGalleryFormData({
+      title: '',
+      category: 'Pemandangan Alam',
+      imageUrl: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?q=80&w=1200&auto=format&fit=crop',
+      description: '',
+    });
   };
 
-  const handleOpenWhatsAppGuest = (b: BookingRecord) => {
-    const message = `Halo Kak ${b.userName}, kami dari Pengelola Wisata Bukit Punjabu Sidrap mengonfirmasi pemesanan tiket Anda (#${b.id.slice(0, 8)}) untuk tanggal ${b.bookingDate}. Apakah ada yang ingin ditanyakan?`;
-    window.open(`https://wa.me/${b.userPhone.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(message)}`, '_blank');
+  const handleSaveFaq = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!faqFormData.question || !faqFormData.answer) {
+      showToast('Gagal', 'Pertanyaan dan jawaban wajib diisi.', 'info');
+      return;
+    }
+    await addFaq(faqFormData);
+    showToast('FAQ Ditambahkan', 'Pertanyaan FAQ tersimpan.', 'success');
+    setIsFaqModalOpen(false);
+    setFaqFormData({
+      question: '',
+      answer: '',
+      category: 'Fasilitas & Layanan',
+    });
   };
 
   return (
@@ -399,7 +394,7 @@ export default function AdminDashboardPage() {
               Dashboard CMS Admin Punjabu
             </h1>
             <p className="text-zinc-400 text-xs sm:text-sm max-w-2xl leading-relaxed">
-              Kelola berita desa, kustomisasi destinasi wisata, atur katalog UMKM, serta tinjau reservasi tiket pengunjung Bukit Punjabu (527 mdpl).
+              Kelola berita desa, kustomisasi destinasi wisata, moderasi ulasan pengunjung, serta tata kelola galeri foto &amp; FAQ Bukit Punjabu (527 mdpl).
             </p>
           </div>
 
@@ -427,7 +422,7 @@ export default function AdminDashboardPage() {
       {/* ══════════════════════════════════════════════
           2. ANALYTICS KPI CARDS (OVERALL VILLAGE STATS)
       ══════════════════════════════════════════════ */}
-      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
         {/* Card 1: Monthly Web Visits (Auto-Reset) */}
         <div className="p-5 rounded-2xl bg-zinc-900/80 border border-zinc-800 backdrop-blur-md hover:border-emerald-500/40 transition-all group">
           <div className="flex items-center justify-between text-zinc-400 text-xs font-semibold mb-2">
@@ -457,29 +452,31 @@ export default function AdminDashboardPage() {
             <Compass className="w-4 h-4 text-amber-400 group-hover:scale-110 transition-transform" />
           </div>
           <p className="text-2xl sm:text-3xl font-black text-white">{stats.activeAttractions}</p>
-          <span className="text-[11px] text-amber-400 font-medium mt-1 block">Spot Ikonik Sidrap</span>
+          <span className="text-[11px] text-amber-400 font-medium mt-1 block">Spot Ikonik Punjabu</span>
         </div>
 
-        {/* Card 4: Total Inquiries & Bookings */}
+        {/* Card 4: Total Pembaca Berita */}
         <div className="p-5 rounded-2xl bg-zinc-900/80 border border-zinc-800 backdrop-blur-md hover:border-purple-500/40 transition-all group">
           <div className="flex items-center justify-between text-zinc-400 text-xs font-semibold mb-2">
-            <span>Inquiry &amp; Reservasi</span>
-            <Ticket className="w-4 h-4 text-purple-400 group-hover:scale-110 transition-transform" />
+            <span>Pembaca Berita</span>
+            <Eye className="w-4 h-4 text-purple-400 group-hover:scale-110 transition-transform" />
           </div>
-          <p className="text-2xl sm:text-3xl font-black text-white">{stats.totalInquiries}</p>
+          <p className="text-2xl sm:text-3xl font-black text-white">{totalNewsViews.toLocaleString('id-ID')}</p>
           <span className="text-[11px] text-purple-400 font-medium mt-1 block">
-            {pendingBookings > 0 ? `${pendingBookings} Menunggu Konfirmasi` : 'Semua Terkonfirmasi'}
+            Total Pembaca Artikel
           </span>
         </div>
 
-        {/* Card 5: Revenue & Rating */}
-        <div className="p-5 rounded-2xl bg-zinc-900/80 border border-zinc-800 backdrop-blur-md hover:border-emerald-400/40 transition-all group col-span-2 lg:col-span-1">
+        {/* Card 5: Rata-Rata Rating Ulasan */}
+        <div className="p-5 rounded-2xl bg-zinc-900/80 border border-zinc-800 backdrop-blur-md hover:border-yellow-500/40 transition-all group">
           <div className="flex items-center justify-between text-zinc-400 text-xs font-semibold mb-2">
-            <span>Omset Reservasi</span>
-            <DollarSign className="w-4 h-4 text-emerald-400 group-hover:scale-110 transition-transform" />
+            <span>Rating Ulasan</span>
+            <Star className="w-4 h-4 text-yellow-400 fill-yellow-400 group-hover:scale-110 transition-transform" />
           </div>
-          <p className="text-2xl sm:text-3xl font-black text-white">Rp {totalRevenue.toLocaleString('id-ID')}</p>
-          <span className="text-[11px] text-amber-400 font-medium mt-1 block">Rating: ★ {avgRating} ({reviews.length} ulasan)</span>
+          <p className="text-2xl sm:text-3xl font-black text-white">{avgRating} <span className="text-sm font-bold text-yellow-400">/ 5.0</span></p>
+          <span className="text-[11px] text-yellow-400 font-medium mt-1 block">
+            Dari {reviews.length} Ulasan Pengunjung
+          </span>
         </div>
       </div>
 
@@ -514,18 +511,6 @@ export default function AdminDashboardPage() {
           </button>
 
           <button
-            onClick={() => setActiveTab('bookings')}
-            className={`flex items-center space-x-2 px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-bold transition cursor-pointer shrink-0 ${
-              activeTab === 'bookings'
-                ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-950'
-                : 'bg-zinc-900 text-zinc-400 hover:text-white hover:bg-zinc-800'
-            }`}
-          >
-            <Ticket className="w-4 h-4" />
-            <span>Reservasi ({bookings.length})</span>
-          </button>
-
-          <button
             onClick={() => setActiveTab('reviews')}
             className={`flex items-center space-x-2 px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-bold transition cursor-pointer shrink-0 ${
               activeTab === 'reviews'
@@ -535,6 +520,30 @@ export default function AdminDashboardPage() {
           >
             <MessageSquare className="w-4 h-4" />
             <span>Ulasan ({reviews.length})</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('gallery')}
+            className={`flex items-center space-x-2 px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-bold transition cursor-pointer shrink-0 ${
+              activeTab === 'gallery'
+                ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-950'
+                : 'bg-zinc-900 text-zinc-400 hover:text-white hover:bg-zinc-800'
+            }`}
+          >
+            <ImageIcon className="w-4 h-4" />
+            <span>Galeri Foto ({galleryItems.length})</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('faqs')}
+            className={`flex items-center space-x-2 px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-bold transition cursor-pointer shrink-0 ${
+              activeTab === 'faqs'
+                ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-950'
+                : 'bg-zinc-900 text-zinc-400 hover:text-white hover:bg-zinc-800'
+            }`}
+          >
+            <HelpCircle className="w-4 h-4" />
+            <span>FAQ ({faqs.length})</span>
           </button>
         </div>
 
@@ -559,7 +568,7 @@ export default function AdminDashboardPage() {
             )}
           </div>
 
-          {(activeTab === 'wisata' || activeTab === 'umkm') && (
+          {(activeTab === 'wisata' || activeTab === 'gallery') && (
             <div className="flex items-center p-1 bg-zinc-900 border border-zinc-800 rounded-xl">
               <button
                 onClick={() => setViewMode('grid')}
@@ -582,7 +591,7 @@ export default function AdminDashboardPage() {
           {activeTab === 'news' && (
             <button
               onClick={() => handleOpenNewsModal()}
-              className="flex items-center space-x-1.5 py-2 px-4 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl transition shadow-md"
+              className="flex items-center space-x-1.5 py-2 px-4 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl transition shadow-md cursor-pointer shrink-0"
             >
               <Plus className="w-4 h-4" />
               <span>Tambah Berita</span>
@@ -592,20 +601,30 @@ export default function AdminDashboardPage() {
           {activeTab === 'wisata' && (
             <button
               onClick={() => handleOpenSpotModal()}
-              className="flex items-center space-x-1.5 py-2 px-4 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl transition shadow-md"
+              className="flex items-center space-x-1.5 py-2 px-4 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl transition shadow-md cursor-pointer shrink-0"
             >
               <Plus className="w-4 h-4" />
               <span>Tambah Wisata</span>
             </button>
           )}
 
-          {activeTab === 'umkm' && (
+          {activeTab === 'gallery' && (
             <button
-              onClick={() => handleOpenUmkmModal()}
-              className="flex items-center space-x-1.5 py-2 px-4 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl transition shadow-md"
+              onClick={() => setIsGalleryModalOpen(true)}
+              className="flex items-center space-x-1.5 py-2 px-4 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl transition shadow-md cursor-pointer shrink-0"
             >
               <Plus className="w-4 h-4" />
-              <span>Tambah UMKM</span>
+              <span>Tambah Foto Galeri</span>
+            </button>
+          )}
+
+          {activeTab === 'faqs' && (
+            <button
+              onClick={() => setIsFaqModalOpen(true)}
+              className="flex items-center space-x-1.5 py-2 px-4 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl transition shadow-md cursor-pointer shrink-0"
+            >
+              <Plus className="w-4 h-4" />
+              <span>Tambah FAQ</span>
             </button>
           )}
         </div>
@@ -806,50 +825,116 @@ export default function AdminDashboardPage() {
         </>
       )}
 
-      {/* TAB 3: PRODUK UMKM */}
-      {activeTab === 'umkm' && (
+      {/* TAB 5: ULASAN WISATAWAN */}
+      {activeTab === 'reviews' && (
+        <div className="space-y-4">
+          {/* Rating Filter Bar */}
+          <div className="flex items-center justify-between bg-zinc-900/60 p-3 rounded-2xl border border-zinc-800 backdrop-blur-md">
+            <div className="flex items-center space-x-2 text-xs">
+              <span className="text-zinc-400 font-medium flex items-center gap-1.5 mr-1">
+                <Filter className="w-3.5 h-3.5 text-amber-400" />
+                Filter Rating:
+              </span>
+              {(['All', 5, 4, 3] as const).map((r) => (
+                <button
+                  key={String(r)}
+                  onClick={() => setReviewRatingFilter(r)}
+                  className={`px-3 py-1.5 rounded-xl font-bold text-xs transition cursor-pointer ${
+                    reviewRatingFilter === r
+                      ? 'bg-amber-500 text-black shadow-md'
+                      : 'bg-zinc-800/80 text-zinc-400 hover:text-white hover:bg-zinc-800'
+                  }`}
+                >
+                  {r === 'All' ? 'Semua Rating' : `★ ${r} Bintang`}
+                </button>
+              ))}
+            </div>
+            <span className="text-xs text-zinc-500 font-medium">
+              Menampilkan {reviews.filter((r) => (reviewRatingFilter === 'All' ? true : r.rating === reviewRatingFilter)).length} ulasan
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {reviews
+              .filter((r) => (reviewRatingFilter === 'All' ? true : r.rating === reviewRatingFilter))
+              .filter((r) => r.name.toLowerCase().includes(searchQuery.toLowerCase()) || r.comment.toLowerCase().includes(searchQuery.toLowerCase()) || r.spot.toLowerCase().includes(searchQuery.toLowerCase()))
+              .map((rev) => (
+                <div key={rev.id} className="bg-zinc-900/90 border border-zinc-800 rounded-3xl p-5 space-y-4 flex flex-col justify-between shadow-xl hover:border-amber-500/30 transition-all">
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-1 text-amber-400 text-xs font-bold">
+                        {[...Array(rev.rating)].map((_, i) => (
+                          <Star key={i} className="w-3.5 h-3.5 fill-amber-400" />
+                        ))}
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-[10px] text-zinc-500">{rev.date}</span>
+                        <button
+                          onClick={() => {
+                            if (confirm(`Hapus ulasan dari ${rev.name}?`)) {
+                              deleteReview(rev.id);
+                              showToast('Ulasan Dihapus', 'Ulasan wisatawan telah dibersihkan.', 'info');
+                            }
+                          }}
+                          className="p-1 bg-zinc-800 hover:bg-rose-600/30 text-rose-400 rounded-lg transition"
+                          title="Hapus / Moderasi Ulasan"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </div>
+                    <p className="text-xs text-zinc-300 italic leading-relaxed">&ldquo;{rev.comment}&rdquo;</p>
+                  </div>
+
+                  <div className="flex items-center justify-between pt-3 border-t border-zinc-800">
+                    <div className="flex items-center space-x-2.5">
+                      <Image src={rev.avatar} alt={rev.name} width={32} height={32} unoptimized className="w-8 h-8 rounded-full object-cover border border-zinc-700" />
+                      <div>
+                        <h5 className="text-xs font-bold text-white">{rev.name}</h5>
+                        <span className="text-[10px] text-zinc-500">{rev.origin} • {rev.spot}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+          </div>
+        </div>
+      )}
+
+      {/* TAB 6: GALERI FOTO WISATA */}
+      {activeTab === 'gallery' && (
         <>
           {viewMode === 'grid' ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
-              {umkmProducts
-                .filter((u) => u.name.toLowerCase().includes(searchQuery.toLowerCase()))
-                .map((prod) => (
-                  <div key={prod.id} className="bg-zinc-900/90 border border-zinc-800 rounded-3xl overflow-hidden flex flex-col justify-between p-4 space-y-3 shadow-xl hover:border-emerald-500/40 transition-all">
+              {galleryItems
+                .filter((g) => g.title.toLowerCase().includes(searchQuery.toLowerCase()) || g.category.toLowerCase().includes(searchQuery.toLowerCase()))
+                .map((item) => (
+                  <div key={item.id} className="bg-zinc-900/90 border border-zinc-800 rounded-3xl overflow-hidden flex flex-col justify-between p-4 space-y-3 shadow-xl hover:border-emerald-500/40 transition-all">
                     <div>
-                      <div className="relative h-40 rounded-2xl overflow-hidden">
-                        <Image src={prod.image} alt={prod.name} fill className="object-cover" />
-                        {prod.badge && (
-                          <span className="absolute top-2 left-2 bg-emerald-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow">
-                            {prod.badge}
-                          </span>
-                        )}
+                      <div className="relative h-44 rounded-2xl overflow-hidden">
+                        <Image src={item.imageUrl} alt={item.title} fill className="object-cover" />
+                        <span className="absolute top-2.5 left-2.5 bg-emerald-600/90 backdrop-blur-xs text-white text-[10px] font-bold px-2.5 py-0.5 rounded-full shadow">
+                          {item.category}
+                        </span>
                       </div>
-                      <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-wider block mt-3">{prod.category}</span>
-                      <h4 className="font-bold text-white text-base mt-0.5">{prod.name}</h4>
-                      <p className="text-sm font-extrabold text-emerald-400 mt-1">Rp {prod.price.toLocaleString('id-ID')} <span className="text-[10px] font-normal text-zinc-400">/ {prod.priceUnit}</span></p>
+                      <h4 className="font-bold text-white text-sm mt-3">{item.title}</h4>
+                      {item.description && <p className="text-xs text-zinc-400 mt-1 line-clamp-2">{item.description}</p>}
                     </div>
 
                     <div className="flex items-center justify-between pt-3 border-t border-zinc-800">
-                      <span className="text-[10px] text-zinc-500 font-medium truncate max-w-[120px]">{prod.seller}</span>
-                      <div className="flex space-x-1.5">
-                        <button
-                          onClick={() => handleOpenUmkmModal(prod)}
-                          className="p-1.5 bg-zinc-800 hover:bg-emerald-600/30 text-emerald-400 rounded-lg transition"
-                        >
-                          <Edit className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => {
-                            if (confirm('Hapus produk UMKM ini?')) {
-                              deleteUmkmProduct(prod.id);
-                              showToast('Produk Dihapus', 'Produk UMKM dihapus.', 'info');
-                            }
-                          }}
-                          className="p-1.5 bg-zinc-800 hover:bg-rose-600/30 text-rose-400 rounded-lg transition"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
+                      <span className="text-[10px] text-zinc-500 font-medium">Spot Punjabu</span>
+                      <button
+                        onClick={() => {
+                          if (confirm('Hapus foto ini dari galeri wisata?')) {
+                            deleteGalleryItem(item.id);
+                            showToast('Foto Dihapus', 'Foto telah dihapus dari galeri.', 'info');
+                          }
+                        }}
+                        className="p-1.5 bg-zinc-800 hover:bg-rose-600/30 text-rose-400 rounded-lg transition"
+                        title="Hapus Foto Galeri"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
                     </div>
                   </div>
                 ))}
@@ -859,49 +944,39 @@ export default function AdminDashboardPage() {
               <table className="w-full text-left text-sm text-zinc-300">
                 <thead className="bg-zinc-950/80 text-xs text-zinc-400 uppercase tracking-wider border-b border-zinc-800">
                   <tr>
-                    <th className="py-4 px-6">Nama Produk UMKM</th>
-                    <th className="py-4 px-6">Kategori</th>
-                    <th className="py-4 px-6">Penjual / Kelompok</th>
-                    <th className="py-4 px-6">Harga (Rp)</th>
+                    <th className="py-4 px-6">Foto &amp; Judul</th>
+                    <th className="py-4 px-6">Kategori Galeri</th>
+                    <th className="py-4 px-6">Deskripsi Keterangan</th>
                     <th className="py-4 px-6 text-right">Aksi</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-zinc-800/80">
-                  {umkmProducts
-                    .filter((u) => u.name.toLowerCase().includes(searchQuery.toLowerCase()))
-                    .map((prod) => (
-                      <tr key={prod.id} className="hover:bg-zinc-800/40 transition-colors">
+                  {galleryItems
+                    .filter((g) => g.title.toLowerCase().includes(searchQuery.toLowerCase()) || g.category.toLowerCase().includes(searchQuery.toLowerCase()))
+                    .map((item) => (
+                      <tr key={item.id} className="hover:bg-zinc-800/40 transition-colors">
                         <td className="py-4 px-6">
                           <div className="flex items-center space-x-3">
-                            <div className="relative w-12 h-12 rounded-xl overflow-hidden shrink-0 border border-zinc-700">
-                              <Image src={prod.image} alt={prod.name} fill className="object-cover" />
+                            <div className="relative w-14 h-14 rounded-xl overflow-hidden shrink-0 border border-zinc-700">
+                              <Image src={item.imageUrl} alt={item.title} fill className="object-cover" />
                             </div>
-                            <span className="font-bold text-white">{prod.name}</span>
+                            <span className="font-bold text-white text-sm">{item.title}</span>
                           </div>
                         </td>
-                        <td className="py-4 px-6 text-xs text-emerald-400 font-semibold">{prod.category}</td>
-                        <td className="py-4 px-6 text-xs text-zinc-300">{prod.seller}</td>
-                        <td className="py-4 px-6 font-bold text-emerald-400">Rp {prod.price.toLocaleString('id-ID')}</td>
+                        <td className="py-4 px-6 text-xs text-emerald-400 font-semibold">{item.category}</td>
+                        <td className="py-4 px-6 text-xs text-zinc-400 max-w-xs truncate">{item.description || '-'}</td>
                         <td className="py-4 px-6 text-right">
-                          <div className="flex items-center justify-end space-x-2">
-                            <button
-                              onClick={() => handleOpenUmkmModal(prod)}
-                              className="p-2 bg-zinc-800 hover:bg-emerald-600/30 text-emerald-400 rounded-xl transition"
-                            >
-                              <Edit className="w-4 h-4" />
-                            </button>
-                            <button
-                              onClick={() => {
-                                if (confirm('Hapus produk UMKM ini?')) {
-                                  deleteUmkmProduct(prod.id);
-                                  showToast('Produk Dihapus', 'Data dihapus.', 'info');
-                                }
-                              }}
-                              className="p-2 bg-zinc-800 hover:bg-rose-600/30 text-rose-400 rounded-xl transition"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          </div>
+                          <button
+                            onClick={() => {
+                              if (confirm('Hapus foto ini dari galeri wisata?')) {
+                                deleteGalleryItem(item.id);
+                                showToast('Foto Dihapus', 'Foto dihapus.', 'info');
+                              }
+                            }}
+                            className="p-2 bg-zinc-800 hover:bg-rose-600/30 text-rose-400 rounded-xl transition"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
                         </td>
                       </tr>
                     ))}
@@ -912,125 +987,38 @@ export default function AdminDashboardPage() {
         </>
       )}
 
-      {/* TAB 4: RESERVASI TIKET */}
-      {activeTab === 'bookings' && (
-        <div className="bg-zinc-900/90 border border-zinc-800 rounded-3xl overflow-hidden shadow-2xl backdrop-blur-md">
-          {bookings.length === 0 ? (
-            <div className="p-16 text-center text-zinc-500 space-y-3">
-              <Ticket className="w-12 h-12 mx-auto text-zinc-600" />
-              <p className="text-sm font-semibold">Belum ada reservasi masuk dari pengunjung.</p>
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm text-zinc-300">
-                <thead className="bg-zinc-950/80 text-xs text-zinc-400 uppercase tracking-wider border-b border-zinc-800">
-                  <tr>
-                    <th className="py-4 px-6">ID Kode</th>
-                    <th className="py-4 px-6">Pemesan</th>
-                    <th className="py-4 px-6">No. WhatsApp</th>
-                    <th className="py-4 px-6">Tgl Kunjungan</th>
-                    <th className="py-4 px-6">Detail Pesanan</th>
-                    <th className="py-4 px-6">Total Biaya</th>
-                    <th className="py-4 px-6 text-center">Status</th>
-                    <th className="py-4 px-6 text-right">Aksi Kelola</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-zinc-800/80">
-                  {bookings.map((b) => (
-                    <tr key={b.id} className="hover:bg-zinc-800/40 transition-colors">
-                      <td className="py-4 px-6 font-mono text-xs text-emerald-400 font-bold">#{b.id.slice(0, 8)}</td>
-                      <td className="py-4 px-6 font-semibold text-white">{b.userName}</td>
-                      <td className="py-4 px-6 text-xs text-zinc-300">
-                        <button
-                          onClick={() => handleOpenWhatsAppGuest(b)}
-                          className="flex items-center space-x-1 hover:text-emerald-400 underline font-medium"
-                          title="Hubungi via WhatsApp"
-                        >
-                          <Phone className="w-3.5 h-3.5 text-emerald-400" />
-                          <span>{b.userPhone}</span>
-                        </button>
-                      </td>
-                      <td className="py-4 px-6 text-xs text-zinc-300">{b.bookingDate}</td>
-                      <td className="py-4 px-6 text-xs space-y-0.5">
-                        <div>🎟️ {b.ticketQty} Tiket</div>
-                        {b.tentQty > 0 && <div>⛺ {b.tentQty} Tenda</div>}
-                        {b.guideIncluded && <div className="text-emerald-400 font-semibold">🧭 Pemandu Pokdarwis</div>}
-                      </td>
-                      <td className="py-4 px-6 font-extrabold text-emerald-400">Rp {b.totalPrice.toLocaleString('id-ID')}</td>
-                      <td className="py-4 px-6 text-center">
-                        <span
-                          className={`px-3 py-1 text-[10px] font-extrabold rounded-full ${
-                            b.status === 'Confirmed'
-                              ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
-                              : b.status === 'Pending'
-                              ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30 animate-pulse'
-                              : 'bg-rose-500/20 text-rose-400 border border-rose-500/30'
-                          }`}
-                        >
-                          {b.status}
-                        </span>
-                      </td>
-                      <td className="py-4 px-6 text-right">
-                        <div className="flex items-center justify-end space-x-1.5">
-                          <button
-                            onClick={() => {
-                              updateBookingStatus(b.id, 'Confirmed');
-                              showToast('Reservasi Dikonfirmasi', `Status pemesanan #${b.id.slice(0,8)} diubah menjadi Confirmed.`, 'success');
-                            }}
-                            className="p-1.5 bg-emerald-600/20 hover:bg-emerald-600 text-emerald-400 hover:text-white rounded-lg transition"
-                            title="Setujui Reservasi"
-                          >
-                            <CheckCircle2 className="w-4 h-4" />
-                          </button>
-                          <button
-                            onClick={() => {
-                              updateBookingStatus(b.id, 'Cancelled');
-                              showToast('Reservasi Dibatalkan', `Status pemesanan #${b.id.slice(0,8)} dibatalkan.`, 'info');
-                            }}
-                            className="p-1.5 bg-rose-600/20 hover:bg-rose-600 text-rose-400 hover:text-white rounded-lg transition"
-                            title="Batalkan Reservasi"
-                          >
-                            <XCircle className="w-4 h-4" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* TAB 5: ULASAN WISATAWAN */}
-      {activeTab === 'reviews' && (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {reviews.map((rev) => (
-            <div key={rev.id} className="bg-zinc-900/90 border border-zinc-800 rounded-3xl p-5 space-y-4 flex flex-col justify-between shadow-xl">
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-1 text-amber-400 text-xs font-bold">
-                    {[...Array(rev.rating)].map((_, i) => (
-                      <Star key={i} className="w-3.5 h-3.5 fill-amber-400" />
-                    ))}
+      {/* TAB 7: FAQ PENGUNJUNG */}
+      {activeTab === 'faqs' && (
+        <div className="bg-zinc-900/90 border border-zinc-800 rounded-3xl p-6 shadow-2xl space-y-4 backdrop-blur-md">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {faqs
+              .filter((f) => f.question.toLowerCase().includes(searchQuery.toLowerCase()) || f.answer.toLowerCase().includes(searchQuery.toLowerCase()))
+              .map((faq) => (
+                <div key={faq.id} className="p-5 bg-zinc-950/60 border border-zinc-800/80 rounded-2xl space-y-3 hover:border-emerald-500/40 transition-all flex flex-col justify-between">
+                  <div className="space-y-2">
+                    <span className="px-2.5 py-0.5 bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-[10px] font-bold rounded-full inline-block">
+                      {faq.category}
+                    </span>
+                    <h4 className="font-bold text-white text-sm leading-snug">❓ {faq.question}</h4>
+                    <p className="text-xs text-zinc-400 leading-relaxed pl-5 border-l-2 border-emerald-500/40">{faq.answer}</p>
                   </div>
-                  <span className="text-[10px] text-zinc-500">{rev.date}</span>
-                </div>
-                <p className="text-xs text-zinc-300 italic leading-relaxed">&ldquo;{rev.comment}&rdquo;</p>
-              </div>
-
-              <div className="flex items-center justify-between pt-3 border-t border-zinc-800">
-                <div className="flex items-center space-x-2.5">
-                  <Image src={rev.avatar} alt={rev.name} width={32} height={32} unoptimized className="w-8 h-8 rounded-full object-cover" />
-                  <div>
-                    <h5 className="text-xs font-bold text-white">{rev.name}</h5>
-                    <span className="text-[10px] text-zinc-500">{rev.origin} • {rev.spot}</span>
+                  <div className="flex justify-end pt-2 border-t border-zinc-900">
+                    <button
+                      onClick={() => {
+                        if (confirm('Hapus pertanyaan FAQ ini?')) {
+                          deleteFaq(faq.id);
+                          showToast('FAQ Dihapus', 'Pertanyaan telah dihapus.', 'info');
+                        }
+                      }}
+                      className="p-1.5 bg-zinc-800 hover:bg-rose-600/30 text-rose-400 rounded-lg transition text-xs flex items-center space-x-1"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                      <span>Hapus FAQ</span>
+                    </button>
                   </div>
                 </div>
-              </div>
-            </div>
-          ))}
+              ))}
+          </div>
         </div>
       )}
 
@@ -1182,6 +1170,16 @@ export default function AdminDashboardPage() {
                   onChange={(e) => setNewsFormData({ ...newsFormData, coverImage: e.target.value })}
                   className="w-full p-3 bg-zinc-800/80 border border-zinc-700 rounded-xl text-white focus:outline-none font-mono"
                 />
+                {newsFormData.coverImage && newsFormData.coverImage.includes('ibb.co/') && !newsFormData.coverImage.includes('i.ibb.co') && (
+                  <p className="mt-1 text-[11px] text-amber-400 font-medium bg-amber-500/10 p-2 rounded-lg border border-amber-500/20">
+                    ⚠️ Link ImgBB ini tampak seperti link halaman viewer (<strong>ibb.co/...</strong>). Gunakan <strong>Direct Link / Tautan Langsung</strong> (ber-domain <strong>i.ibb.co/...</strong>) agar gambar dapat tampil.
+                  </p>
+                )}
+                {newsFormData.coverImage && newsFormData.coverImage.includes('imgur.com/') && !newsFormData.coverImage.includes('i.imgur.com') && (
+                  <p className="mt-1 text-[11px] text-amber-400 font-medium bg-amber-500/10 p-2 rounded-lg border border-amber-500/20">
+                    ⚠️ Link Imgur ini tampak seperti link halaman viewer (<strong>imgur.com/...</strong>). Klik kanan foto di Imgur -&gt; <strong>Copy Image Address</strong> (ber-domain <strong>i.imgur.com/...</strong>).
+                  </p>
+                )}
                 {newsFormData.coverImage && (
                   <div className="mt-2 relative h-36 w-full rounded-2xl overflow-hidden border border-zinc-700">
                     <Image src={newsFormData.coverImage} alt="Pratinjau Sampul" fill className="object-cover" />
@@ -1380,10 +1378,10 @@ export default function AdminDashboardPage() {
         document.body
       )}
 
-      {/* MODAL UMKM */}
-      {mounted && isUmkmModalOpen && createPortal(
+      {/* MODAL GALERI FOTO */}
+      {mounted && isGalleryModalOpen && createPortal(
         <div
-          onClick={() => setIsUmkmModalOpen(false)}
+          onClick={() => setIsGalleryModalOpen(false)}
           className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-black/80 backdrop-blur-xl animate-fade-in cursor-pointer"
         >
           <div
@@ -1391,82 +1389,152 @@ export default function AdminDashboardPage() {
             className="bg-zinc-900 border border-zinc-800 rounded-3xl max-w-md w-full p-6 space-y-4 shadow-2xl cursor-default"
           >
             <div className="flex justify-between items-center pb-3 border-b border-zinc-800">
-              <h3 className="font-bold text-white text-lg">{editingUmkm ? 'Edit Produk UMKM' : 'Tambah Produk UMKM'}</h3>
-              <button onClick={() => setIsUmkmModalOpen(false)} className="text-zinc-400 hover:text-white"><X className="w-5 h-5" /></button>
+              <h3 className="font-bold text-white text-lg">Tambah Foto Galeri Wisata</h3>
+              <button onClick={() => setIsGalleryModalOpen(false)} className="text-zinc-400 hover:text-white">
+                <X className="w-5 h-5" />
+              </button>
             </div>
-            <form onSubmit={handleSaveUmkm} className="space-y-4 text-xs">
+            <form onSubmit={handleSaveGallery} className="space-y-4 text-xs">
               <div>
-                <label className="block text-zinc-400 mb-1 font-semibold">Nama Produk *</label>
+                <label className="block text-zinc-400 mb-1 font-semibold">Judul / Label Foto *</label>
                 <input
                   type="text"
                   required
-                  value={umkmFormData.name}
-                  onChange={(e) => setUmkmFormData({ ...umkmFormData, name: e.target.value })}
-                  className="w-full p-3 bg-zinc-800/80 border border-zinc-700 rounded-xl text-white focus:outline-none"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-zinc-400 mb-1 font-semibold">Harga (Rp) *</label>
-                  <input
-                    type="number"
-                    required
-                    value={umkmFormData.price}
-                    onChange={(e) => setUmkmFormData({ ...umkmFormData, price: Number(e.target.value) })}
-                    className="w-full p-3 bg-zinc-800/80 border border-zinc-700 rounded-xl text-white focus:outline-none font-mono"
-                  />
-                </div>
-                <div>
-                  <label className="block text-zinc-400 mb-1 font-semibold">Satuan Kemasan</label>
-                  <input
-                    type="text"
-                    value={umkmFormData.priceUnit}
-                    onChange={(e) => setUmkmFormData({ ...umkmFormData, priceUnit: e.target.value })}
-                    className="w-full p-3 bg-zinc-800/80 border border-zinc-700 rounded-xl text-white focus:outline-none"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-zinc-400 mb-1 font-semibold">Penjual / Kelompok UMKM</label>
-                <input
-                  type="text"
-                  value={umkmFormData.seller}
-                  onChange={(e) => setUmkmFormData({ ...umkmFormData, seller: e.target.value })}
+                  placeholder="Contoh: Sunrise Lautan Awan 527 mdpl"
+                  value={galleryFormData.title}
+                  onChange={(e) => setGalleryFormData({ ...galleryFormData, title: e.target.value })}
                   className="w-full p-3 bg-zinc-800/80 border border-zinc-700 rounded-xl text-white focus:outline-none"
                 />
               </div>
 
               <div>
-                <label className="block text-zinc-400 mb-1 font-semibold">Deskripsi Produk *</label>
+                <label className="block text-zinc-400 mb-1 font-semibold">Kategori Foto</label>
+                <select
+                  value={galleryFormData.category}
+                  onChange={(e) => setGalleryFormData({ ...galleryFormData, category: e.target.value })}
+                  className="w-full p-3 bg-zinc-800/80 border border-zinc-700 rounded-xl text-white focus:outline-none"
+                >
+                  <option value="Pemandangan Alam">Pemandangan Alam</option>
+                  <option value="Camping Ground">Camping Ground</option>
+                  <option value="Spot Foto Ikonik">Spot Foto Ikonik</option>
+                  <option value="Kegiatan Wisata">Kegiatan Wisata</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-zinc-400 mb-1 font-semibold">Deskripsi / Keterangan</label>
                 <textarea
-                  required
                   rows={2}
-                  value={umkmFormData.description}
-                  onChange={(e) => setUmkmFormData({ ...umkmFormData, description: e.target.value })}
+                  placeholder="Keterangan singkat momen foto..."
+                  value={galleryFormData.description}
+                  onChange={(e) => setGalleryFormData({ ...galleryFormData, description: e.target.value })}
                   className="w-full p-3 bg-zinc-800/80 border border-zinc-700 rounded-xl text-white focus:outline-none"
                 />
               </div>
 
               <div>
-                <label className="block text-zinc-400 mb-1 font-semibold">URL Foto Produk</label>
+                <label className="block text-zinc-400 mb-1 font-semibold">URL Foto Gambar *</label>
                 <input
                   type="text"
-                  value={umkmFormData.image}
-                  onChange={(e) => setUmkmFormData({ ...umkmFormData, image: e.target.value })}
-                  className="w-full p-3 bg-zinc-800/80 border border-zinc-700 rounded-xl text-white focus:outline-none"
+                  required
+                  placeholder="https://images.unsplash.com/..."
+                  value={galleryFormData.imageUrl}
+                  onChange={(e) => setGalleryFormData({ ...galleryFormData, imageUrl: e.target.value })}
+                  className="w-full p-3 bg-zinc-800/80 border border-zinc-700 rounded-xl text-white focus:outline-none font-mono"
                 />
-                {umkmFormData.image && (
-                  <div className="mt-2 relative h-28 w-full rounded-xl overflow-hidden border border-zinc-700">
-                    <Image src={umkmFormData.image} alt="Pratinjau" fill className="object-cover" />
+                {galleryFormData.imageUrl && galleryFormData.imageUrl.includes('ibb.co/') && !galleryFormData.imageUrl.includes('i.ibb.co') && (
+                  <p className="mt-1 text-[11px] text-amber-400 font-medium bg-amber-500/10 p-2 rounded-lg border border-amber-500/20">
+                    ⚠️ Link ImgBB ini adalah link halaman viewer (<strong>ibb.co/...</strong>). Gunakan <strong>Direct Link / Tautan Langsung</strong> (ber-domain <strong>i.ibb.co/...</strong>).
+                  </p>
+                )}
+                {galleryFormData.imageUrl && galleryFormData.imageUrl.includes('imgur.com/') && !galleryFormData.imageUrl.includes('i.imgur.com') && (
+                  <p className="mt-1 text-[11px] text-amber-400 font-medium bg-amber-500/10 p-2 rounded-lg border border-amber-500/20">
+                    ⚠️ Link Imgur ini adalah link halaman viewer (<strong>imgur.com/...</strong>). Klik kanan foto di Imgur -&gt; <strong>Copy Image Address</strong> (ber-domain <strong>i.imgur.com/...</strong>).
+                  </p>
+                )}
+                {galleryFormData.imageUrl && (
+                  <div className="mt-2 relative h-32 w-full rounded-xl overflow-hidden border border-zinc-700">
+                    <Image src={galleryFormData.imageUrl} alt="Pratinjau" fill className="object-cover" />
                   </div>
                 )}
               </div>
 
               <div className="flex justify-end space-x-3 pt-3 border-t border-zinc-800">
-                <button type="button" onClick={() => setIsUmkmModalOpen(false)} className="px-4 py-2 bg-zinc-800 text-zinc-300 rounded-xl">Batal</button>
-                <button type="submit" className="px-6 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl shadow-lg">Simpan Produk</button>
+                <button type="button" onClick={() => setIsGalleryModalOpen(false)} className="px-4 py-2 bg-zinc-800 text-zinc-300 rounded-xl">
+                  Batal
+                </button>
+                <button type="submit" className="px-6 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl shadow-lg">
+                  Simpan Foto
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* MODAL FAQ */}
+      {mounted && isFaqModalOpen && createPortal(
+        <div
+          onClick={() => setIsFaqModalOpen(false)}
+          className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-black/80 backdrop-blur-xl animate-fade-in cursor-pointer"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="bg-zinc-900 border border-zinc-800 rounded-3xl max-w-md w-full p-6 space-y-4 shadow-2xl cursor-default"
+          >
+            <div className="flex justify-between items-center pb-3 border-b border-zinc-800">
+              <h3 className="font-bold text-white text-lg">Tambah Pertanyaan FAQ</h3>
+              <button onClick={() => setIsFaqModalOpen(false)} className="text-zinc-400 hover:text-white">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <form onSubmit={handleSaveFaq} className="space-y-4 text-xs">
+              <div>
+                <label className="block text-zinc-400 mb-1 font-semibold">Kategori Topik</label>
+                <select
+                  value={faqFormData.category}
+                  onChange={(e) => setFaqFormData({ ...faqFormData, category: e.target.value as 'Fasilitas & Layanan' | 'Akses & Tiket' | 'Camping & Sunrise' | 'Aturan & Keamanan' })}
+                  className="w-full p-3 bg-zinc-800/80 border border-zinc-700 rounded-xl text-white focus:outline-none"
+                >
+                  <option value="Fasilitas & Layanan">Fasilitas &amp; Layanan</option>
+                  <option value="Akses & Tiket">Akses &amp; Tiket</option>
+                  <option value="Camping & Sunrise">Camping &amp; Sunrise</option>
+                  <option value="Aturan & Keamanan">Aturan &amp; Keamanan</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-zinc-400 mb-1 font-semibold">Pertanyaan Pengunjung *</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="Contoh: Berapa harga tiket masuk kendaraan roda dua?"
+                  value={faqFormData.question}
+                  onChange={(e) => setFaqFormData({ ...faqFormData, question: e.target.value })}
+                  className="w-full p-3 bg-zinc-800/80 border border-zinc-700 rounded-xl text-white focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-zinc-400 mb-1 font-semibold">Jawaban Resmi Pengelola *</label>
+                <textarea
+                  required
+                  rows={4}
+                  placeholder="Penjelasan lengkap dan ramah untuk wisatawan..."
+                  value={faqFormData.answer}
+                  onChange={(e) => setFaqFormData({ ...faqFormData, answer: e.target.value })}
+                  className="w-full p-3 bg-zinc-800/80 border border-zinc-700 rounded-xl text-white focus:outline-none"
+                />
+              </div>
+
+              <div className="flex justify-end space-x-3 pt-3 border-t border-zinc-800">
+                <button type="button" onClick={() => setIsFaqModalOpen(false)} className="px-4 py-2 bg-zinc-800 text-zinc-300 rounded-xl">
+                  Batal
+                </button>
+                <button type="submit" className="px-6 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl shadow-lg">
+                  Simpan FAQ
+                </button>
               </div>
             </form>
           </div>

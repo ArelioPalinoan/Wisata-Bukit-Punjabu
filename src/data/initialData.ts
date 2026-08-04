@@ -2,7 +2,7 @@ export interface NewsArticle {
   id: string;
   title: string;
   slug: string;
-  category: 'Wisata & Event' | 'Kegiatan Desa' | 'Pembangunan' | 'Ekonomi & UMKM' | 'Pengumuman';
+  category: 'Wisata & Event' | 'Kegiatan Desa' | 'Pembangunan' | 'Pengumuman';
   author: string;
   authorRole: string;
   date: string;
@@ -461,13 +461,13 @@ Pengunjung yang hadir tidak hanya disuguhkan keindahan alam, namun juga diajak m
 
 > "Kami mengundang seluruh masyarakat Sidrap dan sekitarnya untuk berkemah dan merasakan keramahan warga Desa Buntu Buangin," ujar Ahmad Ridwan, Ketua Pokdarwis Punjabu.
     `,
-    coverImage: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?q=80&w=1200&auto=format&fit=crop',
+    coverImage: '/images/sideview.jpg',
     gallery: [
-      'https://images.unsplash.com/photo-1510312305653-8ed496efae75?q=80&w=1200&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?q=80&w=1200&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1447933601403-0c6688de566e?q=80&w=1200&auto=format&fit=crop'
+      '/images/sideview.jpg',
+      '/images/heroimage.jpg',
+      '/images/gazeboview.png'
     ],
-    tags: ['Bukit Punjabu', 'Puncak Jambu-Jambu', 'Desa Buntu Buangin', 'Sidrap', 'Gula Tappo', 'ADWI 2021'],
+    tags: ['Bukit Punjabu', 'Puncak Jambu-Jambu', 'Desa Buntu Buangin', 'Sidrap', 'Camping Ground', 'ADWI 2021'],
   },
   {
     id: '2',
@@ -494,18 +494,19 @@ Penataan mencakup:
 
 Kepala Desa Buntu Buangin menyampaikan bahwa keberlanjutan pengembangan wisata ini menjadi komitmen desa untuk mendorong perekonomian masyarakat secara mandiri.
     `,
-    coverImage: 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?q=80&w=1200&auto=format&fit=crop',
+    coverImage: '/images/trailview.png',
     gallery: [
-      'https://images.unsplash.com/photo-1500382017468-9049fed747ef?q=80&w=1200&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1506744038136-46273834b3fb?q=80&w=1200&auto=format&fit=crop'
+      '/images/trailview.png',
+      '/images/topview.jpg',
+      '/images/gazeboview.png'
     ],
     tags: ['Bukit Punjabu', 'Pitu Riase', 'Buntu Buangin', 'Sidrap', 'Off-Road', 'Pembangunan Desa'],
   },
   {
     id: '3',
-    title: 'Gula Tappo & Kopi Punjabu: Kombinasi Oleh-Oleh Khas Kebanggaan Warga Buntu Buangin Sidrap',
-    slug: 'gula-tappo-kopi-punjabu-kombinasi-oleh-oleh-khas-kebanggaan-warga-buntu-buangin-sidrap',
-    category: 'Ekonomi & UMKM',
+    title: 'Potensi Agrowisata Kebun Cengkih & Nira Aren Perbukitan Buntu Buangin Sidrap',
+    slug: 'potensi-agrowisata-kebun-cengkih-nira-aren-perbukitan-buntu-buangin-sidrap',
+    category: 'Wisata & Event',
     author: 'Pak Sutrisno',
     authorRole: 'Ketua Kelompok Tani Buntu Buangin',
     date: '15 Juli 2026',
@@ -513,19 +514,19 @@ Kepala Desa Buntu Buangin menyampaikan bahwa keberlanjutan pengembangan wisata i
     views: 950,
     featured: false,
     status: 'Published',
-    summary: 'Camilan tradisional Gula Tappo dan olahan biji kopi perkebunan Punjabu diminati para wisatawan sebagai oleh-oleh favorit dari Sidrap.',
+    summary: 'Lanskap lanskap kebun cengkih yang asri dan pengolahan nira aren murni di lereng Bukit Punjabu menjadi daya tarik agrowisata khas Buntu Buangin.',
     content: `
-Selain keindahan fenomena lautan awan di ketinggian 527 mdpl, lereng kawasan **Bukit Punjabu di Desa Buntu Buangin Kecamatan Pitu Riase Kabupaten Sidrap** menyimpan kekayaan olahan kuliner tradisional yang khas.
+Selain keindahan fenomena lautan awan di ketinggian 527 mdpl, lereng kawasan **Bukit Punjabu di Desa Buntu Buangin Kecamatan Pitu Riase Kabupaten Sidrap** menyimpan kekayaan panorama agrowisata yang menawan.
 
-Salah satu yang paling diminati adalah **Gula Tappo**, makanan ringan tradisional khas Buntu Buangin yang diolah dari racikan kelapa parut sangrai dan gula merah aren murni. Teksturnya yang gurih-renyah bersatu dengan manisnya gula aren membuat camilan ini menjadi teman sempurna saat menikmati cangkir hangat **Kopi Punjabu**.
-
-Kelompok UMKM Desa Buntu Buangin kini aktif memproduksi kemasan hygienis untuk Gula Tappo dan Kopi Punjabu petik merah agar siap dibawa sebagai buah tangan wisatawan.
+Hamparan perkebunan cengkih yang hijau dan tertata rapi serta pepohonan aren organik menghiasi sepanjang rute perjalanan menuju puncak bukit. Pengunjung dapat menikmati suasana pedesaan yang sejuk sembari menyaksikan aktivitas harian warga lokal Dusun Jambu-jambu.
     `,
-    coverImage: 'https://images.unsplash.com/photo-1447933601403-0c6688de566e?q=80&w=1200&auto=format&fit=crop',
+    coverImage: '/images/kebunview.png',
     gallery: [
-      'https://images.unsplash.com/photo-1510312305653-8ed496efae75?q=80&w=1200&auto=format&fit=crop'
+      '/images/kebunview.png',
+      '/images/gazeboview.png',
+      '/images/boneview.png'
     ],
-    tags: ['Gula Tappo', 'Kopi Punjabu', 'UMKM Buntu Buangin', 'Sidrap', 'Kuliner Khas'],
+    tags: ['Agrowisata', 'Kebun Cengkih', 'Aren Murni', 'Buntu Buangin', 'Sidrap', 'Pesona Alam'],
   }
 ];
 

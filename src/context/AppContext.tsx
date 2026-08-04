@@ -92,8 +92,8 @@ interface AppContextType {
   updateNews: (id: string, updatedFields: Partial<NewsArticle>) => Promise<void>;
   deleteNews: (id: string) => Promise<void>;
   incrementNewsViews: (id: string) => Promise<void>;
-  fetchNewsComments: (newsId: string) => Promise<Array<{ id: string; author: string; text: string; date: string }>>;
-  addNewsComment: (newsId: string, authorName: string, commentText: string) => Promise<{ id: string; author: string; text: string; date: string } | null>;
+  fetchNewsComments: (newsId: string) => Promise<Array<{ id: string; author: string; avatar?: string; text: string; date: string }>>;
+  addNewsComment: (newsId: string, authorName: string, commentText: string, authorAvatar?: string) => Promise<{ id: string; author: string; avatar?: string; text: string; date: string } | null>;
 
   // Tourism Spots CMS
   tourismSpots: TourismSpot[];
@@ -110,11 +110,13 @@ interface AppContextType {
   // Reviews
   reviews: VisitorReview[];
   addReview: (review: Omit<VisitorReview, 'id' | 'date'>) => Promise<void>;
+  deleteReview: (id: string) => Promise<void>;
 
   // Bookings
   bookings: BookingRecord[];
   createBooking: (bookingData: Omit<BookingRecord, 'id' | 'status' | 'createdAt'>) => Promise<BookingRecord | null>;
   updateBookingStatus: (id: string, status: 'Pending' | 'Confirmed' | 'Cancelled') => Promise<void>;
+  deleteBooking: (id: string) => Promise<void>;
 
   // FAQs, Routes & Gallery
   faqs: FAQItem[];
@@ -779,7 +781,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     );
   };
 
-  const fetchNewsComments = async (newsId: string): Promise<Array<{ id: string; author: string; text: string; date: string }>> => {
+  const fetchNewsComments = async (newsId: string): Promise<Array<{ id: string; author: string; avatar?: string; text: string; date: string }>> => {
     if (isSupabaseConfigured() && supabase) {
       try {
         const { data, error } = await supabase
@@ -789,9 +791,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           .order('created_at', { ascending: false });
 
         if (!error && data) {
-          return data.map((c: { id: string; author_name: string; comment_text: string; created_at: string }) => ({
+          return data.map((c: { id: string; author_name: string; author_avatar?: string; comment_text: string; created_at: string }) => ({
             id: String(c.id),
             author: c.author_name,
+            avatar: c.author_avatar || undefined,
             text: c.comment_text,
             date: new Date(c.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }),
           }));
@@ -803,7 +806,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return [];
   };
 
-  const addNewsComment = async (newsId: string, authorName: string, commentText: string): Promise<{ id: string; author: string; text: string; date: string } | null> => {
+  const addNewsComment = async (
+    newsId: string,
+    authorName: string,
+    commentText: string,
+    authorAvatar?: string
+  ): Promise<{ id: string; author: string; avatar?: string; text: string; date: string } | null> => {
     const formattedDate = new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
     if (isSupabaseConfigured() && supabase) {
       try {
@@ -813,6 +821,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             {
               news_id: newsId,
               author_name: authorName,
+              author_avatar: authorAvatar || null,
               comment_text: commentText,
             },
           ])
@@ -822,6 +831,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           return {
             id: String(data[0].id),
             author: data[0].author_name,
+            avatar: data[0].author_avatar || undefined,
             text: data[0].comment_text,
             date: new Date(data[0].created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }),
           };
@@ -834,6 +844,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return {
       id: `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
       author: authorName,
+      avatar: authorAvatar,
       text: commentText,
       date: formattedDate,
     };
@@ -1005,6 +1016,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setReviews((prev) => [newRev, ...prev]);
   };
 
+  const deleteReview = async (id: string) => {
+    if (isSupabaseConfigured() && supabase) {
+      try {
+        await supabase.from('visitor_reviews').delete().eq('id', id);
+      } catch (err) {
+        console.warn('Supabase deleteReview error:', err);
+      }
+    }
+    setReviews((prev) => prev.filter((r) => r.id !== id));
+  };
+
   const createBooking = async (bookingData: Omit<BookingRecord, 'id' | 'status' | 'createdAt'>): Promise<BookingRecord | null> => {
     if (isSupabaseConfigured() && supabase) {
       try {
@@ -1063,6 +1085,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       }
     }
     setBookings((prev) => prev.map((b) => (b.id === id ? { ...b, status } : b)));
+  };
+
+  const deleteBooking = async (id: string) => {
+    if (isSupabaseConfigured() && supabase) {
+      try {
+        await supabase.from('bookings').delete().eq('id', id);
+      } catch (err) {
+        console.warn('Supabase deleteBooking error:', err);
+      }
+    }
+    setBookings((prev) => prev.filter((b) => b.id !== id));
   };
 
   const addFaq = async (faq: Omit<FAQItem, 'id'>) => {
@@ -1180,11 +1213,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         // Reviews
         reviews,
         addReview,
+        deleteReview,
 
         // Bookings
         bookings,
         createBooking,
         updateBookingStatus,
+        deleteBooking,
 
         // FAQs, Routes, Gallery
         faqs,

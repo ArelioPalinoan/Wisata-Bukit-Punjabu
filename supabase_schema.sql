@@ -93,6 +93,7 @@ CREATE TABLE IF NOT EXISTS news_comments (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   news_id TEXT NOT NULL,
   author_name TEXT NOT NULL,
+  author_avatar TEXT,
   comment_text TEXT NOT NULL,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );

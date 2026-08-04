@@ -10,7 +10,7 @@ export default function BeritaPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('Semua');
 
-  const categories = ['Semua', 'Wisata & Event', 'Kegiatan Desa', 'Pembangunan', 'Ekonomi & UMKM'];
+  const categories = ['Semua', 'Wisata & Event', 'Kegiatan Desa', 'Pembangunan', 'Pengumuman'];
 
   // Filter published news with fallback to all news
   const publishedNews = newsList.filter((n) => !n.status || n.status.toLowerCase() === 'published');

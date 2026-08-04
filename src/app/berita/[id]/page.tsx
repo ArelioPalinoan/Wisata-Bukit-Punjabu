@@ -36,8 +36,7 @@ export default function DetailBeritaPage({ params }: { params: Promise<{ id: str
   const resolvedParams = use(params);
   const { newsList, incrementNewsViews, fetchNewsComments, addNewsComment, user } = useApp();
   const [commentText, setCommentText] = useState('');
-  const [authorNameInput, setAuthorNameInput] = useState('');
-  const [comments, setComments] = useState<Array<{ id: string; author: string; text: string; date: string }>>([]);
+  const [comments, setComments] = useState<Array<{ id: string; author: string; avatar?: string; text: string; date: string }>>([]);
   const [copiedLink, setCopiedLink] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
   const mounted = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
@@ -127,14 +126,14 @@ export default function DetailBeritaPage({ params }: { params: Promise<{ id: str
     e.preventDefault();
     if (!commentText.trim()) return;
 
-    const author = user?.name || authorNameInput.trim() || 'Pengunjung Desa';
-    const newComment = await addNewsComment(article.id, author, commentText.trim());
+    const author = user ? user.name : 'Pengunjung';
+    const avatar = user ? user.avatar : undefined;
+    const newComment = await addNewsComment(article.id, author, commentText.trim(), avatar);
 
     if (newComment) {
       setComments((prev) => [newComment, ...prev]);
     }
     setCommentText('');
-    setAuthorNameInput('');
   };
 
   const handleCopyLink = () => {
@@ -431,13 +430,14 @@ export default function DetailBeritaPage({ params }: { params: Promise<{ id: str
                 </span>
               </div>
             ) : (
-              <input
-                type="text"
-                placeholder="Nama Anda (contoh: Rahmat - Makassar)"
-                value={authorNameInput}
-                onChange={(e) => setAuthorNameInput(e.target.value)}
-                className="w-full p-3 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl text-zinc-900 dark:text-white text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500 transition"
-              />
+              <div className="flex items-center gap-2.5 p-3 bg-zinc-100 dark:bg-zinc-800/80 border border-zinc-200 dark:border-zinc-700/60 rounded-xl">
+                <div className="w-7 h-7 rounded-full bg-zinc-400 dark:bg-zinc-600 text-white font-bold text-xs flex items-center justify-center shrink-0">
+                  P
+                </div>
+                <span className="text-xs font-medium text-zinc-600 dark:text-zinc-300">
+                  Mengomentari sebagai <strong className="font-bold text-zinc-900 dark:text-white">Pengunjung</strong> (Login untuk tampilkan nama &amp; foto profil)
+                </span>
+              </div>
             )}
             <textarea
               rows={3}
@@ -450,7 +450,7 @@ export default function DetailBeritaPage({ params }: { params: Promise<{ id: str
             <div className="flex justify-end">
               <button
                 type="submit"
-                className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl text-xs flex items-center gap-2 shadow-lg shadow-emerald-600/20 transition"
+                className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl text-xs flex items-center gap-2 shadow-lg shadow-emerald-600/20 transition cursor-pointer"
               >
                 <Send className="w-3.5 h-3.5" />
                 Kirim Komentar
@@ -463,13 +463,39 @@ export default function DetailBeritaPage({ params }: { params: Promise<{ id: str
             {comments.map((c) => (
               <div
                 key={c.id}
-                className="p-4 rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800/80 space-y-2 shadow-sm"
+                className="p-4 rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800/80 space-y-3 shadow-xs"
               >
-                <div className="flex items-center justify-between text-xs">
-                  <span className="font-bold text-zinc-900 dark:text-white">{c.author}</span>
-                  <span className="text-zinc-400">{c.date}</span>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    {c.avatar ? (
+                      /* eslint-disable-next-line @next/next/no-img-element */
+                      <img
+                        src={c.avatar}
+                        alt={c.author}
+                        className="w-8 h-8 rounded-full object-cover border border-emerald-500/30 shrink-0"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${encodeURIComponent(c.author)}&background=059669&color=fff`;
+                        }}
+                      />
+                    ) : (
+                      <div className="w-8 h-8 rounded-full bg-emerald-500/15 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 font-extrabold text-xs flex items-center justify-center shrink-0 border border-emerald-500/30">
+                        {c.author.charAt(0).toUpperCase()}
+                      </div>
+                    )}
+                    <div>
+                      <h4 className="font-bold text-xs sm:text-sm text-zinc-900 dark:text-white flex items-center gap-1.5">
+                        {c.author}
+                        {c.author !== 'Pengunjung' && c.author !== 'Pengunjung Desa' && (
+                          <span className="px-1.5 py-0.5 text-[9px] font-bold bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 rounded-md">
+                            Akun Terverifikasi
+                          </span>
+                        )}
+                      </h4>
+                      <span className="text-[10px] sm:text-[11px] text-zinc-400">{c.date}</span>
+                    </div>
+                  </div>
                 </div>
-                <p className="text-sm text-zinc-600 dark:text-zinc-300 leading-relaxed">{c.text}</p>
+                <p className="text-xs sm:text-sm text-zinc-700 dark:text-zinc-300 leading-relaxed pl-11">{c.text}</p>
               </div>
             ))}
           </div>

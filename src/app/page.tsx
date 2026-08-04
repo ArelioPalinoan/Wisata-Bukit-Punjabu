@@ -9,6 +9,7 @@ import { NewsCard } from '@/components/NewsCard';
 import { ScrollReveal } from '@/components/ScrollReveal';
 import { WeatherWidget } from '@/components/WeatherWidget';
 import { GallerySection } from '@/components/GalleryLightbox';
+import { ReviewModal } from '@/components/ReviewModal';
 
 import {
   Compass,
@@ -27,21 +28,21 @@ import {
   Star,
   Quote,
   Clock,
-  PhoneCall,
   ExternalLink,
   HelpCircle,
-  Search,
   BookOpen,
   ShieldAlert,
   Sunrise,
   Backpack,
   HeartPulse,
+  PenSquare,
 } from 'lucide-react';
 
 
 export default function Home() {
-  const { newsList, tourismSpots, reviews } = useApp();
+  const { newsList, tourismSpots, reviews, user, openAuthModal } = useApp();
   const [openFaqId, setOpenFaqId] = useState<string | null>('f1');
+  const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
   const heroRef = useRef<HTMLDivElement>(null);
   const [heroParallax, setHeroParallax] = useState(0);
 
@@ -55,12 +56,6 @@ export default function Home() {
 
   const published = newsList.filter((n) => !n.status || n.status.toLowerCase() === 'published');
   const recentNews = (published.length > 0 ? published : newsList).slice(0, 3);
-
-  const handleOrderUmkm = (productName: string, price: number, seller?: string) => {
-    const message = `Halo ${seller || 'Pokdarwis Punjabu'}, saya ingin memesan produk UMKM *${productName}* (Rp ${price.toLocaleString('id-ID')}). Apakah stok produk masih tersedia?`;
-    window.open(`https://wa.me/6282291117360?text=${encodeURIComponent(message)}`, '_blank');
-  };
-
 
   const noFocusStyle: React.CSSProperties = {
     outline: 'none',
@@ -481,7 +476,7 @@ export default function Home() {
 
         <ScrollReveal className="text-center">
           <a
-            href="https://maps.google.com/?q=Bukit+Punjabu+Desa+Buntu+Buangin+Sidrap"
+            href="https://www.google.com/maps/search/?api=1&query=-3.7381,120.0072"
             target="_blank"
             rel="noopener noreferrer"
             style={noFocusStyle}
@@ -504,13 +499,29 @@ export default function Home() {
       ══════════════════════════════════════════════ */}
       <section className="bg-zinc-100/60 dark:bg-zinc-900/40 py-20 border-y border-zinc-200/80 dark:border-zinc-800/60">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
-          <ScrollReveal className="text-center space-y-3">
-            <span className="text-xs font-bold uppercase tracking-widest text-emerald-700 dark:text-emerald-400">
-              Kesan &amp; Pengalaman Pengunjung
-            </span>
-            <h2 className="text-3xl sm:text-4xl font-extrabold text-zinc-900 dark:text-white">
-              Ulasan Asli Wisatawan
-            </h2>
+          <ScrollReveal className="flex flex-col sm:flex-row items-center justify-between gap-6 text-center sm:text-left">
+            <div className="space-y-2">
+              <span className="text-xs font-bold uppercase tracking-widest text-emerald-700 dark:text-emerald-400">
+                Kesan &amp; Pengalaman Pengunjung
+              </span>
+              <h2 className="text-3xl sm:text-4xl font-extrabold text-zinc-900 dark:text-white">
+                Ulasan Asli Wisatawan
+              </h2>
+            </div>
+            <button
+              onClick={() => {
+                if (!user) {
+                  openAuthModal();
+                } else {
+                  setIsReviewModalOpen(true);
+                }
+              }}
+              style={noFocusStyle}
+              className="px-6 py-3 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-extrabold rounded-2xl text-xs sm:text-sm flex items-center gap-2 shadow-lg shadow-emerald-600/20 hover:shadow-emerald-600/30 transition transform hover:-translate-y-0.5 cursor-pointer shrink-0"
+            >
+              <PenSquare className="w-4 h-4" />
+              <span>Tulis Ulasan &amp; Rating</span>
+            </button>
           </ScrollReveal>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -535,7 +546,7 @@ export default function Home() {
                 </div>
 
                 <div className="flex items-center gap-3 pt-3 border-t border-zinc-200/80 dark:border-zinc-800">
-                  <Image src={rev.avatar} alt={rev.name} width={40} height={40} unoptimized className="w-10 h-10 rounded-full object-cover" />
+                  <Image src={rev.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(rev.name)}&background=059669&color=fff`} alt={rev.name} width={40} height={40} unoptimized className="w-10 h-10 rounded-full object-cover border border-emerald-500/30" />
                   <div>
                     <h4 className="text-sm font-bold text-zinc-900 dark:text-white">{rev.name}</h4>
                     <p className="text-[11px] text-zinc-600 dark:text-zinc-400 font-medium">{rev.origin} • {rev.spot}</p>
@@ -590,6 +601,9 @@ export default function Home() {
           })}
         </ScrollReveal>
       </section>
+
+      {/* Review Modal for Logged-In Users */}
+      <ReviewModal isOpen={isReviewModalOpen} onClose={() => setIsReviewModalOpen(false)} />
 
     </div>
   );

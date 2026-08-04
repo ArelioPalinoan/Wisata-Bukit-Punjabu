@@ -7,8 +7,6 @@ import { Footer } from "@/components/Footer";
 import { AuthModal } from "@/components/AuthModal";
 import { BookingModal } from "@/components/BookingModal";
 import { ToastContainer } from "@/components/Toast";
-import { FloatingActions } from "@/components/FloatingActions";
-import { TripCalculatorModal } from "@/components/TripCalculatorModal";
 
 const jakartaSans = Plus_Jakarta_Sans({
   subsets: ["latin"],
@@ -92,8 +90,6 @@ export default function RootLayout({
           <Footer />
           <AuthModal />
           <BookingModal />
-          <TripCalculatorModal />
-          <FloatingActions />
           <ToastContainer />
         </AppProvider>
       </body>

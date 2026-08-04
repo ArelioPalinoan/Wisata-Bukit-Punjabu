@@ -87,7 +87,7 @@ export const Footer: React.FC = () => {
               </li>
               <li>
                 <Link href="/berita?cat=Pembangunan" className="hover:text-emerald-400 transition">
-                  Pembangunan Infrastructure
+                  Pembangunan Desa
                 </Link>
               </li>
               <li>
@@ -110,7 +110,7 @@ export const Footer: React.FC = () => {
               </li>
               <li className="flex items-center gap-3">
                 <Phone className="w-4 h-4 text-emerald-400 shrink-0" />
-                <span>+62 852-5555-8910 (Pokdarwis Sidrap)</span>
+                <span>+62 822-9111-7360 (Pokdarwis Punjabu)</span>
               </li>
               <li className="flex items-center gap-3">
                 <Mail className="w-4 h-4 text-emerald-400 shrink-0" />
