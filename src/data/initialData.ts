@@ -229,7 +229,143 @@ export const UMKM_PRODUCTS: UMKMProduct[] = [
     image: 'https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?q=80&w=800&auto=format&fit=crop',
     badge: 'Pilihan Petani',
   },
+  {
+    id: 'u5',
+    name: 'Madu Hutan Murni Perbukitan Buntu Buangin (350 ml)',
+    price: 85000,
+    priceUnit: 'botol 350ml',
+    category: 'Hasil Hutan Organik',
+    seller: 'Kelompok Pemburu Madu Dusun Awo-Awo',
+    description: 'Madu murni hasil panen sarang lebah liar rimba Pitu Riase Buntu Buangin. 100% alami tanpa campuran air atau pemanis buatan.',
+    image: 'https://images.unsplash.com/photo-1587049352847-4a222e784d38?q=80&w=800&auto=format&fit=crop',
+    badge: 'Madu Liar Asli',
+  },
+  {
+    id: 'u6',
+    name: 'Lada Biji Hitam Super Buntu Buangin (250g)',
+    price: 30000,
+    priceUnit: 'kemasan 250g',
+    category: 'Rempah Perkebunan',
+    seller: 'Petani Lada Perbukitan Sidrap',
+    description: 'Biji lada hitam pilihan hasil petik kering matahari perbukitan Buntu Buangin. Memiliki cita rasa pedas hangat dan aroma kuat.',
+    image: 'https://images.unsplash.com/photo-1599940824399-b87987ceb72a?q=80&w=800&auto=format&fit=crop',
+    badge: 'Rempah Super',
+  },
 ];
+
+export interface VillageDusun {
+  name: string;
+  code: string;
+  description: string;
+  facilities: string[];
+}
+
+export interface VillageProfileData {
+  villageName: string;
+  district: string;
+  regency: string;
+  province: string;
+  elevation: string;
+  headOfVillage: string;
+  officeHours: string;
+  officeAddress: string;
+  dusuns: VillageDusun[];
+  borders: {
+    north: string;
+    east: string;
+    south: string;
+    west: string;
+  };
+  achievements: {
+    year: string;
+    title: string;
+    organizer: string;
+    description: string;
+  }[];
+  commodities: {
+    name: string;
+    icon: string;
+    description: string;
+  }[];
+}
+
+export const VILLAGE_PROFILE_DATA: VillageProfileData = {
+  villageName: 'Desa Buntu Buangin',
+  district: 'Kecamatan Pitu Riase',
+  regency: 'Kabupaten Sidenreng Rappang (Sidrap)',
+  province: 'Sulawesi Selatan',
+  elevation: '500 - 700 mdpl (Puncak Punjabu 527 mdpl)',
+  headOfVillage: 'Sahrul Ramadana',
+  officeHours: 'Senin - Jumat, 08.00 - 16.00 WITA',
+  officeAddress: 'Kantor Desa Buntu Buangin, Dusun I Jambu-Jambu, Kec. Pitu Riase, Kab. Sidrap',
+  dusuns: [
+    {
+      name: 'Dusun I Jambu-Jambu',
+      code: 'Dusun Utama & Wisata',
+      description: 'Pusat kantor pemerintahan desa, sarana pendidikan (PAUD & SD), Poskesdes, serta lokasi Puncak Taman Wisata Bukit Punjabu.',
+      facilities: ['Kantor Desa', 'Puncak Bukit Punjabu', 'PAUD & SD', 'Poskesdes', 'Gerbang Wisata'],
+    },
+    {
+      name: 'Dusun II Cambongi',
+      code: 'Dusun Perkebunan Cengkih',
+      description: 'Kawasan pertanian produktif yang ditumbuhi hamparan kebun cengkih tertata rapi serta pemukiman warga penyadap nira aren.',
+      facilities: ['Kebun Cengkih Tumpangsari', 'Sentra Gula Aren & Gula Tappo', 'Masjid Dusun'],
+    },
+    {
+      name: 'Dusun III Awo-Awo',
+      code: 'Dusun Agrowisata & Hutan',
+      description: 'Kawasan perbukitan yang kaya akan potensi madu lebah hutan liar, kebun lada hitam super, kakao, dan kopi robusta.',
+      facilities: ['Sentra Madu Lebah Liar', 'Kebun Lada & Kopi', 'Pos Ronda Desa'],
+    },
+  ],
+  borders: {
+    north: 'Desa Belawae & Desa Leppangeng',
+    east: 'Kabupaten Wajo',
+    south: 'Desa Lombo',
+    west: 'Desa Dengeng-Dengeng',
+  },
+  achievements: [
+    {
+      year: '2021',
+      title: 'Top 300 Besar Anugerah Desa Wisata Indonesia (ADWI)',
+      organizer: 'Kementerian Pariwisata dan Ekonomi Kreatif RI (Kemenparekraf)',
+      description: 'Apresiasi nasional atas potensi daya tarik alam perbukitan dan kearifan lokal Bukit Punjabu.',
+    },
+    {
+      year: '2022',
+      title: 'Juara 2 Nasional Lomba Promosi Desa Wisata Nusantara (LPDWN)',
+      organizer: 'Kementerian Desa, Pembangunan Daerah Tertinggal, dan Transmigrasi RI (Kemendes PDTT)',
+      description: 'Penghargaan atas keaktifan promosi digital pariwisata berbasis pemberdayaan masyarakat desa.',
+    },
+  ],
+  commodities: [
+    {
+      name: 'Gula Tappo & Gula Aren',
+      icon: 'Cookie',
+      description: 'Camilan olahan kelapa sangrai gula aren & gula aren cetak murni tanpa pengawet dari sadapan nira segar Dusun Jambu-Jambu.',
+    },
+    {
+      name: 'Cengkih (Perkebunan Utama)',
+      icon: 'Trees',
+      description: 'Komoditas rempah utama warga yang membentang indah di lereng bukit, memberikan pemandangan hijau instagramable.',
+    },
+    {
+      name: 'Kopi Punjabu (Robusta & Arabika)',
+      icon: 'Coffee',
+      description: 'Kopi petik merah organik ketinggian 527 mdpl dengan olahan honey process yang khas.',
+    },
+    {
+      name: 'Lada / Merica Biji Super',
+      icon: 'Flame',
+      description: 'Lada pedas berkualitas tinggi yang dibudidayakan secara tradisional oleh para petani pedalaman Pitu Riase.',
+    },
+    {
+      name: 'Madu Hutan Murni',
+      icon: 'Sparkles',
+      description: 'Madu lebah liar pilihan hasil panen langsung dari pepohonan hutan rimba perbukitan Buntu Buangin.',
+    },
+  ],
+};
 
 export const FAQS: FAQItem[] = [
   {
