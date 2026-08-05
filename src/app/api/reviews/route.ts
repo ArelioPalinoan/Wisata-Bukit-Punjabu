@@ -46,3 +46,23 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Failed to create visitor review' }, { status: 500 });
   }
 }
+
+export async function DELETE(request: Request) {
+  try {
+    const { searchParams } = new URL(request.url);
+    const id = searchParams.get('id');
+    if (!id) {
+      return NextResponse.json({ error: 'Missing review id' }, { status: 400 });
+    }
+
+    await prisma.visitorReview.delete({
+      where: { id },
+    });
+
+    return NextResponse.json({ success: true, message: 'Review deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting visitor review:', error);
+    return NextResponse.json({ error: 'Failed to delete visitor review' }, { status: 500 });
+  }
+}
+

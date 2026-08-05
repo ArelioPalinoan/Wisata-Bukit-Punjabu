@@ -236,20 +236,22 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         }
 
         // Fetch Visitor Reviews
-        const { data: reviewsData } = await supabase.from('visitor_reviews').select('*').order('created_at', { ascending: false });
-        if (reviewsData && reviewsData.length > 0) {
-          setReviews(
-            reviewsData.map((r: { id: string; name: string; origin: string; rating: number; date: string; comment: string; avatar?: string; spot: string }) => ({
-              id: String(r.id),
-              name: r.name,
-              origin: r.origin,
-              rating: Number(r.rating) || 5,
-              date: r.date,
-              comment: r.comment,
-              avatar: r.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(r.name)}&background=059669&color=fff`,
-              spot: r.spot,
-            }))
-          );
+        const { data: reviewsData, error: reviewsErr } = await supabase.from('visitor_reviews').select('*').order('created_at', { ascending: false });
+        if (!reviewsErr && reviewsData !== null) {
+          const mappedReviews = reviewsData.map((r: { id: string; name: string; origin: string; rating: number; date: string; comment: string; avatar?: string; spot: string }) => ({
+            id: String(r.id),
+            name: r.name,
+            origin: r.origin,
+            rating: Number(r.rating) || 5,
+            date: r.date,
+            comment: r.comment,
+            avatar: r.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(r.name)}&background=059669&color=fff`,
+            spot: r.spot,
+          }));
+          setReviews(mappedReviews);
+          if (typeof window !== 'undefined') {
+            localStorage.setItem('punjabu_reviews', JSON.stringify(mappedReviews));
+          }
         }
 
         // Fetch Bookings
@@ -368,6 +370,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             setUser(JSON.parse(savedUser));
           } catch (e) {
             console.error('Error loading user from storage:', e);
+          }
+        }
+        const savedReviews = localStorage.getItem('punjabu_reviews');
+        if (savedReviews) {
+          try {
+            setReviews(JSON.parse(savedReviews));
+          } catch (e) {
+            console.error('Error loading reviews from storage:', e);
           }
         }
       }
@@ -1002,7 +1012,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             avatar: data[0].avatar,
             spot: data[0].spot,
           };
-          setReviews((prev) => [newRev, ...prev]);
+          setReviews((prev) => {
+            const updated = [newRev, ...prev];
+            if (typeof window !== 'undefined') {
+              localStorage.setItem('punjabu_reviews', JSON.stringify(updated));
+            }
+            return updated;
+          });
           return;
         }
       } catch (err) {
@@ -1010,18 +1026,33 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       }
     }
     const newRev: VisitorReview = { ...reviewData, id: `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`, date: formattedDate };
-    setReviews((prev) => [newRev, ...prev]);
+    setReviews((prev) => {
+      const updated = [newRev, ...prev];
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('punjabu_reviews', JSON.stringify(updated));
+      }
+      return updated;
+    });
   };
 
   const deleteReview = async (id: string) => {
     if (isSupabaseConfigured() && supabase) {
       try {
-        await supabase.from('visitor_reviews').delete().eq('id', id);
+        const { error } = await supabase.from('visitor_reviews').delete().eq('id', id);
+        if (error) {
+          console.warn('Supabase deleteReview error:', error);
+        }
       } catch (err) {
         console.warn('Supabase deleteReview error:', err);
       }
     }
-    setReviews((prev) => prev.filter((r) => r.id !== id));
+    setReviews((prev) => {
+      const updated = prev.filter((r) => r.id !== id);
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('punjabu_reviews', JSON.stringify(updated));
+      }
+      return updated;
+    });
   };
 
   const createBooking = async (bookingData: Omit<BookingRecord, 'id' | 'status' | 'createdAt'>): Promise<BookingRecord | null> => {
