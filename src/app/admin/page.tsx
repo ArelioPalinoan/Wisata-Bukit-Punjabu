@@ -36,7 +36,7 @@ import {
 export default function AdminDashboardPage() {
   const {
     user,
-    login,
+    openAuthModal,
     newsList,
     addNews,
     updateNews,
@@ -170,7 +170,7 @@ export default function AdminDashboardPage() {
             </p>
           </div>
           <button
-            onClick={() => login('admin@punjabu.desa.id', 'admin', 'Admin Pengelola Punjabu')}
+            onClick={openAuthModal}
             className="w-full py-3.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-extrabold rounded-2xl shadow-lg shadow-emerald-950/50 transition-all transform hover:scale-[1.02] active:scale-95"
           >
             Masuk Sebagai Administrator

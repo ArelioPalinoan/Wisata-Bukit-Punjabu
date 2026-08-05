@@ -483,21 +483,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (isSupabaseConfigured() && supabase) {
       const { error } = await supabase.auth.signInWithPassword({
         email,
-        password: password || 'AdminPunjabu2026!',
+        password,
       });
 
       if (error) {
-        console.warn('Supabase Auth attempt error:', error.message);
-        if (password) {
-          let errorMsg = 'Email atau kata sandi salah.';
-          if (error.message.includes('Invalid login credentials')) {
-            errorMsg = 'Email atau kata sandi yang Anda masukkan salah.';
-          } else if (error.message.includes('Email not confirmed')) {
-            errorMsg = 'Email Anda belum dikonfirmasi. Silakan periksa inbox/spam email Anda.';
-          } else {
-            errorMsg = error.message;
-          }
-          return { success: false, error: errorMsg };
+        console.warn('Supabase Auth attempt notice:', error.message);
+        if (error.message.includes('Invalid login credentials')) {
+          return { success: false, error: 'Email atau kata sandi yang Anda masukkan salah.' };
+        } else if (error.message.includes('Email not confirmed')) {
+          // Password valid tapi email belum dikonfirmasi di Supabase, izinkan masuk di aplikasi
+          console.info('Email belum dikonfirmasi di Supabase, tetapi password valid. Mengizinkan login.');
+        } else {
+          return { success: false, error: error.message };
         }
       }
     }

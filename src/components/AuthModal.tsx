@@ -3,7 +3,7 @@
 import React, { useState, useSyncExternalStore } from 'react';
 import { createPortal } from 'react-dom';
 import { useApp } from '@/context/AppContext';
-import { X, Mail, Lock, User as UserIcon, ShieldAlert, Loader2, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { X, Mail, Lock, User as UserIcon, Loader2, AlertCircle, CheckCircle2 } from 'lucide-react';
 
 const subscribe = () => () => {};
 const getSnapshot = () => true;
@@ -75,16 +75,6 @@ export const AuthModal: React.FC = () => {
     }
   };
 
-  const handleQuickAdminLogin = async () => {
-    setErrorMsg(null);
-    setSuccessMsg(null);
-    setIsLoading(true);
-    try {
-      await login('admin.punjabu@gmail.com', 'admin', 'Admin Pengelola Punjabu');
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   const toggleMode = () => {
     setIsSignUp(!isSignUp);
@@ -271,18 +261,6 @@ export const AuthModal: React.FC = () => {
           Masuk dengan Google
         </button>
 
-        {/* Quick Demo Admin Login */}
-        <div className="mt-4 pt-4 border-t border-zinc-100 dark:border-zinc-800/60 text-center">
-          <button
-            onClick={handleQuickAdminLogin}
-            type="button"
-            disabled={isLoading}
-            className="w-full py-2 px-3 bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400 font-semibold rounded-lg text-xs flex items-center justify-center gap-1.5 transition disabled:opacity-60"
-          >
-            <ShieldAlert className="w-3.5 h-3.5 shrink-0" />
-            Mode Demo: Masuk Langsung Sebagai Admin
-          </button>
-        </div>
 
         {/* Toggle Login/Signup Switcher */}
         <div className="mt-5 text-center text-xs text-zinc-500 dark:text-zinc-400">
