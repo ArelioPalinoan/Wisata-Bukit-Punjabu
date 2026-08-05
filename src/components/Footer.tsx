@@ -43,12 +43,7 @@ export const Footer: React.FC = () => {
             <ul className="space-y-2.5 text-sm">
               <li>
                 <Link href="/" className="hover:text-emerald-400 transition">
-                  Beranda
-                </Link>
-              </li>
-              <li>
-                <Link href="/#profil-desa" className="hover:text-emerald-400 transition">
-                  Profil Desa Buntu Buangin
+                  Beranda Profil
                 </Link>
               </li>
               <li>

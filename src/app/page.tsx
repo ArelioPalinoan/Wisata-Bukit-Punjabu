@@ -10,7 +10,6 @@ import { ScrollReveal } from '@/components/ScrollReveal';
 import { WeatherWidget } from '@/components/WeatherWidget';
 import { GallerySection } from '@/components/GalleryLightbox';
 import { ReviewModal } from '@/components/ReviewModal';
-import { VillageProfileSection } from '@/components/VillageProfileSection';
 
 import {
   Compass,
@@ -173,11 +172,6 @@ export default function Home() {
           <WeatherWidget />
         </ScrollReveal>
       </section>
-
-      {/* ══════════════════════════════════════════════
-          PROFIL DESA BUNTU BUANGIN (id="profil-desa")
-      ══════════════════════════════════════════════ */}
-      <VillageProfileSection />
 
 
 

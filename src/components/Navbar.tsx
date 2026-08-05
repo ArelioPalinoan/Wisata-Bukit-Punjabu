@@ -15,7 +15,6 @@ type NavLink = {
 // Streamlined, clean, spacious nav structure
 const navLinks: NavLink[] = [
   { name: 'Beranda', href: '/', sectionId: 'top' },
-  { name: 'Profil Desa', href: '/#profil-desa', sectionId: 'profil-desa' },
   { name: 'Wisata', href: '/#wisata', sectionId: 'wisata' },
   { name: 'Panduan', href: '/#panduan', sectionId: 'panduan' },
   { name: 'Berita', href: '/#berita', sectionId: 'berita' },
@@ -43,7 +42,7 @@ export const Navbar: React.FC = () => {
   useEffect(() => {
     if (pathname !== '/') return;
 
-    const sectionIds = ['profil-desa', 'wisata', 'panduan', 'berita', 'informasi', 'rute', 'galeri', 'faq'];
+    const sectionIds = ['wisata', 'panduan', 'berita', 'informasi', 'rute', 'galeri', 'faq'];
 
     const update = () => {
       const threshold = window.scrollY + 180;
